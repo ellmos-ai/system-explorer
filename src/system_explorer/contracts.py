@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import unicodedata
 from copy import deepcopy
 from typing import Any
+from urllib.parse import unquote, urlsplit
 
 
 CONTRACT_SCHEMAS = {
@@ -61,6 +63,53 @@ SECRET_KEYS = {
     "private_key",
     "secret",
     "token",
+}
+SECRET_KEY_SUFFIXES = {
+    "accesstoken",
+    "apikey",
+    "authtoken",
+    "clientsecret",
+    "credential",
+    "credentials",
+    "credentialvalue",
+    "password",
+    "passwd",
+    "privatekey",
+    "pwd",
+    "secret",
+    "secretvalue",
+    "token",
+}
+SECRET_KEY_MARKERS = {
+    "accesstoken",
+    "apikey",
+    "authtoken",
+    "clientsecret",
+    "credentialvalue",
+    "password",
+    "passwd",
+    "privatekey",
+    "secretvalue",
+}
+REFERENCE_KEY_SUFFIXES = {
+    "id",
+    "location",
+    "path",
+    "provider",
+    "ref",
+    "status",
+    "type",
+    "uri",
+}
+OUTPUT_BINDING_FIELDS = {
+    "kind",
+    "owner_ref",
+    "storage_uri",
+    "visibility",
+    "raw_content_allowed",
+    "retention",
+    "backup_uri",
+    "desktop_shortcut",
 }
 
 
@@ -442,11 +491,13 @@ def _validate_output_bindings(
             item_path,
             errors,
         )
+        for field in sorted(set(binding) - OUTPUT_BINDING_FIELDS):
+            errors.append(f"{item_path}.{field} is unsupported")
         _enum(binding.get("kind"), OUTPUT_KINDS, f"{item_path}.kind", errors)
         _nonempty_string(binding.get("owner_ref"), f"{item_path}.owner_ref", errors)
         _nonempty_string(binding.get("storage_uri"), f"{item_path}.storage_uri", errors)
         if isinstance(binding.get("storage_uri"), str) and not URI_RE.match(
-            binding["storage_uri"]
+            _normalized_uri(binding["storage_uri"])
         ):
             errors.append(f"{item_path}.storage_uri must be a typed URI")
         _enum(binding.get("visibility"), VISIBILITIES, f"{item_path}.visibility", errors)
@@ -458,7 +509,7 @@ def _validate_output_bindings(
         for field in ("backup_uri", "desktop_shortcut"):
             if (
                 isinstance(binding.get(field), str)
-                and not URI_RE.match(binding[field])
+                and not URI_RE.match(_normalized_uri(binding[field]))
             ):
                 errors.append(f"{item_path}.{field} must be a typed URI")
         _validate_output_binding_policy(binding, item_path, errors)
@@ -469,25 +520,37 @@ def _validate_output_binding_policy(
 ) -> None:
     kind = binding.get("kind")
     storage = str(binding.get("storage_uri", ""))
-    storage_folded = storage.casefold().replace("\\", "/")
+    storage_normalized = _normalized_uri(storage)
+    storage_scheme = urlsplit(storage_normalized).scheme.casefold()
     owner = str(binding.get("owner_ref", ""))
     raw_allowed = binding.get("raw_content_allowed") is True
-    desktop_target = storage_folded.startswith(("desktop://", "user://desktop"))
-    onedrive_target = storage_folded.startswith("onedrive://") or "/onedrive/" in storage_folded
+    desktop_target = _uri_targets_named_location(storage_normalized, "desktop")
+    onedrive_target = _uri_targets_named_location(storage_normalized, "onedrive")
 
     if kind == "runtime_log":
         if owner == "ellmos-memory-human-context-bundle":
             errors.append(f"{path}.owner_ref may not assign logs to the memory bundle")
-        if raw_allowed and not storage_folded.startswith("host-local://"):
+        if raw_allowed and storage_scheme != "host-local":
             errors.append(
                 f"{path}.storage_uri must use host-local:// for raw runtime logs"
             )
-        if raw_allowed and (desktop_target or onedrive_target):
+        if raw_allowed and (
+            desktop_target
+            or onedrive_target
+            or "desktop" in storage_normalized
+            or "onedrive" in storage_normalized
+        ):
             errors.append(f"{path} may not place raw runtime logs on OneDrive or Desktop")
+        if raw_allowed:
+            for field in ("backup_uri", "desktop_shortcut"):
+                if field in binding:
+                    errors.append(
+                        f"{path}.{field} is not allowed for raw runtime logs"
+                    )
     if raw_allowed and desktop_target:
         errors.append(f"{path} may not use Desktop as a raw-content target")
-    if kind in {"decision_request", "decision_synthesis"} and not storage.startswith(
-        "control-center://_DECISIONS"
+    if kind in {"decision_request", "decision_synthesis"} and not storage_normalized.startswith(
+        "control-center://_decisions"
     ):
         errors.append(
             f"{path}.storage_uri must use control-center://_DECISIONS for decisions"
@@ -497,7 +560,7 @@ def _validate_output_binding_policy(
             errors.append(
                 f"{path}.owner_ref must be ellmos-automation-control-bundle"
             )
-        if not storage.startswith("user://.USR/logs/automation"):
+        if not storage_normalized.startswith("user://.usr/logs/automation"):
             errors.append(
                 f"{path}.storage_uri must use user://.USR/logs/automation"
             )
@@ -506,8 +569,8 @@ def _validate_output_binding_policy(
             f"{path}.owner_ref must be ellmos-governance-assurance-bundle"
         )
     if kind == "one_off_report" and desktop_target:
-        backup = str(binding.get("backup_uri", ""))
-        if not backup.startswith("user://.USR/"):
+        backup = _normalized_uri(str(binding.get("backup_uri", "")))
+        if not backup.startswith("user://.usr/"):
             errors.append(
                 f"{path}.backup_uri must use user://.USR/ when Desktop is the report target"
             )
@@ -605,8 +668,8 @@ def _ref_name(value: Any) -> str | None:
 def _reject_secret_values(value: Any, path: str, errors: list[str]) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
-            normalized = str(key).casefold().replace("-", "_")
-            if normalized in SECRET_KEYS:
+            normalized = _normalized_key(str(key))
+            if _is_secret_value_key(normalized):
                 errors.append(f"{path}.{key} may not contain a secret value")
             _reject_secret_values(child, f"{path}.{key}", errors)
     elif isinstance(value, list):
@@ -676,3 +739,40 @@ def _find_cycle(nodes: set[str], edges: dict[str, list[str]]) -> list[str]:
         if cycle:
             return cycle
     return []
+
+
+def _normalized_uri(value: str) -> str:
+    return unicodedata.normalize("NFKC", unquote(value.strip())).replace(
+        "\\",
+        "/",
+    ).casefold()
+
+
+def _uri_targets_named_location(value: str, name: str) -> bool:
+    parsed = urlsplit(value)
+    if parsed.scheme.casefold() == name:
+        return True
+    segments = [
+        part
+        for part in re.split(r"[/@:?&=#]+", f"{parsed.netloc}/{parsed.path}")
+        if part
+    ]
+    return name.casefold() in segments
+
+
+def _normalized_key(value: str) -> str:
+    return re.sub(
+        r"[^a-z0-9]",
+        "",
+        unicodedata.normalize("NFKC", value).casefold(),
+    )
+
+
+def _is_secret_value_key(value: str) -> bool:
+    if value in {_normalized_key(key) for key in SECRET_KEYS}:
+        return True
+    if any(value.endswith(suffix) for suffix in REFERENCE_KEY_SUFFIXES):
+        return False
+    return any(value.endswith(suffix) for suffix in SECRET_KEY_SUFFIXES) or any(
+        marker in value for marker in SECRET_KEY_MARKERS
+    )

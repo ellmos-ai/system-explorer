@@ -35,13 +35,17 @@ def validate_manifest_path(path: Path) -> dict[str, Any]:
         if value.get("schema") in CONTRACT_SCHEMAS
         else validate_manifest(value)
     )
+    computed_hash = canonical_content_hash(value)
+    declared_hash = value.get("content_hash")
+    if declared_hash is not None and declared_hash != computed_hash:
+        errors.append("$.content_hash does not match canonical content")
     return {
         "path": path.name,
         "schema": value.get("schema"),
         "id": value.get("id"),
         "valid": not errors,
-        "errors": errors,
-        "computed_content_hash": canonical_content_hash(value),
+        "errors": sorted(set(errors)),
+        "computed_content_hash": computed_hash,
     }
 
 
@@ -688,9 +692,18 @@ def _verify_pin(ref: Any, manifest: dict[str, Any], label: str) -> None:
             f"{label} commit pin {expected_commit!r} does not match "
             f"{actual_commit!r}"
         )
+    computed_hash = canonical_content_hash(manifest)
+    declared_hash = manifest.get("content_hash")
+    if declared_hash is not None:
+        if not isinstance(declared_hash, str):
+            raise ValueError(f"{label} referenced manifest content_hash must be a string")
+        if declared_hash != computed_hash:
+            raise ValueError(
+                f"{label} referenced manifest content_hash does not match "
+                "canonical content"
+            )
     expected_hash = ref.get("content_hash")
-    actual_hash = manifest.get("content_hash") or canonical_content_hash(manifest)
-    if expected_hash and expected_hash != actual_hash:
+    if expected_hash and expected_hash != computed_hash:
         raise ValueError(f"{label} content_hash pin does not match referenced manifest")
 
 

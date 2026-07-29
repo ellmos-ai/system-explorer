@@ -88,6 +88,56 @@ class ContractTest(unittest.TestCase):
             any("backup_uri" in error for error in validate_contract(missing_backup))
         )
 
+    def test_raw_runtime_log_rejects_secondary_targets_and_encoded_cloud_path(
+        self,
+    ) -> None:
+        for field, target in (
+            ("backup_uri", "onedrive://logs/raw-backup.jsonl"),
+            ("desktop_shortcut", "desktop://raw-log"),
+        ):
+            manifest = self._system(output_bindings=self._valid_output_bindings())
+            manifest["output_bindings"][0][field] = target
+            errors = validate_contract(with_content_hash(manifest))
+            self.assertTrue(
+                any(
+                    f"{field} is not allowed for raw runtime logs" in error
+                    for error in errors
+                )
+            )
+
+        for target in (
+            "host-local://logs/%4fneDrive/raw.jsonl",
+            "host-local://logs/raw.jsonl?mirror=OneDrive",
+        ):
+            encoded = self._system(output_bindings=self._valid_output_bindings())
+            encoded["output_bindings"][0]["storage_uri"] = target
+            errors = validate_contract(with_content_hash(encoded))
+            self.assertTrue(any("OneDrive or Desktop" in error for error in errors))
+
+    def test_output_binding_rejects_unknown_fields_and_secret_aliases(self) -> None:
+        unknown = self._system(output_bindings=self._valid_output_bindings())
+        unknown["output_bindings"][0]["mirror_uri"] = "onedrive://logs/raw.jsonl"
+        errors = validate_contract(with_content_hash(unknown))
+        self.assertTrue(any(".mirror_uri is unsupported" in error for error in errors))
+
+        secret_alias = self._system()
+        secret_alias["provenance"]["clientSecret"] = "must-not-be-stored"
+        errors = validate_contract(with_content_hash(secret_alias))
+        self.assertTrue(
+            any("clientSecret may not contain a secret value" in error for error in errors)
+        )
+
+        api_key_value = self._system()
+        api_key_value["provenance"]["apiKeyValue"] = "must-not-be-stored"
+        errors = validate_contract(with_content_hash(api_key_value))
+        self.assertTrue(
+            any("apiKeyValue may not contain a secret value" in error for error in errors)
+        )
+
+        reference_is_allowed = self._system()
+        reference_is_allowed["provenance"]["client_secret_ref"] = "vault://secret-id"
+        self.assertEqual(validate_contract(with_content_hash(reference_is_allowed)), [])
+
     def test_resolver_is_deterministic_and_applies_profiles_and_statuses(self) -> None:
         paths = self._write_fixture()
         first = resolve_system(paths["instance"], [paths["catalog"]])
@@ -198,6 +248,27 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(result["stacks"][0]["id"], "legacy-stack")
         self.assertIn("bundle_refs only", result["warnings"][0])
         self.assertEqual(validate_manifest({"schema": "ellmos.stack.v2", "id": "x"}), [])
+
+    def test_legacy_stack_rejects_stale_self_declared_hash_after_mutation(self) -> None:
+        paths = self._write_fixture(use_stack=True)
+        stack_path = self.root / "stack.json"
+        stack = self._read(stack_path)
+        old_hash = canonical_content_hash(stack)
+        stack["content_hash"] = old_hash
+        stack["bundle_refs"] = []
+        self._write(stack_path, stack)
+
+        validation = validate_manifest_target(stack_path)
+        self.assertFalse(validation["valid"])
+        self.assertIn(
+            "$.content_hash does not match canonical content",
+            validation["errors"],
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "referenced manifest content_hash does not match canonical content",
+        ):
+            resolve_system(paths["instance"], [paths["catalog"]])
 
     def _write_fixture(
         self,

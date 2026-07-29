@@ -13,6 +13,9 @@
   Fallback-/Abhängigkeitszyklen, Suppressions und atomarem explizitem Output
 - typisierte Output-/Log-Bindings mit hostlokaler Rohloggrenze,
   Entscheidungs-, Automations-, Governance- und Berichts-Ownership
+- gehärtete Pinprüfung gegen den neu berechneten kanonischen Hash,
+  einschließlich tolerierter Legacy-Stacks, sowie normalisierte Prüfung
+  sämtlicher Rohlogziele und Secret-Aliase
 
 ### Geplant
 

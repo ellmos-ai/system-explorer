@@ -67,8 +67,9 @@ Ausgaben über `output_bindings`. Ein Binding enthält:
 
 Sicherheitsregeln:
 
-- rohe Runtime-Logs verwenden ausschließlich `host-local://`; OneDrive und
-  Desktop sind keine Rohlogziele,
+- rohe Runtime-Logs verwenden ausschließlich normalisierte
+  `host-local://`-URIs; OneDrive und Desktop sind keine Rohlogziele, auch
+  nicht percent-kodiert, als Query, Backup oder Shortcut,
 - Entscheidungen verwenden `control-center://_DECISIONS`,
 - redigierte Automationssynthesen gehören dem
   `ellmos-automation-control-bundle` und verwenden
@@ -81,7 +82,8 @@ Sicherheitsregeln:
 
 System Explorer indexiert später ausschließlich Metadaten, URI, Typ, Owner,
 Aufbewahrung und Health. Native Rohlogs bleiben beim produzierenden Modul
-oder der Runtime.
+oder der Runtime. Unbekannte Output-Binding-Felder und Secret-Wert-Aliase
+werden abgewiesen; Referenzfelder wie `client_secret_ref` bleiben zulässig.
 
 ## CLI
 
