@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .contracts import CONTRACT_SCHEMAS, validate_contract
+
 
 MODULE_REQUIRED = {
     "schema",
@@ -47,6 +49,8 @@ def load_manifest(path: Path) -> dict[str, Any]:
 def validate_manifest(value: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     schema = value.get("schema")
+    if schema in CONTRACT_SCHEMAS:
+        return validate_contract(value)
     if schema == "ellmos.module.v2":
         missing = sorted(MODULE_REQUIRED - set(value))
         errors.extend(f"missing field: {field}" for field in missing)
@@ -81,7 +85,7 @@ def validate_manifest(value: dict[str, Any]) -> list[str]:
         adapters = value.get("adapters", [])
         if not isinstance(adapters, list) or any(not isinstance(item, dict) for item in adapters):
             errors.append("adapters must contain objects")
-    elif schema in {"ellmos.stack.v2", "ellmos.system-instance.v1"}:
+    elif schema == "ellmos.stack.v2":
         if not value.get("id"):
             errors.append("missing field: id")
     else:

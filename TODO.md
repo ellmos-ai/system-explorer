@@ -8,3 +8,5 @@
 - UI als optionales Panel in vorhandenen GUI-Host einbetten
 - externe Schwarmresultate als standardisierte Probe-Receipts importieren
 - signierte Evidenzreceipts und inkrementelle Scans ergänzen
+- autoritatives externes `ellmos.stack.v2`-Schema anbinden; bis dahin nur
+  gepinnte Stackreferenzen prüfen und `bundle_refs` tolerant konsumieren

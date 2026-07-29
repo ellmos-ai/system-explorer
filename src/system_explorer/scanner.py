@@ -43,9 +43,14 @@ MANIFEST_NAMES = {
     "server.json",
 }
 MANIFEST_SCHEMAS = {
+    "ellmos.bundle.v1",
+    "ellmos.bundles.catalog.v1",
+    "ellmos.fleet.v1",
     "ellmos.module.v2",
     "ellmos.stack.v2",
     "ellmos.system-instance.v1",
+    "ellmos.system-test.v1",
+    "ellmos.system.v1",
 }
 FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -311,13 +316,16 @@ def _scan_manifest(
 ) -> None:
     value = load_manifest(path)
     schema = value.get("schema", "")
-    carrier_kind = (
-        "module"
-        if "module" in schema
-        else "stack"
-        if "stack" in schema
-        else "mcp"
-    )
+    carrier_kind = {
+        "ellmos.bundle.v1": "bundle",
+        "ellmos.bundles.catalog.v1": "bundle-catalog",
+        "ellmos.fleet.v1": "fleet",
+        "ellmos.module.v2": "module",
+        "ellmos.stack.v2": "stack",
+        "ellmos.system-instance.v1": "system-instance",
+        "ellmos.system-test.v1": "system-test",
+        "ellmos.system.v1": "system",
+    }.get(schema, "manifest")
     carrier_id = store.add_node(
         "carrier",
         value.get("display_name")

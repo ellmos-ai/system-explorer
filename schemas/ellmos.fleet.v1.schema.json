@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ellmos.ai/schemas/ellmos.fleet.v1.schema.json",
+  "title": "ellmos system fleet contract",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "status",
+    "lifecycle",
+    "authority",
+    "provenance",
+    "content_hash",
+    "systems",
+    "roles",
+    "handoffs",
+    "dependencies",
+    "host_overrides"
+  ],
+  "properties": {
+    "schema": {"const": "ellmos.fleet.v1"},
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "status": {"$ref": "#/$defs/status"},
+    "lifecycle": {"enum": ["draft", "active", "deprecated"]},
+    "authority": {"type": "object"},
+    "provenance": {"type": "object"},
+    "content_hash": {"$ref": "#/$defs/hash"},
+    "systems": {"type": "array", "items": {"$ref": "#/$defs/pinned_ref"}},
+    "roles": {"type": "array", "items": {"type": "object"}},
+    "handoffs": {"type": "array", "items": {"type": "object"}},
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target"],
+        "properties": {
+          "source": {"type": "string", "minLength": 1},
+          "target": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": true
+      }
+    },
+    "host_overrides": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {
+      "enum": [
+        "registered",
+        "available",
+        "installed",
+        "configured",
+        "enabled",
+        "active",
+        "healthy",
+        "suppressed",
+        "experimental",
+        "unavailable"
+      ]
+    },
+    "ref": {
+      "type": "object",
+      "anyOf": [
+        {"required": ["ref"]},
+        {"required": ["id"]},
+        {"required": ["path"]}
+      ],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "commit": {"type": "string", "minLength": 1},
+        "content_hash": {"$ref": "#/$defs/hash"}
+      },
+      "additionalProperties": true
+    },
+    "pinned_ref": {
+      "allOf": [
+        {"$ref": "#/$defs/ref"},
+        {
+          "anyOf": [
+            {"required": ["version"]},
+            {"required": ["commit"]},
+            {"required": ["content_hash"]}
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +22,7 @@ from .manifests import load_manifest, new_module_manifest, validate_manifest
 from .maps import graph_view, render_ascii, render_html, render_mermaid
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
+from .resolver import resolve_system, resolve_test, validate_manifest_target
 from .resources import resource_report
 from .scanner import scan
 from .server import serve
@@ -167,6 +170,40 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--category", default="control")
     create.add_argument("--kind", default="tool")
     create.add_argument("--repository")
+
+    manifest_validate = sub.add_parser(
+        "manifest-validate",
+        help="Validate a V4 contract or compatible legacy manifest.",
+    )
+    manifest_validate.add_argument("path", type=Path)
+
+    system_resolve = sub.add_parser(
+        "system-resolve",
+        help="Resolve a pinned desired system instance without runtime actions.",
+    )
+    system_resolve.add_argument("instance", type=Path)
+    system_resolve.add_argument(
+        "--catalog",
+        type=Path,
+        action="append",
+        required=True,
+        dest="catalogs",
+    )
+    system_resolve.add_argument("--output", type=Path)
+
+    test_resolve = sub.add_parser(
+        "test-resolve",
+        help="Resolve a read-only system-test overlay.",
+    )
+    test_resolve.add_argument("test", type=Path)
+    test_resolve.add_argument(
+        "--catalog",
+        type=Path,
+        action="append",
+        required=True,
+        dest="catalogs",
+    )
+    test_resolve.add_argument("--output", type=Path)
     return parser
 
 
@@ -205,6 +242,32 @@ def _run(args: argparse.Namespace) -> int:
         return 0
     if args.command == "manifest":
         return _manifest(args)
+    if args.command == "manifest-validate":
+        value = validate_manifest_target(args.path)
+        print(json.dumps(value, ensure_ascii=False, indent=2))
+        return 0 if value["valid"] else 1
+    if args.command in {"system-resolve", "test-resolve"}:
+        value = (
+            resolve_system(args.instance, args.catalogs)
+            if args.command == "system-resolve"
+            else resolve_test(args.test, args.catalogs)
+        )
+        if args.output:
+            _write_json_atomic(args.output, value)
+            print(
+                json.dumps(
+                    {
+                        "output": str(args.output),
+                        "schema": value["schema"],
+                        "content_hash": value["content_hash"],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        else:
+            print(json.dumps(value, ensure_ascii=False, indent=2))
+        return 0
 
     config = load_config(args.config)
     if args.command == "serve":
@@ -378,6 +441,35 @@ def _ingest(config: dict[str, Any], store: Store) -> dict[str, Any]:
 def _write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _write_json_atomic(path: Path, value: Any) -> None:
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ) + "\n"
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            handle.write(body)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temp_path = Path(handle.name)
+        os.replace(temp_path, path)
+    finally:
+        if temp_path and temp_path.exists():
+            temp_path.unlink()
 
 
 if __name__ == "__main__":
