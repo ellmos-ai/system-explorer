@@ -80,6 +80,14 @@ class ContractTest(unittest.TestCase):
                 "live_database_in_sync",
             },
         )
+        ready_disabled = component_state["allOf"][2]["then"]
+        self.assertEqual(
+            ready_disabled["properties"]["database_allowlist"]["maxItems"],
+            0,
+        )
+        self.assertFalse(
+            ready_disabled["properties"]["live_database_in_sync"]["const"],
+        )
 
     def test_canonical_hash_ignores_only_the_root_content_hash(self) -> None:
         value = {"schema": "example", "nested": {"content_hash": "retained"}, "z": 1}
@@ -378,6 +386,14 @@ class ContractTest(unittest.TestCase):
             (
                 {"publisher_slot": "workstation"},
                 "complete trusted-peer state together",
+            ),
+            (
+                {
+                    "activation": "ready-disabled",
+                    "database_allowlist": ["database:unexpected"],
+                    "live_database_in_sync": False,
+                },
+                "ready-disabled requires database_allowlist=[]",
             ),
             (
                 {
