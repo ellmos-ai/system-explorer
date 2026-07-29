@@ -15,6 +15,7 @@ from system_explorer.contracts import (
 )
 from system_explorer.manifests import validate_manifest
 from system_explorer.resolver import (
+    resolve_fleet,
     resolve_system,
     resolve_test,
     validate_manifest_target,
@@ -334,6 +335,187 @@ class ContractTest(unittest.TestCase):
         self._write(paths["system"], with_content_hash(system))
         with self.assertRaisesRegex(ValueError, "system binding cycle"):
             resolve_system(paths["instance"], [paths["catalog"]])
+
+    def test_fleet_resolver_applies_host_desired_deviations(self) -> None:
+        paths = self._write_fixture(suppress_optional=False)
+        workstation = self._read(paths["instance"])
+        laptop = deepcopy(workstation)
+        laptop.update(
+            {
+                "id": "laptop-instance",
+                "instance_id": "test-instance@host-b",
+                "host_id": "host-b",
+            }
+        )
+        laptop_path = self.root / "laptop-instance.json"
+        self._write(laptop_path, with_content_hash(laptop))
+
+        fleet = self._common("ellmos.fleet.v1", "test-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "id": "workstation",
+                        "path": paths["instance"].name,
+                        "content_hash": workstation["content_hash"],
+                    },
+                    {
+                        "id": "laptop",
+                        "path": laptop_path.name,
+                        "content_hash": canonical_content_hash(laptop),
+                    },
+                ],
+                "roles": [
+                    {"system": "workstation", "role": "development-primary"}
+                ],
+                "handoffs": [
+                    {
+                        "source": "workstation",
+                        "target": "laptop",
+                        "kind": "sync",
+                    }
+                ],
+                "dependencies": [
+                    {"source": "workstation", "target": "laptop"}
+                ],
+                "host_overrides": [
+                    {
+                        "host_id": "host-b",
+                        "reason": "Laptop intentionally omits the optional UI.",
+                        "component_states": {
+                            "module:optional-ui": {"status": "suppressed"}
+                        },
+                        "tolerated_gaps": ["system.ui"],
+                    }
+                ],
+            }
+        )
+        fleet_path = self.root / "fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+
+        first = resolve_fleet(fleet_path, [paths["catalog"]])
+        second = resolve_fleet(fleet_path, [paths["catalog"]])
+        self.assertEqual(first, second)
+        self.assertEqual(first["content_hash"], canonical_content_hash(first))
+        self.assertEqual(
+            [member["id"] for member in first["members"]],
+            ["laptop", "workstation"],
+        )
+        laptop_result = first["members"][0]
+        self.assertEqual(laptop_result["resolution"]["functions"], ["system.map"])
+        self.assertEqual(laptop_result["coverage_status"], "tolerated-gap")
+        self.assertEqual(laptop_result["open_tolerated_gaps"], ["system.ui"])
+        self.assertEqual(first["coverage_status"], "tolerated-gap")
+        self.assertEqual(first["blocking_required_gaps"], [])
+        self.assertEqual(
+            first["dependencies"][0]["source"],
+            "workstation",
+        )
+        self.assertEqual(first["dependencies"][0]["target"], "laptop")
+        self.assertEqual(first["runtime_actions"], [])
+        self.assertEqual(first["target_mutations"], [])
+        self.assertEqual(self._read(paths["instance"]), workstation)
+        output = self.root / "out" / "fleet-resolution.json"
+        code = main(
+            [
+                "fleet-resolve",
+                str(fleet_path),
+                "--catalog",
+                str(paths["catalog"]),
+                "--output",
+                str(output),
+            ]
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(self._read(output), first)
+        self.assertEqual(list(self.root.rglob(f".{output.name}.*.tmp")), [])
+
+    def test_fleet_contract_and_resolution_reject_unsafe_overrides(self) -> None:
+        paths = self._write_fixture()
+        instance = self._read(paths["instance"])
+        fleet = self._common("ellmos.fleet.v1", "test-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "id": "workstation",
+                        "path": paths["instance"].name,
+                        "content_hash": instance["content_hash"],
+                    }
+                ],
+                "roles": [],
+                "handoffs": [],
+                "dependencies": [],
+                "host_overrides": [
+                    {
+                        "host_id": "missing-host",
+                        "reason": "Negative test.",
+                        "tolerated_gaps": [],
+                    }
+                ],
+            }
+        )
+        fleet_path = self.root / "fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+        with self.assertRaisesRegex(ValueError, "unresolved hosts"):
+            resolve_fleet(fleet_path, [paths["catalog"]])
+
+        fleet["host_overrides"][0].update(
+            {
+                "host_id": "host-a",
+                "component_states": {
+                    "module:mapper": {"status": "suppressed"}
+                },
+            }
+        )
+        self._write(fleet_path, with_content_hash(fleet))
+        result = resolve_fleet(fleet_path, [paths["catalog"]])
+        self.assertEqual(result["coverage_status"], "blocking-gap")
+        self.assertEqual(
+            result["blocking_required_gaps"],
+            [{"member": "workstation", "function": "system.map"}],
+        )
+
+        fleet["host_overrides"][0]["component_states"] = {
+            "module:mapper": {"actual": "healthy"}
+        }
+        errors = validate_contract(with_content_hash(fleet))
+        self.assertTrue(
+            any("not allowed in desired state" in error for error in errors)
+        )
+
+    def test_fleet_resolver_supports_id_refs_and_host_bindings(self) -> None:
+        paths = self._write_fixture()
+        instance = self._read(paths["instance"])
+        fleet = self._common("ellmos.fleet.v1", "test-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "ref": instance["id"],
+                        "content_hash": instance["content_hash"],
+                    }
+                ],
+                "roles": [
+                    {"system": instance["id"], "role": "desired-peer"}
+                ],
+                "handoffs": [],
+                "dependencies": [],
+                "host_overrides": [
+                    {"host": "host-a", "ref": instance["id"]}
+                ],
+            }
+        )
+        fleet_path = self.root / "fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+
+        self.assertEqual(validate_contract(self._read(fleet_path)), [])
+        result = resolve_fleet(fleet_path, [paths["catalog"]])
+        self.assertEqual(
+            result["host_bindings"],
+            [{"host_id": "host-a", "member": "test-instance@host-a"}],
+        )
+        self.assertEqual(result["members"][0]["host_override"], None)
 
     def test_test_overlay_suppresses_only_resolved_refs_without_writeback(self) -> None:
         paths = self._write_fixture(suppress_optional=False)

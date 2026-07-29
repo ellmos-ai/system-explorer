@@ -28,6 +28,8 @@
     "system.map.export",
     "system.map.import",
     "system.map.federation",
+    "system.fleet.resolve",
+    "system.host-deviation.analysis",
     "system.llm-trace-analysis",
     "system.llm-action-surface",
     "system.software-resource.mapping",

@@ -22,7 +22,12 @@ from .manifests import load_manifest, new_module_manifest, validate_manifest
 from .maps import graph_view, render_ascii, render_html, render_mermaid
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
-from .resolver import resolve_system, resolve_test, validate_manifest_target
+from .resolver import (
+    resolve_fleet,
+    resolve_system,
+    resolve_test,
+    validate_manifest_target,
+)
 from .resources import resource_report
 from .scanner import scan
 from .server import serve
@@ -191,6 +196,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     system_resolve.add_argument("--output", type=Path)
 
+    fleet_resolve = sub.add_parser(
+        "fleet-resolve",
+        help="Resolve pinned system members and host-specific desired deviations.",
+    )
+    fleet_resolve.add_argument("fleet", type=Path)
+    fleet_resolve.add_argument(
+        "--catalog",
+        type=Path,
+        action="append",
+        required=True,
+        dest="catalogs",
+    )
+    fleet_resolve.add_argument("--output", type=Path)
+
     test_resolve = sub.add_parser(
         "test-resolve",
         help="Resolve a read-only system-test overlay.",
@@ -246,12 +265,13 @@ def _run(args: argparse.Namespace) -> int:
         value = validate_manifest_target(args.path)
         print(json.dumps(value, ensure_ascii=False, indent=2))
         return 0 if value["valid"] else 1
-    if args.command in {"system-resolve", "test-resolve"}:
-        value = (
-            resolve_system(args.instance, args.catalogs)
-            if args.command == "system-resolve"
-            else resolve_test(args.test, args.catalogs)
-        )
+    if args.command in {"system-resolve", "fleet-resolve", "test-resolve"}:
+        if args.command == "system-resolve":
+            value = resolve_system(args.instance, args.catalogs)
+        elif args.command == "fleet-resolve":
+            value = resolve_fleet(args.fleet, args.catalogs)
+        else:
+            value = resolve_test(args.test, args.catalogs)
         if args.output:
             _write_json_atomic(args.output, value)
             print(

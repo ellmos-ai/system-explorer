@@ -166,3 +166,11 @@ Automationssynthesen, native Runtime-Logs und Governance-Receipts. Rohlogs
 bleiben hostlokal beim Producer. Explorer darf ihre Metadaten und Health
 indexieren, aber keine zentrale Rohlogkopie erzeugen. Details:
 [`docs/V4-COMPOSITION-CONTRACTS.md`](docs/V4-COMPOSITION-CONTRACTS.md).
+
+Fleet-Auflösungen kapseln mehrere gepinnte System- oder Instanzresolutionen.
+Eine Fleet-ID bleibt dabei von ihrem Manifestpfad getrennt. Begründete
+Host-Overrides verändern nur die Desired-Projektion; Basemanifeste bleiben
+unverändert. Erforderliche, nicht mehr getragene Funktionen erscheinen als
+blockierende Hostlücken, ausdrücklich tolerierte Abweichungen als eigener
+Status. Abhängigkeiten werden auf eindeutige Fleet-Mitglieder normalisiert;
+mehrdeutige Aliase werden fail-closed abgewiesen.

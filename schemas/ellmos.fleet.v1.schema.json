@@ -42,7 +42,10 @@
         "additionalProperties": true
       }
     },
-    "host_overrides": {"type": "array", "items": {"type": "object"}}
+    "host_overrides": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/host_override"}
+    }
   },
   "additionalProperties": true,
   "$defs": {
@@ -87,6 +90,41 @@
             {"required": ["commit"]},
             {"required": ["content_hash"]}
           ]
+        }
+      ]
+    },
+    "component_states": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {"status": {"$ref": "#/$defs/status"}},
+        "additionalProperties": true
+      }
+    },
+    "host_override": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["host", "ref"],
+          "properties": {
+            "host": {"type": "string", "minLength": 1},
+            "ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["host_id", "reason"],
+          "properties": {
+            "host_id": {"type": "string", "minLength": 1},
+            "reason": {"type": "string", "minLength": 1},
+            "desired_profile": {"type": "string", "minLength": 1},
+            "component_states": {"$ref": "#/$defs/component_states"},
+            "tolerated_gaps": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1}
+            }
+          },
+          "additionalProperties": false
         }
       ]
     }

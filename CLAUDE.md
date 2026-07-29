@@ -5,7 +5,7 @@ profile: "FULL"
 version: 0.1.0
 created: "2026-07-29"
 updated: "2026-07-29"
-reason_last_change: "Kristallisierte Software-Randressourcen ergänzt"
+reason_last_change: "Fleet-Auflösung und Hostabweichungsanalyse ergänzt"
 last_verified: "2026-07-29"
 author: "Lukas Geiger"
 anthropic_compatible: true

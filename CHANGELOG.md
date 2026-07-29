@@ -23,6 +23,15 @@
   lokaler Secret-Pfade; logische `secret_ref`-Werte bleiben zulässig
 - begrenzte Percent-Decodierung bis zum Fixpunkt für URI-Zielprüfungen;
   ungültige oder nicht stabil dekodierbare URIs werden fail-closed abgewiesen
+- deterministische `fleet-resolve`-Auflösung für gepinnte Systeme und
+  Instanzen mit getrennter Fleet-ID/Manifestpfad-Semantik sowie eindeutiger
+  repo-lokaler ID-Auflösung
+- begründete Host-Overrides für Desired-Profile, Komponentenstatus und
+  tolerierte Funktionslücken ohne Writeback oder Laufzeitaktionen
+- Fleet-weite Funktionsdeckung, normalisierte Abhängigkeiten sowie getrennte
+  blockierende Pflichtlücken und tolerierte Hostabweichungen
+- unterdrückte gewünschte Komponenten bleiben in Resolutionen sichtbar,
+  tragen aber keine Funktionen und können nicht als Fallbackziel dienen
 
 ### Geplant
 

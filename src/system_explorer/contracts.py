@@ -344,26 +344,11 @@ def _validate_instance(value: dict[str, Any], errors: list[str]) -> None:
     _validate_ref(value.get("system_ref"), "$.system_ref", errors, pinned=True)
     _nonempty_string(value.get("host_id"), "$.host_id", errors)
     _nonempty_string(value.get("desired_profile"), "$.desired_profile", errors)
-    _object(value.get("component_states"), "$.component_states", errors)
-    if isinstance(value.get("component_states"), dict):
-        for ref, state in value["component_states"].items():
-            if not isinstance(ref, str) or not ref:
-                errors.append("$.component_states keys must be non-empty refs")
-            if not isinstance(state, dict):
-                errors.append(f"$.component_states[{ref!r}] must be an object")
-                continue
-            if "status" in state:
-                _enum(
-                    state.get("status"),
-                    OPERATIONAL_STATUSES,
-                    f"$.component_states[{ref!r}].status",
-                    errors,
-                )
-            forbidden = {"actual", "observed", "runtime_value"} & set(state)
-            for field in sorted(forbidden):
-                errors.append(
-                    f"$.component_states[{ref!r}].{field} is not allowed in desired state"
-                )
+    _validate_component_states(
+        value.get("component_states"),
+        "$.component_states",
+        errors,
+    )
     for field in sorted(
         key
         for key in value
@@ -444,18 +429,37 @@ def _validate_fleet(value: dict[str, Any], errors: list[str]) -> None:
         "$",
         errors,
     )
-    _validate_ref_list(value.get("systems"), "$.systems", errors, pinned=True)
+    systems = value.get("systems")
+    _validate_ref_list(systems, "$.systems", errors, pinned=True)
+    alias_owner: dict[str, str] = {}
+    primary_refs: list[str] = []
+    if isinstance(systems, list):
+        for index, system_ref in enumerate(systems):
+            primary = _ref_name(system_ref)
+            if not primary:
+                continue
+            primary_refs.append(primary)
+            for alias in _ref_aliases(system_ref):
+                previous = alias_owner.get(alias)
+                if previous is not None and previous != primary:
+                    errors.append(
+                        f"$.systems[{index}] alias {alias!r} is already used by "
+                        f"{previous!r}"
+                    )
+                else:
+                    alias_owner[alias] = primary
+        if len(primary_refs) != len(set(primary_refs)):
+            errors.append("$.systems contains duplicate refs")
     for field in ("roles", "handoffs", "dependencies", "host_overrides"):
-        if not isinstance(value.get(field), list):
+        items = value.get(field)
+        if not isinstance(items, list):
             errors.append(f"$.{field} must be an array")
+        elif any(not isinstance(item, dict) for item in items):
+            errors.append(f"$.{field} must contain objects")
     dependencies = value.get("dependencies")
     if isinstance(dependencies, list):
         edges: dict[str, list[str]] = {}
-        nodes = {
-            name
-            for item in value.get("systems", [])
-            if (name := _ref_name(item))
-        }
+        nodes = set(alias_owner.values())
         for index, dependency in enumerate(dependencies):
             path = f"$.dependencies[{index}]"
             if not isinstance(dependency, dict):
@@ -466,16 +470,84 @@ def _validate_fleet(value: dict[str, Any], errors: list[str]) -> None:
             _nonempty_string(source, f"{path}.source", errors)
             _nonempty_string(target, f"{path}.target", errors)
             if isinstance(source, str) and isinstance(target, str):
-                unknown = {source, target} - nodes
+                unknown = {source, target} - set(alias_owner)
                 if unknown:
                     errors.append(
                         f"{path} references unknown systems: "
                         + ", ".join(sorted(unknown))
                     )
-                edges.setdefault(source, []).append(target)
+                else:
+                    edges.setdefault(alias_owner[source], []).append(
+                        alias_owner[target]
+                    )
         cycle = _find_cycle(nodes, edges)
         if cycle:
             errors.append("$.dependencies cycle: " + " -> ".join(cycle))
+    host_overrides = value.get("host_overrides")
+    if isinstance(host_overrides, list):
+        host_ids: list[str] = []
+        allowed_fields = {
+            "host",
+            "ref",
+            "host_id",
+            "reason",
+            "desired_profile",
+            "component_states",
+            "tolerated_gaps",
+        }
+        for index, override in enumerate(host_overrides):
+            path = f"$.host_overrides[{index}]"
+            if not isinstance(override, dict):
+                errors.append(f"{path} must be an object")
+                continue
+            for field in sorted(set(override) - allowed_fields):
+                errors.append(f"{path}.{field} is unsupported")
+            is_binding = "host" in override or "ref" in override
+            is_deviation = any(
+                field in override
+                for field in (
+                    "host_id",
+                    "reason",
+                    "desired_profile",
+                    "component_states",
+                    "tolerated_gaps",
+                )
+            )
+            if is_binding and is_deviation:
+                errors.append(
+                    f"{path} may not mix host/ref binding with desired deviation fields"
+                )
+                continue
+            if is_binding:
+                _require(override, {"host", "ref"}, path, errors)
+                _nonempty_string(override.get("host"), f"{path}.host", errors)
+                _nonempty_string(override.get("ref"), f"{path}.ref", errors)
+                continue
+            _require(override, {"host_id", "reason"}, path, errors)
+            _nonempty_string(override.get("host_id"), f"{path}.host_id", errors)
+            _nonempty_string(override.get("reason"), f"{path}.reason", errors)
+            if isinstance(override.get("host_id"), str):
+                host_ids.append(override["host_id"])
+            if "desired_profile" in override:
+                _nonempty_string(
+                    override["desired_profile"],
+                    f"{path}.desired_profile",
+                    errors,
+                )
+            if "component_states" in override:
+                _validate_component_states(
+                    override["component_states"],
+                    f"{path}.component_states",
+                    errors,
+                )
+            if "tolerated_gaps" in override:
+                _string_list(
+                    override["tolerated_gaps"],
+                    f"{path}.tolerated_gaps",
+                    errors,
+                )
+        if len(host_ids) != len(set(host_ids)):
+            errors.append("$.host_overrides contains duplicate host_ids")
 
 
 def _validate_output_bindings(
@@ -660,6 +732,36 @@ def _validate_ref(
         errors.append(f"{path}.content_hash must be a lowercase SHA-256 digest")
     if "depends_on" in value:
         _string_list(value["depends_on"], f"{path}.depends_on", errors)
+    if "profile" in value:
+        _nonempty_string(value["profile"], f"{path}.profile", errors)
+
+
+def _validate_component_states(
+    value: Any,
+    path: str,
+    errors: list[str],
+) -> None:
+    _object(value, path, errors)
+    if not isinstance(value, dict):
+        return
+    for ref, state in value.items():
+        if not isinstance(ref, str) or not ref:
+            errors.append(f"{path} keys must be non-empty refs")
+        if not isinstance(state, dict):
+            errors.append(f"{path}[{ref!r}] must be an object")
+            continue
+        if "status" in state:
+            _enum(
+                state.get("status"),
+                OPERATIONAL_STATUSES,
+                f"{path}[{ref!r}].status",
+                errors,
+            )
+        forbidden = {"actual", "observed", "runtime_value"} & set(state)
+        for field in sorted(forbidden):
+            errors.append(
+                f"{path}[{ref!r}].{field} is not allowed in desired state"
+            )
 
 
 def _validate_component_pin(
@@ -684,6 +786,18 @@ def _ref_name(value: Any) -> str | None:
             if isinstance(candidate, str) and candidate:
                 return candidate
     return None
+
+
+def _ref_aliases(value: Any) -> set[str]:
+    if isinstance(value, str):
+        return {value} if value else set()
+    if not isinstance(value, dict):
+        return set()
+    return {
+        candidate
+        for field in ("ref", "id", "path")
+        if isinstance((candidate := value.get(field)), str) and candidate
+    }
 
 
 def _reject_secret_values(value: Any, path: str, errors: list[str]) -> None:

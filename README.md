@@ -63,6 +63,9 @@ system-explorer map-export --config explorer.json --view all --output system-map
 system-explorer map-import system-map-LAPTOP.json --config explorer.json
 system-explorer map --config explorer.json --view llm-traces --system LAPTOP
 system-explorer map --config explorer.json --view federation
+system-explorer fleet-resolve fleets\development-fleet.json `
+  --catalog manifests\bundles.catalog.v1.json `
+  --output out\development-fleet.resolution.json
 system-explorer server-check --config deployment.json
 system-explorer provider-refresh --config deployment.json
 system-explorer purpose-check --target carrier:system-explorer --config deployment.json
@@ -96,6 +99,16 @@ Herkunftssystem eingeschränkt oder über alle vorliegenden Karten kombiniert
 werden. Siehe
 [`docs/FEDERATED-MAPS.md`](docs/FEDERATED-MAPS.md) und
 [`examples/deployment-federation.json`](examples/deployment-federation.json).
+
+`fleet-resolve` löst gepinnte logische Systeme und Systeminstanzen gemeinsam
+auf. Referenzen dürfen eine stabile Fleet-ID und einen getrennten relativen
+Manifestpfad tragen oder eine im Repo eindeutig registrierte Manifest-ID
+verwenden. `host`/`ref` bindet vorhandene Instanzen an Hosts.
+Desired-Hostabweichungen verwenden getrennt `host_id`/`reason` und können
+abweichende Profile, Komponentenstatus sowie tolerierte Funktionslücken
+deklarieren. Das Ergebnis weist pro Host blockierende Pflichtlücken und
+tolerierte Abweichungen aus, ohne Basemanifeste zu verändern oder
+Laufzeitaktionen auszuführen.
 
 Server- und Repozwecke werden als Kriterien statt als bloße Labels geprüft.
 Die Regeln für Privatserver, teiloffene Dienste, ApiProber und Kostenvergleich

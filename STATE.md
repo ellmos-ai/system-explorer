@@ -19,5 +19,6 @@ description: |
 - Randressourcen: installierte Software mit Funktionen, LLM-Steuerwegen,
   Readiness-Symbolen und getrenntem Tokenersparnisstatus
 - V4-Komposition: additive Bundle-/System-/Instanz-/Test-/Fleet-Verträge und
-  deterministische Read-only-Auflösung auf Feature-Branch
+  deterministische Read-only-Auflösung einschließlich Fleet-Mitgliedern,
+  begründeten Hostabweichungen und Funktionslücken
 - Nächster Freigabepunkt: Test-, UI- und Mirror-Readback

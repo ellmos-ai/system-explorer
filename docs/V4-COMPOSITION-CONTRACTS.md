@@ -124,6 +124,37 @@ system-explorer test-resolve tests\profiles\no-federation.json `
   --catalog manifests\bundles.catalog.v1.json
 ```
 
+Fleet-Auflösung:
+
+```powershell
+system-explorer fleet-resolve fleets\development-fleet.json `
+  --catalog manifests\bundles.catalog.v1.json `
+  --output out\development-fleet.resolution.json
+```
+
+Ein Fleet-Systemverweis kann `id` und `path` gleichzeitig führen: `id` ist
+die stabile Identität innerhalb der Fleet, `path` der relative, gegen den
+Resolution-Root abgesicherte Manifestpfad. Alternativ wird ein ID-only-`ref`
+über einen eindeutigen Manifestindex innerhalb desselben Repositories
+aufgelöst; doppelte IDs brechen fail-closed ab. Dadurch werden logische
+Abhängigkeiten nicht mehr mit Dateipfaden vermischt.
+
+`host_overrides` trägt zwei disjunkte Formen. `host`/`ref` bindet eine bereits
+deklarierte Instanzidentität an ihren Host. `host_id`/`reason` beschreibt eine
+gewünschte Abweichung; erlaubt sind zusätzlich `desired_profile`,
+`component_states` und `tolerated_gaps`. Beide Formen dürfen nicht vermischt
+werden. Actual-/Observed-Felder sind in Desired-Abweichungen verboten. Die
+Auflösung meldet:
+
+- den vollständigen, gepinnten Resolutionstand je Fleet-Mitglied,
+- Funktionsdeckung über alle Mitglieder,
+- offene tolerierte Abweichungen je Host,
+- nicht tolerierte Lücken aus erforderlichen Komponenten,
+- normalisierte Systemabhängigkeiten.
+
+Die Fleet-Auflösung schreibt weder in Instanz-/Systemmanifeste zurück noch
+erzeugt sie Runtime-Aktionen oder Zielsystemmutationen.
+
 Ohne `--output` erscheint die Auflösung nur auf stdout. Mit `--output` wird
 kompaktes, schlüsselsortiertes JSON atomar auf genau diesen Pfad geschrieben.
 Die Resolution enthält ausdrücklich leere `runtime_actions` und

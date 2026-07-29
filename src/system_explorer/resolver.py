@@ -128,6 +128,267 @@ def resolve_system(instance_path: Path, catalog_paths: Iterable[Path]) -> dict[s
     )
 
 
+def resolve_fleet(fleet_path: Path, catalog_paths: Iterable[Path]) -> dict[str, Any]:
+    fleet_path = fleet_path.resolve()
+    catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
+    resolution_root = _resolution_root((fleet_path, *catalog_paths))
+    fleet = _load_contract(fleet_path, "ellmos.fleet.v1")
+    if fleet["status"] not in RESOLVABLE_STATUSES:
+        raise ValueError(
+            f"fleet {fleet['id']!r} has non-resolvable status {fleet['status']!r}"
+        )
+    catalogs = _load_catalogs(catalog_paths, resolution_root)
+    fleet_manifest_index = _manifest_id_index(
+        resolution_root,
+        {"ellmos.system.v1", "ellmos.system-instance.v1"},
+    )
+
+    descriptors: list[dict[str, Any]] = []
+    member_ids: set[str] = set()
+    alias_targets: dict[str, set[str]] = {}
+    for index, fleet_ref in enumerate(fleet["systems"]):
+        target_path = _resolve_fleet_manifest_ref(
+            fleet_ref,
+            resolution_root,
+            fleet_manifest_index,
+            f"$.systems[{index}]",
+        )
+        target = _read_object(target_path)
+        _verify_pin(fleet_ref, target, f"$.systems[{index}]")
+        schema = target.get("schema")
+        instance: dict[str, Any] | None = None
+        if schema == "ellmos.system-instance.v1":
+            instance = _load_contract(target_path, "ellmos.system-instance.v1")
+            system_path = _resolve_contained_ref(
+                instance["system_ref"],
+                resolution_root,
+                f"$.systems[{index}].system_ref",
+            )
+            system = _load_contract(system_path, "ellmos.system.v1")
+            _verify_pin(
+                instance["system_ref"],
+                system,
+                f"$.systems[{index}].system_ref",
+            )
+            default_member_id = instance["instance_id"]
+            host_id = instance["host_id"]
+        elif schema == "ellmos.system.v1":
+            system = _load_contract(target_path, "ellmos.system.v1")
+            system_path = target_path
+            default_member_id = system["id"]
+            host_id = None
+        else:
+            raise ValueError(
+                f"$.systems[{index}] must resolve to ellmos.system.v1 or "
+                "ellmos.system-instance.v1"
+            )
+
+        member_id = _fleet_member_id(fleet_ref, default_member_id)
+        if member_id in member_ids:
+            raise ValueError(f"duplicate fleet member id: {member_id}")
+        member_ids.add(member_id)
+        aliases = _resolver_ref_aliases(fleet_ref)
+        aliases.update({member_id, target["id"], system["id"]})
+        if instance:
+            aliases.update({instance["instance_id"], instance["host_id"]})
+        for alias in aliases:
+            alias_targets.setdefault(alias, set()).add(member_id)
+        descriptors.append(
+            {
+                "member_id": member_id,
+                "fleet_ref": deepcopy(fleet_ref),
+                "manifest": target,
+                "manifest_path": target_path,
+                "system": system,
+                "system_path": system_path,
+                "instance": instance,
+                "host_id": host_id,
+            }
+        )
+
+    host_bindings = [
+        (index, item)
+        for index, item in enumerate(fleet.get("host_overrides", []))
+        if "host" in item
+    ]
+    desired_overrides = [
+        item for item in fleet.get("host_overrides", []) if "host_id" in item
+    ]
+    overrides_by_host = {
+        item["host_id"]: item for item in desired_overrides
+    }
+    known_hosts = {
+        descriptor["host_id"]
+        for descriptor in descriptors
+        if descriptor["host_id"] is not None
+    }
+    unknown_hosts = sorted(set(overrides_by_host) - known_hosts)
+    if unknown_hosts:
+        raise ValueError(
+            "host_overrides references unresolved hosts: "
+            + ", ".join(unknown_hosts)
+        )
+    normalized_host_bindings: list[dict[str, str]] = []
+    descriptors_by_member = {
+        descriptor["member_id"]: descriptor for descriptor in descriptors
+    }
+    for index, binding in host_bindings:
+        member_id = _resolve_fleet_alias(
+            binding["ref"],
+            alias_targets,
+            f"$.host_overrides[{index}].ref",
+        )
+        descriptor = descriptors_by_member[member_id]
+        if descriptor["host_id"] != binding["host"]:
+            raise ValueError(
+                f"host binding {binding['host']!r} does not match "
+                f"fleet member {member_id!r} host {descriptor['host_id']!r}"
+            )
+        normalized_host_bindings.append(
+            {"host_id": binding["host"], "member": member_id}
+        )
+
+    members: list[dict[str, Any]] = []
+    function_members: dict[str, list[str]] = {}
+    fleet_blocking_gaps: list[dict[str, str]] = []
+    for descriptor in sorted(descriptors, key=lambda item: item["member_id"]):
+        instance = descriptor["instance"]
+        override = overrides_by_host.get(descriptor["host_id"], {})
+        if instance:
+            desired_profile = override.get(
+                "desired_profile",
+                instance["desired_profile"],
+            )
+            component_states = deepcopy(instance["component_states"])
+            component_states.update(deepcopy(override.get("component_states", {})))
+        else:
+            desired_profile = _fleet_profile(
+                descriptor["fleet_ref"],
+                descriptor["system"],
+            )
+            component_states = {}
+        resolution = _resolve_system_document(
+            descriptor["system"],
+            descriptor["system_path"],
+            catalogs,
+            desired_profile=desired_profile,
+            component_states=component_states,
+            instance=instance,
+            resolution_root=resolution_root,
+        )
+        functions = set(resolution["functions"])
+        for function in functions:
+            function_members.setdefault(function, []).append(
+                descriptor["member_id"]
+            )
+        tolerated = set(override.get("tolerated_gaps", []))
+        required_functions = {
+            function
+            for bundle in resolution["bundles"]
+            for component in bundle["components"]
+            if component.get("requirement") == "required"
+            for function in component.get("provides", [])
+        }
+        missing_required = required_functions - functions
+        blocking_required = sorted(missing_required - tolerated)
+        for function in blocking_required:
+            fleet_blocking_gaps.append(
+                {"member": descriptor["member_id"], "function": function}
+            )
+        open_tolerated = sorted(tolerated - functions)
+        members.append(
+            {
+                "id": descriptor["member_id"],
+                "manifest": {
+                    "schema": descriptor["manifest"]["schema"],
+                    "id": descriptor["manifest"]["id"],
+                    "version": descriptor["manifest"]["version"],
+                    "content_hash": descriptor["manifest"]["content_hash"],
+                },
+                "system_id": descriptor["system"]["id"],
+                "host_id": descriptor["host_id"],
+                "desired_profile": desired_profile,
+                "host_override": deepcopy(override) if override else None,
+                "coverage_status": (
+                    "blocking-gap"
+                    if blocking_required
+                    else "tolerated-gap"
+                    if open_tolerated
+                    else "covered"
+                ),
+                "blocking_required_gaps": blocking_required,
+                "open_tolerated_gaps": open_tolerated,
+                "covered_tolerances": sorted(tolerated & functions),
+                "resolution": resolution,
+            }
+        )
+
+    dependencies = []
+    for index, dependency in enumerate(fleet.get("dependencies", [])):
+        source = dependency.get("source", dependency.get("from"))
+        target = dependency.get("target", dependency.get("to"))
+        normalized = {
+            key: deepcopy(value)
+            for key, value in dependency.items()
+            if key not in {"source", "from", "target", "to"}
+        }
+        normalized.update(
+            {
+                "source": _resolve_fleet_alias(
+                    source,
+                    alias_targets,
+                    f"$.dependencies[{index}].source",
+                ),
+                "target": _resolve_fleet_alias(
+                    target,
+                    alias_targets,
+                    f"$.dependencies[{index}].target",
+                ),
+                "declared_source": source,
+                "declared_target": target,
+            }
+        )
+        dependencies.append(normalized)
+
+    function_coverage = [
+        {
+            "function": function,
+            "members": sorted(member_list),
+            "member_count": len(member_list),
+        }
+        for function, member_list in sorted(function_members.items())
+    ]
+    return with_content_hash(
+        {
+            "schema": "system-explorer.fleet-resolution.v1",
+            "fleet": {
+                "id": fleet["id"],
+                "version": fleet["version"],
+                "status": fleet["status"],
+                "lifecycle": fleet["lifecycle"],
+                "content_hash": fleet["content_hash"],
+            },
+            "members": members,
+            "functions": sorted(function_members),
+            "function_coverage": function_coverage,
+            "blocking_required_gaps": fleet_blocking_gaps,
+            "coverage_status": (
+                "blocking-gap"
+                if fleet_blocking_gaps
+                else "tolerated-gap"
+                if any(member["open_tolerated_gaps"] for member in members)
+                else "covered"
+            ),
+            "roles": _sorted_objects(fleet.get("roles", [])),
+            "handoffs": _sorted_objects(fleet.get("handoffs", [])),
+            "host_bindings": _sorted_objects(normalized_host_bindings),
+            "dependencies": _sorted_objects(dependencies),
+            "runtime_actions": [],
+            "target_mutations": [],
+        }
+    )
+
+
 def resolve_test(test_path: Path, catalog_paths: Iterable[Path]) -> dict[str, Any]:
     test_path = test_path.resolve()
     catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
@@ -445,18 +706,23 @@ def _resolved_components(
             raise ValueError(
                 f"component {ref!r} has unsupported desired status {desired_status!r}"
             )
-        if desired_status == "suppressed":
-            continue
         if desired_status == "unavailable" and item["requirement"] == "required":
             raise ValueError(f"required component {ref!r} is unavailable")
         item["desired_status"] = desired_status
         resolved.append(item)
-    component_refs = {_ref_name(component["ref"]) for component in resolved}
+    component_refs = {
+        _ref_name(component["ref"])
+        for component in resolved
+        if component["desired_status"] not in {"suppressed", "unavailable"}
+    }
     fallback_edges: dict[str, list[str]] = {}
     for item in resolved:
         ref = _ref_name(item["ref"])
         fallback = item.get("fallback")
-        if fallback is not None:
+        if (
+            fallback is not None
+            and item["desired_status"] not in {"suppressed", "unavailable"}
+        ):
             fallback_ref = _ref_name(fallback)
             if fallback_ref not in component_refs:
                 raise ValueError(
@@ -708,10 +974,48 @@ def _verify_pin(ref: Any, manifest: dict[str, Any], label: str) -> None:
 
 
 def _resolve_contained_ref(ref: Any, root: Path, label: str) -> Path:
-    name = _ref_name(ref)
+    name = _ref_path(ref)
     if not name:
         raise ValueError(f"{label} does not contain a path")
     return _contained_path(root.resolve(), name, label)
+
+
+def _resolve_fleet_manifest_ref(
+    ref: Any,
+    root: Path,
+    manifest_index: dict[str, list[Path]],
+    label: str,
+) -> Path:
+    if isinstance(ref, dict) and isinstance(ref.get("path"), str):
+        return _contained_path(root.resolve(), ref["path"], label)
+    name = _ref_name(ref)
+    if not name:
+        raise ValueError(f"{label} does not identify a system manifest")
+    indexed = manifest_index.get(name, [])
+    candidate = Path(name)
+    file_candidate: Path | None = None
+    if candidate.is_absolute():
+        return _contained_path(root.resolve(), name, label)
+    resolved_candidate = (root / candidate).resolve()
+    try:
+        resolved_candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"{label} escapes its manifest root") from exc
+    if resolved_candidate.is_file():
+        file_candidate = resolved_candidate
+    matches = set(indexed)
+    if file_candidate is not None:
+        matches.add(file_candidate)
+    if not matches:
+        raise ValueError(f"{label} does not resolve to a system manifest: {name}")
+    if len(matches) > 1:
+        raise ValueError(
+            f"{label} is ambiguous across system manifests: "
+            + ", ".join(
+                sorted(path.relative_to(root).as_posix() for path in matches)
+            )
+        )
+    return next(iter(matches))
 
 
 def _contained_path(root: Path, value: str, label: str) -> Path:
@@ -767,6 +1071,32 @@ def _read_object(path: Path) -> dict[str, Any]:
     return value
 
 
+def _manifest_id_index(
+    root: Path,
+    schemas: set[str],
+) -> dict[str, list[Path]]:
+    root = root.resolve()
+    index: dict[str, list[Path]] = {}
+    for candidate in sorted(root.rglob("*.json"), key=lambda item: item.as_posix()):
+        resolved = candidate.resolve()
+        try:
+            resolved.relative_to(root)
+        except ValueError:
+            continue
+        if not resolved.is_file():
+            continue
+        try:
+            value = _read_object(resolved)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        manifest_id = value.get("id")
+        if value.get("schema") not in schemas or not isinstance(manifest_id, str):
+            continue
+        if resolved not in index.setdefault(manifest_id, []):
+            index[manifest_id].append(resolved)
+    return index
+
+
 def _ref_name(value: Any) -> str:
     if isinstance(value, str):
         return value
@@ -776,3 +1106,75 @@ def _ref_name(value: Any) -> str:
             if isinstance(candidate, str) and candidate:
                 return candidate
     return ""
+
+
+def _ref_path(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        for field in ("path", "ref", "id"):
+            candidate = value.get(field)
+            if isinstance(candidate, str) and candidate:
+                return candidate
+    return ""
+
+
+def _resolver_ref_aliases(value: Any) -> set[str]:
+    if isinstance(value, str):
+        return {value} if value else set()
+    if not isinstance(value, dict):
+        return set()
+    return {
+        candidate
+        for field in ("ref", "id", "path")
+        if isinstance((candidate := value.get(field)), str) and candidate
+    }
+
+
+def _fleet_member_id(value: Any, fallback: str) -> str:
+    if isinstance(value, dict):
+        candidate = value.get("id")
+        if isinstance(candidate, str) and candidate:
+            return candidate
+    return fallback
+
+
+def _fleet_profile(fleet_ref: Any, system: dict[str, Any]) -> str:
+    if isinstance(fleet_ref, dict):
+        selected = fleet_ref.get("profile")
+        if isinstance(selected, str) and selected:
+            return selected
+    profiles = sorted(system.get("profiles", {}))
+    if "default" in profiles:
+        return "default"
+    return profiles[0] if profiles else "default"
+
+
+def _resolve_fleet_alias(
+    value: Any,
+    alias_targets: dict[str, set[str]],
+    label: str,
+) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} must be a non-empty fleet member reference")
+    targets = alias_targets.get(value, set())
+    if not targets:
+        raise ValueError(f"{label} references an unresolved fleet member: {value}")
+    if len(targets) > 1:
+        raise ValueError(
+            f"{label} is ambiguous across fleet members: {value} -> "
+            + ", ".join(sorted(targets))
+        )
+    return next(iter(targets))
+
+
+def _sorted_objects(values: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        (deepcopy(item) for item in values),
+        key=lambda item: json.dumps(
+            item,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+    )
