@@ -63,7 +63,9 @@ Ausgaben über `output_bindings`. Ein Binding enthält:
 - `kind`: `one_off_report`, `decision_request`, `decision_synthesis`,
   `automation_summary`, `runtime_log` oder `audit_receipt`
 - `owner_ref`, `storage_uri`, `visibility`, `raw_content_allowed`
-- optional `retention`, `backup_uri` und `desktop_shortcut`
+- optional `retention`, `backup_uri`, `desktop_shortcut` und
+  `materialization`; letzteres ist eng auf
+  `resolution-only-unmaterialized` begrenzt
 
 Sicherheitsregeln:
 
@@ -73,7 +75,8 @@ Sicherheitsregeln:
 - Entscheidungen verwenden `control-center://_DECISIONS`,
 - redigierte Automationssynthesen gehören dem
   `ellmos-automation-control-bundle` und verwenden
-  `user://.USR/logs/automation`,
+  `user://.USR/logs/automation`; `raw_content_allowed` ist dabei zwingend
+  `false`,
 - Audit-, Mutation- und Policy-Receipts gehören dem
   `ellmos-governance-assurance-bundle`,
 - das Memory-/Human-Context-Bundle besitzt keine Logs,
@@ -83,7 +86,19 @@ Sicherheitsregeln:
 System Explorer indexiert später ausschließlich Metadaten, URI, Typ, Owner,
 Aufbewahrung und Health. Native Rohlogs bleiben beim produzierenden Modul
 oder der Runtime. Unbekannte Output-Binding-Felder und Secret-Wert-Aliase
-werden abgewiesen; Referenzfelder wie `client_secret_ref` bleiben zulässig.
+werden abgewiesen; ausschließlich explizite Referenzfelder mit dem Suffix
+`_ref`, etwa `client_secret_ref`, bleiben zulässig. Suffixe wie `_uri`,
+`_path`, `_id`, `_provider` oder `_status` machen ein Secret-Feld nicht
+harmlos.
+Die rekursive Prüfung gilt auch für generische `bindings`. Cloud-safe
+Manifeste enthalten ausschließlich logische Secret-Referenzen, niemals
+Credential-Werte oder absolute lokale Secret-/Credential-Pfade.
+
+Die Auflösung solcher Referenzen auf hostlokale Credential-Pfade ist ein
+separater, hier nicht implementierter Runtime-Vertrag. Ebenso bleiben
+authentifizierter Peer-Pull über SSH/Tailscale und Datenbank-Synchronisierung
+über `sqlite-transit-sync` mit Snapshot und Receipt spätere Verträge.
+Live-WAL-Dateien werden nicht kopiert; `.SYNC` erhält keine Credential-Werte.
 
 ## CLI
 

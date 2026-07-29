@@ -127,6 +127,7 @@
         "retention": {"type": "string", "minLength": 1},
         "backup_uri": {"type": "string", "minLength": 1},
         "desktop_shortcut": {"type": "string", "minLength": 1},
+        "materialization": {"enum": ["resolution-only-unmaterialized"]},
         "raw_content_allowed": {"type": "boolean"}
       },
       "additionalProperties": false

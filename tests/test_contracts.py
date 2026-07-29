@@ -8,6 +8,7 @@ from pathlib import Path
 
 from system_explorer.cli import main
 from system_explorer.contracts import (
+    OUTPUT_BINDING_FIELDS,
     canonical_content_hash,
     validate_contract,
     with_content_hash,
@@ -42,6 +43,20 @@ class ContractTest(unittest.TestCase):
             value = json.loads((schema_dir / name).read_text(encoding="utf-8"))
             self.assertEqual(value["$schema"], "https://json-schema.org/draft/2020-12/schema")
             self.assertIn("content_hash", value["required"])
+            if name in {
+                "ellmos.system.v1.schema.json",
+                "ellmos.system-instance.v1.schema.json",
+            }:
+                output_binding = value["$defs"]["output_binding"]
+                self.assertFalse(output_binding["additionalProperties"])
+                self.assertEqual(
+                    set(output_binding["properties"]),
+                    OUTPUT_BINDING_FIELDS,
+                )
+                self.assertEqual(
+                    output_binding["properties"]["materialization"]["enum"],
+                    ["resolution-only-unmaterialized"],
+                )
 
     def test_canonical_hash_ignores_only_the_root_content_hash(self) -> None:
         value = {"schema": "example", "nested": {"content_hash": "retained"}, "z": 1}
@@ -108,17 +123,75 @@ class ContractTest(unittest.TestCase):
         for target in (
             "host-local://logs/%4fneDrive/raw.jsonl",
             "host-local://logs/raw.jsonl?mirror=OneDrive",
+            "host-local://logs/%254fneDrive/raw.jsonl",
+            "host-local://logs/raw.jsonl?mirror=%2544esktop",
         ):
             encoded = self._system(output_bindings=self._valid_output_bindings())
             encoded["output_bindings"][0]["storage_uri"] = target
             errors = validate_contract(with_content_hash(encoded))
             self.assertTrue(any("OneDrive or Desktop" in error for error in errors))
 
+        invalid_encoding = self._system(output_bindings=self._valid_output_bindings())
+        invalid_encoding["output_bindings"][0][
+            "storage_uri"
+        ] = "host-local://logs/%ZZ/raw.jsonl"
+        errors = validate_contract(with_content_hash(invalid_encoding))
+        self.assertTrue(any("must be a typed URI" in error for error in errors))
+
     def test_output_binding_rejects_unknown_fields_and_secret_aliases(self) -> None:
         unknown = self._system(output_bindings=self._valid_output_bindings())
-        unknown["output_bindings"][0]["mirror_uri"] = "onedrive://logs/raw.jsonl"
-        errors = validate_contract(with_content_hash(unknown))
-        self.assertTrue(any(".mirror_uri is unsupported" in error for error in errors))
+        for field in ("mirror_uri", "access_token"):
+            candidate = deepcopy(unknown)
+            candidate["output_bindings"][0][field] = "reviewer-canary"
+            errors = validate_contract(with_content_hash(candidate))
+            self.assertTrue(
+                any(f".{field} is unsupported" in error for error in errors)
+            )
+        access_token_errors = validate_contract(
+            with_content_hash(
+                {
+                    **unknown,
+                    "output_bindings": [
+                        {
+                            **unknown["output_bindings"][0],
+                            "access_token": "SHOULD_NOT_SURVIVE",
+                        }
+                    ],
+                }
+            )
+        )
+        self.assertTrue(
+            any(
+                "access_token may not contain a secret value" in error
+                for error in access_token_errors
+            )
+        )
+
+        paths = self._write_fixture()
+        system = self._read(paths["system"])
+        system["output_bindings"][0]["access_token"] = "RESOLVER-CANARY"
+        self._write(paths["system"], with_content_hash(system))
+        with self.assertRaisesRegex(ValueError, "access_token"):
+            resolve_system(paths["instance"], [paths["catalog"]])
+
+        materialized = deepcopy(unknown)
+        materialized["output_bindings"][0][
+            "materialization"
+        ] = "resolution-only-unmaterialized"
+        self.assertEqual(validate_contract(with_content_hash(materialized)), [])
+
+        invalid_materialization = deepcopy(unknown)
+        invalid_materialization["output_bindings"][0][
+            "materialization"
+        ] = "materialized-with-side-effects"
+        errors = validate_contract(with_content_hash(invalid_materialization))
+        self.assertTrue(
+            any(
+                ".materialization must be one of resolution-only-unmaterialized"
+                in error
+                for error in errors
+            )
+        )
 
         secret_alias = self._system()
         secret_alias["provenance"]["clientSecret"] = "must-not-be-stored"
@@ -134,9 +207,87 @@ class ContractTest(unittest.TestCase):
             any("apiKeyValue may not contain a secret value" in error for error in errors)
         )
 
+        for field in (
+            "client_secret_uri",
+            "api_key_path",
+            "access_token_id",
+            "password_provider",
+            "private_key_status",
+        ):
+            secret_metadata_alias = self._system()
+            secret_metadata_alias["provenance"][field] = "reviewer-canary"
+            errors = validate_contract(with_content_hash(secret_metadata_alias))
+            self.assertTrue(
+                any(f"{field} may not contain a secret value" in error for error in errors)
+            )
+
         reference_is_allowed = self._system()
         reference_is_allowed["provenance"]["client_secret_ref"] = "vault://secret-id"
         self.assertEqual(validate_contract(with_content_hash(reference_is_allowed)), [])
+
+    def test_generic_bindings_reject_secrets_and_absolute_secret_paths(self) -> None:
+        for field, value, expected in (
+            ("access_token", "SHOULD_NOT_SURVIVE", "a secret value"),
+            (
+                "credential_path",
+                r"C:\Users\agent\.ssh\id_ed25519",
+                "an absolute secret path",
+            ),
+            ("secret_file", "/etc/private/credential", "an absolute secret path"),
+        ):
+            manifest = self._system(
+                bindings=[
+                    {
+                        "source": "module:a",
+                        "target": "module:b",
+                        field: value,
+                    }
+                ]
+            )
+            errors = validate_contract(with_content_hash(manifest))
+            self.assertTrue(
+                any(f".{field} may not contain {expected}" in error for error in errors)
+            )
+
+        logical_reference = self._system(
+            bindings=[
+                {
+                    "source": "module:a",
+                    "target": "module:b",
+                    "secret_ref": "vault://logical-secret-id",
+                }
+            ]
+        )
+        self.assertEqual(validate_contract(with_content_hash(logical_reference)), [])
+
+        paths = self._write_fixture()
+        system = self._read(paths["system"])
+        system["bindings"] = [
+            {
+                "source": "module:a",
+                "target": "module:b",
+                "access_token": "RESOLVER-CANARY",
+            }
+        ]
+        self._write(paths["system"], with_content_hash(system))
+        with self.assertRaisesRegex(ValueError, "access_token"):
+            resolve_system(paths["instance"], [paths["catalog"]])
+
+    def test_automation_summary_requires_redacted_non_raw_content(self) -> None:
+        manifest = self._system(output_bindings=self._valid_output_bindings())
+        summary = next(
+            item
+            for item in manifest["output_bindings"]
+            if item["kind"] == "automation_summary"
+        )
+        summary["raw_content_allowed"] = True
+        errors = validate_contract(with_content_hash(manifest))
+        self.assertTrue(
+            any(
+                "raw_content_allowed must be false for automation summaries" in error
+                for error in errors
+            )
+        )
 
     def test_resolver_is_deterministic_and_applies_profiles_and_statuses(self) -> None:
         paths = self._write_fixture()

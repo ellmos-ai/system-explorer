@@ -53,8 +53,11 @@ OUTPUT_KINDS = {
     "runtime_log",
     "audit_receipt",
 }
+MATERIALIZATION_STATES = {"resolution-only-unmaterialized"}
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 URI_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+INVALID_PERCENT_ESCAPE_RE = re.compile(r"%(?![0-9a-f]{2})", re.IGNORECASE)
+MAX_PERCENT_DECODE_PASSES = 8
 SECRET_KEYS = {
     "api_key",
     "apikey",
@@ -91,15 +94,21 @@ SECRET_KEY_MARKERS = {
     "privatekey",
     "secretvalue",
 }
+SECRET_PATH_KEY_MARKERS = {
+    "accesstoken",
+    "apikey",
+    "authtoken",
+    "clientsecret",
+    "credential",
+    "password",
+    "passwd",
+    "privatekey",
+    "pwd",
+    "secret",
+    "token",
+}
 REFERENCE_KEY_SUFFIXES = {
-    "id",
-    "location",
-    "path",
-    "provider",
     "ref",
-    "status",
-    "type",
-    "uri",
 }
 OUTPUT_BINDING_FIELDS = {
     "kind",
@@ -110,6 +119,7 @@ OUTPUT_BINDING_FIELDS = {
     "retention",
     "backup_uri",
     "desktop_shortcut",
+    "materialization",
 }
 
 
@@ -503,6 +513,13 @@ def _validate_output_bindings(
         _enum(binding.get("visibility"), VISIBILITIES, f"{item_path}.visibility", errors)
         if not isinstance(binding.get("raw_content_allowed"), bool):
             errors.append(f"{item_path}.raw_content_allowed must be boolean")
+        if "materialization" in binding:
+            _enum(
+                binding["materialization"],
+                MATERIALIZATION_STATES,
+                f"{item_path}.materialization",
+                errors,
+            )
         for field in ("retention", "backup_uri", "desktop_shortcut"):
             if field in binding:
                 _nonempty_string(binding[field], f"{item_path}.{field}", errors)
@@ -556,6 +573,10 @@ def _validate_output_binding_policy(
             f"{path}.storage_uri must use control-center://_DECISIONS for decisions"
         )
     if kind == "automation_summary":
+        if raw_allowed:
+            errors.append(
+                f"{path}.raw_content_allowed must be false for automation summaries"
+            )
         if owner != "ellmos-automation-control-bundle":
             errors.append(
                 f"{path}.owner_ref must be ellmos-automation-control-bundle"
@@ -669,7 +690,15 @@ def _reject_secret_values(value: Any, path: str, errors: list[str]) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
             normalized = _normalized_key(str(key))
-            if _is_secret_value_key(normalized):
+            if (
+                _is_secret_path_key(normalized)
+                and isinstance(child, str)
+                and _is_absolute_filesystem_path(child)
+            ):
+                errors.append(
+                    f"{path}.{key} may not contain an absolute secret path"
+                )
+            elif _is_secret_value_key(normalized):
                 errors.append(f"{path}.{key} may not contain a secret value")
             _reject_secret_values(child, f"{path}.{key}", errors)
     elif isinstance(value, list):
@@ -742,10 +771,10 @@ def _find_cycle(nodes: set[str], edges: dict[str, list[str]]) -> list[str]:
 
 
 def _normalized_uri(value: str) -> str:
-    return unicodedata.normalize("NFKC", unquote(value.strip())).replace(
-        "\\",
-        "/",
-    ).casefold()
+    normalized = _bounded_unquote(value.strip())
+    if normalized is None:
+        return ""
+    return normalized.replace("\\", "/").casefold()
 
 
 def _uri_targets_named_location(value: str, name: str) -> bool:
@@ -776,3 +805,28 @@ def _is_secret_value_key(value: str) -> bool:
     return any(value.endswith(suffix) for suffix in SECRET_KEY_SUFFIXES) or any(
         marker in value for marker in SECRET_KEY_MARKERS
     )
+
+
+def _is_secret_path_key(value: str) -> bool:
+    return value.endswith(("file", "location", "path", "uri")) and any(
+        marker in value for marker in SECRET_PATH_KEY_MARKERS
+    )
+
+
+def _is_absolute_filesystem_path(value: str) -> bool:
+    normalized = _bounded_unquote(value.strip())
+    if normalized is None:
+        return True
+    return bool(re.match(r"^(?:[a-z]:[\\/]|[\\/]{2}|/)", normalized, re.IGNORECASE))
+
+
+def _bounded_unquote(value: str) -> str | None:
+    current = unicodedata.normalize("NFKC", value)
+    for _ in range(MAX_PERCENT_DECODE_PASSES):
+        if INVALID_PERCENT_ESCAPE_RE.search(current):
+            return None
+        decoded = unicodedata.normalize("NFKC", unquote(current))
+        if decoded == current:
+            return current
+        current = decoded
+    return None

@@ -16,6 +16,13 @@
 - gehärtete Pinprüfung gegen den neu berechneten kanonischen Hash,
   einschließlich tolerierter Legacy-Stacks, sowie normalisierte Prüfung
   sämtlicher Rohlogziele und Secret-Aliase
+- exakte Output-Binding-Allowlist mit eng typisiertem
+  `resolution-only-unmaterialized`-Zustand sowie erzwungen redigierten
+  Automationssynthesen
+- rekursive Secret-Grenze für generische Bindings einschließlich absoluter
+  lokaler Secret-Pfade; logische `secret_ref`-Werte bleiben zulässig
+- begrenzte Percent-Decodierung bis zum Fixpunkt für URI-Zielprüfungen;
+  ungültige oder nicht stabil dekodierbare URIs werden fail-closed abgewiesen
 
 ### Geplant
 
