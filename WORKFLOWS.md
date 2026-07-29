@@ -13,11 +13,15 @@
 ## Verfügbare Workflows (auto-generated)
 
 <!-- @auto-generated:workflow-index -->
-<!-- last-updated: 2026-07-29 12:49 -->
+<!-- last-updated: 2026-07-29 22:05 -->
 <!-- tool: _tools/workflows-sync -->
-<!-- count: 0 workflows in 0 categories -->
+<!-- count: 1 workflows in 1 categories -->
 
-_Noch keine Workflows in `workflows/` vorhanden._
+## General (1)
+
+| Workflow | Purpose | Frequency | Duration |
+|---|---|---|---|
+| **Repository-Schaltpläne aktualisieren** [`update-repo-diagrams.md`](./workflows/update-repo-diagrams.md) | Verwaltete Systemkarten in einem einzelnen Git-Repository oder in den | ad-hoc oder bei Architekturänderungen | abhängig von Anzahl und Größe der Repositories |
 
 <!-- @end:workflow-index -->
 

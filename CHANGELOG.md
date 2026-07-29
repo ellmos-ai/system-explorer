@@ -4,6 +4,13 @@
 
 ### Hinzugefügt
 
+- `ai-media-editor`-Connector mit Vertragsprüfung, optionalem UC6-Probeaufruf
+  und Erklärvideo-Handoff aus mehreren analysierten Kartenansichten
+- deutsches Storyboard für Einstieg, Fähigkeiten, Funktionsweise,
+  Feature-Highlights, weitere Features/Lücken und Schaltplanatlas
+- Repo-/Bundle-Schaltpläne mit Dry-Run, Root-/Lock-/Dirty-Prüfung,
+  Generator-Marker, atomarem Readback und optionalem Commit/Push
+- JSON-Schema für `system-explorer.ai-media-editor-handoff.v1`
 - JSON-Schemas für `ellmos.bundle.v1`, `ellmos.bundles.catalog.v1`,
   `ellmos.system.v1`, `ellmos.system-instance.v1`,
   `ellmos.system-test.v1` und `ellmos.fleet.v1`

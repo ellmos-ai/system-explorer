@@ -11,5 +11,8 @@ Deployment and purpose rules: docs/DEPLOYMENT-PURPOSE-MODEL.md
 Federated map contract: docs/FEDERATED-MAPS.md
 Time-bound provider baseline: docs/CLOUD-SERVER-BASELINE_2026-07-29.md
 Crystallized software resources: docs/CRYSTALLIZED-RESOURCES.md
+Connector contracts: docs/CONNECTOR-ADAPTERS.md
 Portable map: system-explorer map-export --config <config> --view all --output <map.json>
 Cross-system analysis: system-explorer map --config <config> --view <view> [--system <id>]
+Explainer handoff: system-explorer explain-video --config <config> --output <dir> --media-editor <repo>
+Repository diagrams: system-explorer diagrams --repo <repo> [--apply --commit --push]

@@ -23,4 +23,7 @@
 - [x] LLM-Spuren- und LLM-Handlungsflächenansichten ergänzt
 - [x] kristallisierte Software-Randressourcen mit Funktionen,
   LLM-Steuerwegen, Readiness-Symbolen und Tokenersparnisstatus ergänzt
+- [x] `ai-media-editor`-Connector mit UC6-Erklärvideo-Handoff ergänzt
+- [x] sichere Repo-/Bundle-Schaltplanpflege einschließlich optionalem
+  Commit-/Push-Readback ergänzt
 - [x] Unit-, Schema-, CLI-, API- und Browserprüfung durchgeführt

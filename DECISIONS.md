@@ -3,6 +3,32 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-07-29: Connectoren materialisieren nur eng begrenzte Ableitungen
+
+### Kontext
+
+Analysierte Systemkarten sollen als Erklärvideo weiterverarbeitet und als
+aktuelle Schaltpläne in einzelnen Repositories oder Bundle-Komponenten
+sichtbar werden. Eine allgemeine Mutationsengine würde dagegen die
+read-only-Wahrheitsgrenze des Explorers aufheben.
+
+### Entscheidung
+
+Der `ai-media-editor`-Connector erzeugt ein versioniertes UC6-Handoff mit
+Storyboard, Sprechertext und Mermaid-Karten. Der Repo-Connector erzeugt nur
+eine markierte Dokumentdatei innerhalb ausdrücklich benannter Git-Roots.
+Dry-Run ist Standard; Schreiben, Commit und Push benötigen getrennte Flags.
+Locks, Dirty-Baseline, Root-Containment, Fremddokumente und Push-Readback
+werden fail-closed geprüft.
+
+### Grenze
+
+Das Handoff ist noch kein gerendertes MP4. Der Explorer verändert keine
+Runtime, fachliche Konfiguration, Policy oder fremde handgepflegte
+Architekturdokumentation. Reale Medienproduktion bleibt beim
+`ai-media-editor`; Repo-Commits enthalten ausschließlich die generierte
+Schaltplandatei.
+
 ## 2026-07-29: Software ist kristallisierte Randressource
 
 ### Kontext

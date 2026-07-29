@@ -65,6 +65,10 @@ Beziehungen besitzen:
 12. **Composition contracts** – gepinnte Bundles, Kataloge, logische Systeme,
     gewünschte Instanzen, Testoverlays und Flotten mit deterministischer
     Read-only-Auflösung.
+13. **Media handoff connector** – abgeleitete Storyboards, Sprechertexte und
+    Kartenpakete für `ai-media-editor` UC6; kein stiller Renderlauf.
+14. **Generated repository diagrams** – explizite, markierte und atomare
+    Dokumentmaterialisierung in benannten Git-Repositories.
 
 ## Steuerdokumentgraph
 
@@ -152,6 +156,14 @@ Prompt → ChangeProposal → Schema-/Ontologieprüfung → Kardinalitätsprüfu
 ```
 
 Im MVP endet der Fluss bei `ChangeProposal`.
+
+Connector-Artefakte sind eine engere Ausnahme von dieser Grenze: Sie ändern
+keine analysierte Runtime, Policy oder Konfiguration. `explain-video` schreibt
+nur in den ausdrücklich gewählten Ausgabeordner. `diagrams` schreibt nur die
+generierte Zieldatei innerhalb validierter Git-Roots und verlangt dafür
+`--apply`; Commit und Push sind getrennte explizite Optionen mit Clean-,
+Lock- und Readback-Gates. Details:
+[`docs/CONNECTOR-ADAPTERS.md`](docs/CONNECTOR-ADAPTERS.md).
 
 ## V4-Kompositionsauflösung
 

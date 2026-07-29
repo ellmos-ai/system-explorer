@@ -2,10 +2,10 @@
 name: "system-explorer"
 type: project-docs
 profile: "FULL"
-version: 0.1.0
+version: 0.2.0
 created: "2026-07-29"
 updated: "2026-07-29"
-reason_last_change: "Kristallisierte Software-Randressourcen ergänzt"
+reason_last_change: "Connector-Adapter und Repo-Schaltplanpflege ergänzt"
 last_verified: "2026-07-29"
 author: "Lukas Geiger"
 anthropic_compatible: true
@@ -119,6 +119,7 @@ system-explorer/
 | [`TOOLS.md`](./TOOLS.md) | Router zu Admin-Utilities |
 | [`GLOSSARY.md`](./GLOSSARY.md) | Projekt-Jargon |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Chronik |
+| [`docs/CONNECTOR-ADAPTERS.md`](./docs/CONNECTOR-ADAPTERS.md) | ai-media-editor- und Repo-/Bundle-Schaltplanvertrag |
 
 ## Domain-Kontext
 
@@ -140,7 +141,11 @@ getrennte Aussagen; siehe `docs/CRYSTALLIZED-RESOURCES.md`.
 - UI nur auf Loopback binden, solange keine externe Authentisierung existiert.
 - Git-Source-of-Truth ist dieser lokale Clone; OneDrive ist nur Mirror.
 - Keine rohen Prompts, Antworten, Toolargumente oder Toolergebnisse speichern.
-- Explorer erzeugt keine Zielsystemmutation; Proposals bleiben read-only.
+- Explorer erzeugt keine allgemeine Zielsystemmutation; Proposals bleiben
+  read-only. Explizite Connector-Materialisierung ist enger begrenzt:
+  `explain-video` schreibt nur ein Handoff-Paket, `diagrams` nur markierte
+  generierte Dokumente in validierte Git-Roots. Details und Gates stehen in
+  `docs/CONNECTOR-ADAPTERS.md`.
 
 ---
 

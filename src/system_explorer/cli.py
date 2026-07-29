@@ -20,8 +20,13 @@ from .deployment import (
 from .federation import export_system_map, import_system_map, tag_current_system
 from .manifests import load_manifest, new_module_manifest, validate_manifest
 from .maps import graph_view, render_ascii, render_html, render_mermaid
+from .media_connector import (
+    build_explainer_package,
+    discover_ai_media_editor,
+)
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
+from .repo_diagrams import sync_repository_diagrams
 from .resolver import resolve_system, resolve_test, validate_manifest_target
 from .resources import resource_report
 from .scanner import scan
@@ -91,6 +96,64 @@ def build_parser() -> argparse.ArgumentParser:
     map_import = sub.add_parser("map-import")
     map_import.add_argument("path", type=Path)
     map_import.add_argument("--config", type=Path, required=True)
+
+    explainer = sub.add_parser(
+        "explain-video",
+        help="Create an ai-media-editor UC6 handoff from analyzed system maps.",
+    )
+    explainer.add_argument("--config", type=Path, required=True)
+    explainer.add_argument("--output", type=Path, required=True)
+    explainer.add_argument("--title")
+    explainer.add_argument(
+        "--view",
+        action="append",
+        choices=[
+            "actual",
+            "desired",
+            "diff",
+            "coverage",
+            "control",
+            "tree",
+            "data",
+            "deployment",
+            "purpose",
+            "federation",
+            "llm-traces",
+            "llm-actions",
+            "function-paths",
+            "resources",
+        ],
+        dest="views",
+    )
+    explainer.add_argument("--system")
+    explainer.add_argument("--media-editor", type=Path)
+    explainer.add_argument("--probe", action="store_true")
+    explainer.add_argument(
+        "--no-ingest",
+        action="store_true",
+        help="Use the existing evidence database without refreshing sources.",
+    )
+
+    diagrams = sub.add_parser(
+        "diagrams",
+        help="Plan or update generated system maps in Git repositories.",
+    )
+    diagrams.add_argument("--repo", type=Path, action="append", dest="repositories")
+    diagrams.add_argument("--bundle", type=Path, action="append", dest="bundles")
+    diagrams.add_argument(
+        "--output",
+        type=Path,
+        default=Path("docs/system-map.md"),
+        help="Relative output path inside every repository.",
+    )
+    diagrams.add_argument("--apply", action="store_true")
+    diagrams.add_argument("--allow-dirty", action="store_true")
+    diagrams.add_argument("--commit", action="store_true")
+    diagrams.add_argument("--push", action="store_true")
+    diagrams.add_argument(
+        "--commit-message",
+        default="docs: update system map",
+    )
 
     server_check = sub.add_parser("server-check")
     server_check.add_argument("--config", type=Path, required=True)
@@ -242,6 +305,19 @@ def _run(args: argparse.Namespace) -> int:
         return 0
     if args.command == "manifest":
         return _manifest(args)
+    if args.command == "diagrams":
+        value = sync_repository_diagrams(
+            repositories=args.repositories or (),
+            bundle_paths=args.bundles or (),
+            output_path=args.output,
+            apply=args.apply,
+            allow_dirty=args.allow_dirty,
+            commit=args.commit,
+            push=args.push,
+            commit_message=args.commit_message,
+        )
+        print(json.dumps(value, ensure_ascii=False, indent=2))
+        return 0
     if args.command == "manifest-validate":
         value = validate_manifest_target(args.path)
         print(json.dumps(value, ensure_ascii=False, indent=2))
@@ -357,6 +433,29 @@ def _run(args: argparse.Namespace) -> int:
             else:
                 print(rendered, end="")
                 return 0
+        elif args.command == "explain-video":
+            if not args.no_ingest:
+                _ingest(config, store)
+            views = args.views or [
+                "control",
+                "function-paths",
+                "coverage",
+                "resources",
+            ]
+            graphs = {
+                view: graph_view(store, view, system_id=args.system)
+                for view in views
+            }
+            media_editor = discover_ai_media_editor(args.media_editor)
+            system = config.get("system", {})
+            value = build_explainer_package(
+                graphs,
+                args.output,
+                title=args.title
+                or str(system.get("name") or system.get("id") or "System"),
+                media_editor=media_editor,
+                probe=args.probe,
+            )
         else:
             raise ValueError(f"unsupported command: {args.command}")
         print(json.dumps(value, ensure_ascii=False, indent=2))

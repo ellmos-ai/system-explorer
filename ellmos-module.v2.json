@@ -2,7 +2,7 @@
   "schema": "ellmos.module.v2",
   "id": "system-explorer",
   "display_name": "System Explorer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "category": "control",
   "kind": "tool",
   "status": "development",
@@ -34,6 +34,8 @@
     "system.llm-readiness-analysis",
     "system.crystallized-intelligence.mapping",
     "system.token-saving-endpoint.analysis",
+    "system.explainer-video.handoff",
+    "system.repository-diagram.sync",
     "api-prober.evidence-adapter",
     "registry.discovery",
     "database.schema.mapping",
@@ -51,7 +53,8 @@
     "swarm-ai.probe-runner",
     "unified-gui.host",
     "system-gap-master.handoff",
-    "apiprober.passive-export"
+    "apiprober.passive-export",
+    "ai-media-editor.uc6"
   ],
   "conflicts": [
     "target-system.mutation",
@@ -86,6 +89,8 @@
     {"type": "cli-wrapper", "id": "claude-desktop-audit-jsonl"},
     {"type": "cli-wrapper", "id": "gemini-sqlite"},
     {"type": "cli-wrapper", "id": "kimi-wire-jsonl"},
-    {"type": "cli-wrapper", "id": "generic-jsonl"}
+    {"type": "cli-wrapper", "id": "generic-jsonl"},
+    {"type": "connector", "id": "ai-media-editor-uc6"},
+    {"type": "repository-writer", "id": "generated-system-map"}
   ]
 }

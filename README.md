@@ -41,6 +41,10 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
 - deterministische, gepinnte Read-only-Auflösung mit Profilen,
   Suppressions, Root-Containment und kanonischen Content-Hashes
 - optionale ApiProber-Evidenzaufnahme für autorisierte passive REST-Prüfungen
+- `ai-media-editor`-Connector für erklärvideo-taugliche Storyboards,
+  Sprechertexte und Mermaid-Schaltpläne aus analysierten Systemkarten
+- sichere, idempotente Repo-/Bundle-Schaltplanpflege mit Dry-Run,
+  Lock-/Dirty-Gates, atomarem Readback sowie optionalem Commit und Push
 - lokale grafische Oberfläche mit belegbezogenen Details
 - schreibgeschützte, promptgestützte Änderungsentwürfe mit Pflichtgates
 - Trampelpfad-Probepläne für externe, budgetierte Schwarmtests
@@ -68,6 +72,9 @@ system-explorer provider-refresh --config deployment.json
 system-explorer purpose-check --target carrier:system-explorer --config deployment.json
 system-explorer resources --config software-resources.json
 system-explorer map --config software-resources.json --view resources
+system-explorer explain-video --config explorer.json --output explainer-package --media-editor ..\ai-media-editor --probe
+system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
+system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
 system-explorer test-resolve system-test.v1.json --catalog bundles.catalog.v1.json
@@ -119,6 +126,14 @@ Die V4-Verträge, Hashregeln, Output-/Log-Bindings und CLI-Grenzen stehen in
 `manifest-validate` prüft wahlweise eine Datei oder einen ganzen Repo-Baum.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
+
+Der `ai-media-editor`-Connector materialisiert aus ausgewählten Karten ein
+UC6-Handoff mit Storyboard, deutschem Sprechertext und Mermaid-Visuals. Er
+rendert nicht still selbst und kopiert keine Rohevidenz. Der getrennte
+Repo-Schaltplanadapter schreibt ausschließlich eine markierte generierte
+Dokumentdatei in ausdrücklich benannte Git-Roots; Dry-Run ist Standard.
+Vertrag und Sicherheitsgates stehen in
+[`docs/CONNECTOR-ADAPTERS.md`](docs/CONNECTOR-ADAPTERS.md).
 
 ## Sicherheits- und Wahrheitsgrenzen
 
