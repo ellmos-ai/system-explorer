@@ -54,6 +54,25 @@ OUTPUT_KINDS = {
     "audit_receipt",
 }
 MATERIALIZATION_STATES = {"resolution-only-unmaterialized"}
+ACTIVATION_STATES = {"blocked", "ready-disabled", "shadow-pilot", "reviewed-activation"}
+PEER_TRANSFER_STATES = {"sftp-over-ssh"}
+NETWORK_PATH_STATES = {"direct-or-tailscale"}
+PEER_VERIFICATION_STATES = {"signed-registry-and-pinned-host-key"}
+DESTINATION_POLICY_STATES = {"normalized-allowlisted-no-overwrite"}
+PUBLISHED_PAYLOAD_STATES = {"signed-path-metadata-only"}
+COMPONENT_STATE_FIELDS = {
+    "status",
+    "desired_profile",
+    "publisher_slot",
+    "publishes",
+    "peer_transfer",
+    "network_path",
+    "peer_verification",
+    "destination_policy",
+    "activation",
+    "database_allowlist",
+    "live_database_in_sync",
+}
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 URI_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
 INVALID_PERCENT_ESCAPE_RE = re.compile(r"%(?![0-9a-f]{2})", re.IGNORECASE)
@@ -352,18 +371,7 @@ def _validate_instance(value: dict[str, Any], errors: list[str]) -> None:
             if not isinstance(state, dict):
                 errors.append(f"$.component_states[{ref!r}] must be an object")
                 continue
-            if "status" in state:
-                _enum(
-                    state.get("status"),
-                    OPERATIONAL_STATUSES,
-                    f"$.component_states[{ref!r}].status",
-                    errors,
-                )
-            forbidden = {"actual", "observed", "runtime_value"} & set(state)
-            for field in sorted(forbidden):
-                errors.append(
-                    f"$.component_states[{ref!r}].{field} is not allowed in desired state"
-                )
+            _validate_component_state(state, f"$.component_states[{ref!r}]", errors)
     for field in sorted(
         key
         for key in value
@@ -383,6 +391,83 @@ def _validate_instance(value: dict[str, Any], errors: list[str]) -> None:
         pinned=False,
     )
     _validate_output_bindings(value.get("output_bindings"), "$.output_bindings", errors)
+
+
+def _validate_component_state(
+    state: dict[str, Any], path: str, errors: list[str]
+) -> None:
+    for field in sorted(set(state) - COMPONENT_STATE_FIELDS):
+        errors.append(f"{path}.{field} is unsupported")
+    if "status" in state:
+        _enum(state["status"], OPERATIONAL_STATUSES, f"{path}.status", errors)
+    for field in ("desired_profile", "publisher_slot"):
+        if field in state:
+            _nonempty_string(state[field], f"{path}.{field}", errors)
+    if "publishes" in state:
+        _enum(state["publishes"], PUBLISHED_PAYLOAD_STATES, f"{path}.publishes", errors)
+    if "peer_transfer" in state:
+        _enum(
+            state["peer_transfer"],
+            PEER_TRANSFER_STATES,
+            f"{path}.peer_transfer",
+            errors,
+        )
+    if "network_path" in state:
+        _enum(
+            state["network_path"],
+            NETWORK_PATH_STATES,
+            f"{path}.network_path",
+            errors,
+        )
+    if "peer_verification" in state:
+        _enum(
+            state["peer_verification"],
+            PEER_VERIFICATION_STATES,
+            f"{path}.peer_verification",
+            errors,
+        )
+    if "destination_policy" in state:
+        _enum(
+            state["destination_policy"],
+            DESTINATION_POLICY_STATES,
+            f"{path}.destination_policy",
+            errors,
+        )
+    peer_fields = {
+        "publisher_slot",
+        "publishes",
+        "peer_transfer",
+        "network_path",
+        "peer_verification",
+        "destination_policy",
+    }
+    if peer_fields & set(state) and not peer_fields <= set(state):
+        errors.append(f"{path} must declare the complete trusted-peer state together")
+    if "activation" in state:
+        _enum(state["activation"], ACTIVATION_STATES, f"{path}.activation", errors)
+    if "database_allowlist" in state:
+        _string_list(
+            state["database_allowlist"],
+            f"{path}.database_allowlist",
+            errors,
+        )
+        if isinstance(state["database_allowlist"], list) and len(
+            state["database_allowlist"]
+        ) != len(set(state["database_allowlist"])):
+            errors.append(f"{path}.database_allowlist must not contain duplicates")
+    if "live_database_in_sync" in state and not isinstance(
+        state["live_database_in_sync"], bool
+    ):
+        errors.append(f"{path}.live_database_in_sync must be a boolean")
+    database_fields = {"activation", "database_allowlist", "live_database_in_sync"}
+    if database_fields & set(state) and not database_fields <= set(state):
+        errors.append(
+            f"{path} must declare activation, database_allowlist, and live_database_in_sync together"
+        )
+    if state.get("activation") == "ready-disabled" and state.get(
+        "live_database_in_sync"
+    ) is not False:
+        errors.append(f"{path}.ready-disabled requires live_database_in_sync=false")
 
 
 def _validate_system_test(value: dict[str, Any], errors: list[str]) -> None:

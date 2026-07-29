@@ -57,6 +57,29 @@ class ContractTest(unittest.TestCase):
                     output_binding["properties"]["materialization"]["enum"],
                     ["resolution-only-unmaterialized"],
                 )
+        instance_schema = json.loads(
+            (schema_dir / "ellmos.system-instance.v1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        component_state = instance_schema["$defs"]["component_state"]
+        self.assertFalse(component_state["additionalProperties"])
+        self.assertEqual(
+            set(component_state["properties"]),
+            {
+                "status",
+                "desired_profile",
+                "publisher_slot",
+                "publishes",
+                "peer_transfer",
+                "network_path",
+                "peer_verification",
+                "destination_policy",
+                "activation",
+                "database_allowlist",
+                "live_database_in_sync",
+            },
+        )
 
     def test_canonical_hash_ignores_only_the_root_content_hash(self) -> None:
         value = {"schema": "example", "nested": {"content_hash": "retained"}, "z": 1}
@@ -306,6 +329,83 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(first["target_mutations"], [])
         self.assertFalse((self.root / "unexpected-output.json").exists())
 
+    def test_resolver_preserves_complete_component_states_for_equal_hosts(self) -> None:
+        for host, slot in (("WORKSTATION-LG", "workstation"), ("ASUS-GEI", "laptop")):
+            component_states = {
+                "module:mapper": {
+                    "status": "registered",
+                    "desired_profile": "trusted-peer-paths",
+                    "publisher_slot": slot,
+                    "publishes": "signed-path-metadata-only",
+                    "peer_transfer": "sftp-over-ssh",
+                    "network_path": "direct-or-tailscale",
+                    "peer_verification": "signed-registry-and-pinned-host-key",
+                    "destination_policy": "normalized-allowlisted-no-overwrite",
+                },
+                "module:optional-ui": {
+                    "status": "registered",
+                    "desired_profile": "database-ready-disabled",
+                    "activation": "ready-disabled",
+                    "database_allowlist": [],
+                    "live_database_in_sync": False,
+                },
+            }
+            paths = self._write_fixture(
+                suppress_optional=False,
+                host_id=host,
+                component_states=component_states,
+            )
+            result = resolve_system(paths["instance"], [paths["catalog"]])
+            components = {
+                item["ref"]: item
+                for item in result["bundles"][0]["components"]
+            }
+            self.assertEqual(
+                components["module:mapper"]["component_state"],
+                component_states["module:mapper"],
+            )
+            self.assertEqual(
+                components["module:optional-ui"]["component_state"],
+                component_states["module:optional-ui"],
+            )
+            self.assertEqual(result["runtime_actions"], [])
+            self.assertEqual(result["target_mutations"], [])
+
+    def test_component_states_reject_malformed_peer_and_database_shapes(self) -> None:
+        paths = self._write_fixture()
+        instance = self._read(paths["instance"])
+        candidates = (
+            (
+                {"publisher_slot": "workstation"},
+                "complete trusted-peer state together",
+            ),
+            (
+                {
+                    "activation": "ready-disabled",
+                    "database_allowlist": [],
+                    "live_database_in_sync": True,
+                },
+                "ready-disabled requires live_database_in_sync=false",
+            ),
+            (
+                {
+                    "activation": "ready-disabled",
+                    "database_allowlist": "database-id",
+                    "live_database_in_sync": False,
+                },
+                "database_allowlist must be an array of non-empty strings",
+            ),
+            (
+                {"desired_profile": "", "unexpected": "value"},
+                "unexpected is unsupported",
+            ),
+        )
+        for state, expected in candidates:
+            candidate = deepcopy(instance)
+            candidate["component_states"] = {"module:mapper": state}
+            errors = validate_contract(with_content_hash(candidate))
+            self.assertTrue(any(expected in error for error in errors), errors)
+
     def test_resolver_rejects_bad_pins_escaping_paths_and_cycles(self) -> None:
         paths = self._write_fixture()
         instance = self._read(paths["instance"])
@@ -427,6 +527,8 @@ class ContractTest(unittest.TestCase):
         fallback_cycle: bool = False,
         suppress_optional: bool = True,
         use_stack: bool = False,
+        host_id: str = "host-a",
+        component_states: dict[str, object] | None = None,
     ) -> dict[str, Path]:
         bundle_dir = self.root / "bundles" / "core"
         bundle_dir.mkdir(parents=True, exist_ok=True)
@@ -542,14 +644,14 @@ class ContractTest(unittest.TestCase):
         instance = self._common("ellmos.system-instance.v1", "test-instance")
         instance.update(
             {
-                "instance_id": "test-instance@host-a",
+                "instance_id": f"test-instance@{host_id}",
                 "system_ref": {
                     "path": system_path.name,
                     "version": system["version"],
                 },
-                "host_id": "host-a",
+                "host_id": host_id,
                 "desired_profile": "default",
-                "component_states": {},
+                "component_states": component_states or {},
                 "desired_sources": [],
                 "evidence_refs": [],
                 "output_bindings": [
