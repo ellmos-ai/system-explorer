@@ -464,10 +464,11 @@ def _validate_component_state(
         errors.append(
             f"{path} must declare activation, database_allowlist, and live_database_in_sync together"
         )
-    if state.get("activation") == "ready-disabled" and state.get(
-        "live_database_in_sync"
-    ) is not False:
-        errors.append(f"{path}.ready-disabled requires live_database_in_sync=false")
+    if state.get("activation") == "ready-disabled":
+        if state.get("database_allowlist") != []:
+            errors.append(f"{path}.ready-disabled requires database_allowlist=[]")
+        if state.get("live_database_in_sync") is not False:
+            errors.append(f"{path}.ready-disabled requires live_database_in_sync=false")
 
 
 def _validate_system_test(value: dict[str, Any], errors: list[str]) -> None:

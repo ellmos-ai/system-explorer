@@ -132,8 +132,11 @@
             "required": ["activation"]
           },
           "then": {
-            "properties": {"live_database_in_sync": {"const": false}},
-            "required": ["live_database_in_sync"]
+            "properties": {
+              "database_allowlist": {"maxItems": 0},
+              "live_database_in_sync": {"const": false}
+            },
+            "required": ["database_allowlist", "live_database_in_sync"]
           }
         }
       ]

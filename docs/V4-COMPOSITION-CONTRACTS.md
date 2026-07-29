@@ -139,7 +139,8 @@ bleiben gewünschte Trusted-Peer-Felder (`desired_profile`, `publisher_slot`,
 `database_allowlist`, `live_database_in_sync`) prüfbar, ohne eine
 Runtime-Aktion abzuleiten. Der Peer-Transport ist dabei ausschließlich
 SFTP über SSH; Tailscale kann nur den Netzwerkpfad tragen.
-`ready-disabled` verlangt zwingend `live_database_in_sync: false`.
+`ready-disabled` verlangt zwingend eine leere `database_allowlist` und
+`live_database_in_sync: false`.
 
 ## Fremdfixture-Readback vom 2026-07-29
 
