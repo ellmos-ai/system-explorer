@@ -36,11 +36,8 @@
     "desired_profile": {"type": "string", "minLength": 1},
     "component_states": {
       "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "properties": {"status": {"$ref": "#/$defs/status"}},
-        "additionalProperties": true
-      }
+      "propertyNames": {"type": "string", "minLength": 1},
+      "additionalProperties": {"$ref": "#/$defs/component_state"}
     },
     "desired_sources": {"type": "array", "items": {"$ref": "#/$defs/ref"}},
     "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/ref"}},
@@ -64,6 +61,81 @@
         "suppressed",
         "experimental",
         "unavailable"
+      ]
+    },
+    "component_state": {
+      "type": "object",
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "desired_profile": {"type": "string", "minLength": 1},
+        "publisher_slot": {"type": "string", "minLength": 1},
+        "publishes": {"const": "signed-path-metadata-only"},
+        "peer_transfer": {"const": "sftp-over-ssh"},
+        "network_path": {"const": "direct-or-tailscale"},
+        "peer_verification": {"const": "signed-registry-and-pinned-host-key"},
+        "destination_policy": {"const": "normalized-allowlisted-no-overwrite"},
+        "activation": {
+          "enum": ["blocked", "ready-disabled", "shadow-pilot", "reviewed-activation"]
+        },
+        "database_allowlist": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "live_database_in_sync": {"type": "boolean"}
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "not": {
+                "anyOf": [
+                  {"required": ["publisher_slot"]},
+                  {"required": ["publishes"]},
+                  {"required": ["peer_transfer"]},
+                  {"required": ["network_path"]},
+                  {"required": ["peer_verification"]},
+                  {"required": ["destination_policy"]}
+                ]
+              }
+            },
+            {
+              "required": [
+                "publisher_slot",
+                "publishes",
+                "peer_transfer",
+                "network_path",
+                "peer_verification",
+                "destination_policy"
+              ]
+            }
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "not": {
+                "anyOf": [
+                  {"required": ["activation"]},
+                  {"required": ["database_allowlist"]},
+                  {"required": ["live_database_in_sync"]}
+                ]
+              }
+            },
+            {"required": ["activation", "database_allowlist", "live_database_in_sync"]}
+          ]
+        },
+        {
+          "if": {
+            "properties": {"activation": {"const": "ready-disabled"}},
+            "required": ["activation"]
+          },
+          "then": {
+            "properties": {"live_database_in_sync": {"const": false}},
+            "required": ["live_database_in_sync"]
+          }
+        }
       ]
     },
     "ref": {

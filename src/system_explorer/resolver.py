@@ -439,7 +439,7 @@ def _resolved_components(
     for component in components:
         ref = _ref_name(component["ref"])
         item = deepcopy(component)
-        state = component_states.get(ref, {})
+        state = deepcopy(component_states.get(ref, {}))
         desired_status = state.get("status", item.pop("status", "configured"))
         if desired_status not in OPERATIONAL_STATUSES:
             raise ValueError(
@@ -450,6 +450,8 @@ def _resolved_components(
         if desired_status == "unavailable" and item["requirement"] == "required":
             raise ValueError(f"required component {ref!r} is unavailable")
         item["desired_status"] = desired_status
+        if state:
+            item["component_state"] = state
         resolved.append(item)
     component_refs = {_ref_name(component["ref"]) for component in resolved}
     fallback_edges: dict[str, list[str]] = {}

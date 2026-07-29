@@ -130,6 +130,17 @@ Die Resolution enthält ausdrücklich leere `runtime_actions` und
 `target_mutations`; Testauflösungen setzen `writeback_to_base` zwingend auf
 `false`.
 
+`component_states` einer gewünschten Instanz sind eng typisiert. Der Resolver
+gibt jeden deklarierten State unverändert als `component_state` am zugehörigen
+aufgelösten Komponentenobjekt aus, zusätzlich zu `desired_status`. Damit
+bleiben gewünschte Trusted-Peer-Felder (`desired_profile`, `publisher_slot`,
+`publishes`, `peer_transfer`, `network_path`, `peer_verification`,
+`destination_policy`) und Database-Transit-Felder (`activation`,
+`database_allowlist`, `live_database_in_sync`) prüfbar, ohne eine
+Runtime-Aktion abzuleiten. Der Peer-Transport ist dabei ausschließlich
+SFTP über SSH; Tailscale kann nur den Netzwerkpfad tragen.
+`ready-disabled` verlangt zwingend `live_database_in_sync: false`.
+
 ## Fremdfixture-Readback vom 2026-07-29
 
 Die zu Beginn von W1 vorhandenen einfachen Manifeste im lokalen
