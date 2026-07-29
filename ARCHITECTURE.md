@@ -1,111 +1,83 @@
-# ARCHITECTURE.md — Struktur & Modul-Graph
+# Architektur
 
-> **Zweck:** High-level Struktur, Komponenten-Beziehungen, Data-Flow.
-> **Pflege:** Manuelle Abschnitte (Overview, Rationale) sind sofort nutzbar.
-> Optional kann später ein projektspezifisches `_tools/arch-update` den
-> AUTOGEN-Block pflegen.
+## Rolle
 
----
+`system-explorer` ist eine read-only Evidenz-, Kartierungs- und Deckungsschicht.
+Es ist weder ein zweites Control Plane noch Scheduler, Policy-Registry,
+Memory-System oder Ausführungsengine. Bestehende Systeme bleiben
+Source-of-Truth; Explorer verweist auf sie.
 
-## Overview (manuell)
+## Kernmodell
 
-[2-3 Absätze: Was ist das Projekt architektonisch? Welche Haupt-Komponenten
-gibt es? Wie hängen sie zusammen? Was ist der Datenfluss?]
-
-Beispiel:
-
-> system-explorer besteht aus drei Haupt-Komponenten:
-> 1. **Pipeline** (`core/`) — modulare Verarbeitungs-Einheiten
-> 2. **Config** (`config/`) — JSON-basierte Runtime-Konfiguration
-> 3. **State** (`data/`) — persistente State-Dateien zwischen Runs
->
-> Der Einstiegspunkt ist `run.py`, das basierend auf CLI-Flags einzelne
-> `core/*.py`-Module orchestriert. Jedes Modul hat eigene State-Files und
-> kann unabhängig laufen.
-
-## Module-Graph (auto-generated)
-
-<!-- @auto-generated:module-graph -->
-<!-- last-updated: 2026-07-29 -->
-<!-- tool: optional _tools/arch-update -->
-
-```mermaid
-graph TD
-  run.py --> core/module_a.py
-  run.py --> core/module_b.py
-  core/module_a.py --> core/shared.py
-  core/module_b.py --> core/shared.py
-  core/module_a.py --> config/settings.json
+```text
+Sollfunktion ──wird_sollgetragen_von──> Funktionsträger
+Sollfunktion <──wird_tatsächlich_getragen_von── Funktionsträger
+      │                                      │
+      └──────────── Deckungsurteil ──────────┘
+                         │
+                    Evidenzreferenz
 ```
 
-<!-- @end:module-graph -->
+Knotentypen sind unter anderem `function`, `carrier`, `system`, `actor`,
+`entrypoint`, `session`, `directory`, `control_document`, `policy_document`,
+`decision_document`, `documentation`, `artifact` und `artifact_reference`.
+Funktionsträger spezialisieren sich über `carrier_kind`: `skill`, `module`,
+`repository`, `mcp`, `stack`, `command` oder eine systemspezifische Art.
 
-## Modules (auto-generated)
+Beziehungen besitzen:
 
-<!-- @auto-generated:modules-table -->
-<!-- last-updated: 2026-07-29 -->
+- `mode`: `desired` oder `actual`
+- `status`: etwa `full`, `partial`, `negative`, `declared`, `observed`
+- Konfidenz und Wirksamkeitszeit
+- eine optionale Evidenzreferenz
+- Zusatzdaten wie Anforderung, Call-ID oder Überlappungsgruppe
 
-| Module | LOC | Top Imports | Beschreibung |
-|---|---|---|---|
-| `core/module_a.py` | 245 | `requests`, `json` | [Erste Zeile Docstring] |
-| `core/module_b.py` | 180 | `github`, `time` | [Erste Zeile Docstring] |
-| `core/shared.py` | 95 | `pathlib`, `os` | [Erste Zeile Docstring] |
+## Deckungslogik
 
-<!-- @end:modules-table -->
+| Urteil | Bedeutung |
+|---|---|
+| `full` | Die gewünschte Funktion ist vollständig und positiv belegt. |
+| `partial` | Der Träger erfüllt nur einen Teil oder ist nur deklariert. |
+| `uncovered` | Eine Sollfunktion hat keinen positiven Ist-Träger. |
+| `negative` | Ein Träger wirkt nachweislich gegen die Sollfunktion. |
+| `unproven` | Ist-Funktion ohne Sollbezug oder noch ohne ausreichenden Beleg. |
+| `overlap` | Mehr als ein positiver Träger deckt dieselbe Funktion; neutral, bis Kardinalität oder Konfliktregeln es bewerten. |
 
-## Directory Tree (auto-generated)
+## Schichten
 
-<!-- @auto-generated:tree -->
-<!-- last-updated: 2026-07-29 -->
+1. **Discovery** – begrenztes Dateisystem-Scanning, Manifest-/Skill-Erkennung.
+2. **Observation** – providerbezogene Transcript- und Ereignisadapter.
+3. **Registry** – lokales SQLite mit referenzieller Evidenz.
+4. **Reconciliation** – zeitliche Auflösung sowie Soll-/Ist-/Deckungsdiff.
+5. **Projection** – JSON, ASCII, Mermaid, HTML und lokale UI.
+6. **Proposal** – unverbindlicher ChangeProposal; nie unmittelbare Mutation.
+7. **Empirical probes** – Probepläne für externe Schwarm- oder
+   Trampelpfad-Runs.
 
+## Steuerdokumentgraph
+
+Textdateien bilden ein zusätzliches Steuerungssystem. Konventionelle und
+konfigurierte Steuerdateien werden typisiert; `contains`, `enters_at`,
+`points_to` und `references` modellieren Verzeichnisbaum, Einstieg,
+Boot-/Steuerpointer und Dokumentabhängigkeiten. Pointer tragen Quellzeile,
+Syntax, Auflösungsstatus und Evidenzreferenz. Fehlende Ziele bleiben als
+`artifact_reference` sichtbar, statt still verworfen zu werden.
+
+## Wiederverwendungsgrenzen
+
+Explorer konsumiert vorhandene Manifest- und Stack-Schemata, kann
+ControlCenter-konforme Karten liefern und verweist auf Policy-, BYUM-,
+Hooker-, Swarm- oder Gardener-Evidenz. Es kopiert deren Datenbanken und
+Entscheidungslogik nicht. Die UI ist als eigenständige lokale Ansicht
+implementiert und kann später in einen vorhandenen GUI-Host eingebettet
+werden.
+
+## Änderungsfluss
+
+```text
+Prompt → ChangeProposal → Schema-/Ontologieprüfung → Kardinalitätsprüfung
+       → Policy-Auflösung → Lock-Prüfung → Freigabe → Adapter-Dry-Run
+       → Ausführung außerhalb Explorer → Readback/Receipt
 ```
-[projekt]/
-├── core/              # Haupt-Pipeline-Module
-│   ├── module_a.py
-│   ├── module_b.py
-│   └── shared.py
-├── config/            # Runtime-Config
-│   └── settings.json
-├── data/              # State-Files (gitignored)
-│   └── state.json
-├── tests/
-├── workflows/
-├── _tools/
-└── .github/
-```
 
-<!-- @end:tree -->
-
-## Data Flow (manuell)
-
-[Beschreibung des Daten-Flusses: wo kommen Inputs rein, wie werden sie
-verarbeitet, wo landen Outputs? Sequenz-Diagramm optional.]
-
-```
-[Input] → [Preprocessing] → [Core-Pipeline] → [Output]
-             ↑                    ↓
-        [Config]              [State-Persistence]
-```
-
-## External Dependencies
-
-[Liste externe APIs, Services, Datenbanken, mit kurzer Beschreibung was
-davon kritisch ist.]
-
-| Dependency | Purpose | Criticality |
-|---|---|---|
-| [GitHub API] | [Repo-Management] | hoch |
-| [Telegram Bot API] | [Benachrichtigungen] | mittel |
-
-## Design Rationale (manuell)
-
-[Warum diese Architektur und nicht eine andere? Verweise auf DECISIONS.md
-für tiefere Entscheidungs-Hintergründe.]
-
-Siehe auch [DECISIONS.md](./DECISIONS.md) für die ADRs (Architecture
-Decision Records).
-
-## Historie
-
-- **2026-07-29** — Initiale Architektur dokumentiert
-- **2026-07-29** — Modul X hinzugefügt
+Im MVP endet der Fluss bei `ChangeProposal`.

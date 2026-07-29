@@ -1,0 +1,57 @@
+{
+  "schema": "system-explorer.desired.v1",
+  "system": "example-system",
+  "effective_at": "2026-01-01T00:00:00+00:00",
+  "confidence": 1.0,
+  "functions": [
+    {
+      "id": "knowledge.search",
+      "name": "Vorhandenes Wissen vor einer Aktion finden",
+      "priority": "high"
+    },
+    {
+      "id": "safe.execution",
+      "name": "Änderungen sicher und belegbar ausführen",
+      "priority": "critical"
+    }
+  ],
+  "carriers": [
+    {
+      "id": "search-skill",
+      "name": "Search Skill",
+      "kind": "skill"
+    },
+    {
+      "id": "unsafe-runner",
+      "name": "Ungeprüfter Runner",
+      "kind": "module"
+    }
+  ],
+  "coverage": [
+    {
+      "function": "knowledge.search",
+      "carrier": "search-skill",
+      "status": "full"
+    },
+    {
+      "function": "safe.execution",
+      "carrier": "unsafe-runner",
+      "status": "full"
+    }
+  ],
+  "observations": [
+    {
+      "function": "knowledge.search",
+      "carrier": "search-skill",
+      "status": "partial",
+      "notes": "Beispiel einer empirisch beobachteten Unterdeckung."
+    },
+    {
+      "function": "safe.execution",
+      "carrier": "unsafe-runner",
+      "status": "negative",
+      "notes": "Beispiel einer beabsichtigungswidrigen Wirkung."
+    }
+  ],
+  "structure": []
+}

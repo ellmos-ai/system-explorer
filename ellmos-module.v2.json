@@ -1,0 +1,72 @@
+{
+  "schema": "ellmos.module.v2",
+  "id": "system-explorer",
+  "display_name": "System Explorer",
+  "version": "0.1.0",
+  "category": "control",
+  "kind": "tool",
+  "status": "development",
+  "visibility": "private",
+  "description": "Evidence-backed maps of desired functions, carriers, actual use, and architecture drift.",
+  "package": "system_explorer",
+  "entrypoints": {
+    "cli": "system-explorer --help",
+    "ui": "system-explorer serve --config <path>"
+  },
+  "provides": [
+    "system.discovery",
+    "system.mapping",
+    "system.coverage",
+    "system.architecture.diff",
+    "system.control-document.mapping",
+    "system.directory-tree",
+    "evidence.registry",
+    "document.registry",
+    "change.proposal.readonly",
+    "trampelpfad.probe-plan"
+  ],
+  "requires": [],
+  "optional": [
+    "controlcenter.context",
+    "policy.registry",
+    "byum.prompt-evidence",
+    "hooker.runtime-evidence",
+    "swarm-ai.probe-runner",
+    "unified-gui.host"
+  ],
+  "conflicts": [
+    "target-system.mutation",
+    "second-control-plane"
+  ],
+  "surfaces": [
+    "library",
+    "cli",
+    "ui"
+  ],
+  "state": {
+    "ownership": "module",
+    "location": "user-home"
+  },
+  "boundaries": {
+    "network": "local",
+    "data": "user-local",
+    "platforms": [
+      "windows",
+      "macos",
+      "linux"
+    ]
+  },
+  "source_of_truth": {
+    "type": "git-repository",
+    "path": ".",
+    "repository": "https://github.com/ellmos-ai/system-explorer"
+  },
+  "adapters": [
+    {"type": "cli-wrapper", "id": "codex-jsonl"},
+    {"type": "cli-wrapper", "id": "claude-code-jsonl"},
+    {"type": "cli-wrapper", "id": "claude-desktop-audit-jsonl"},
+    {"type": "cli-wrapper", "id": "gemini-sqlite"},
+    {"type": "cli-wrapper", "id": "kimi-wire-jsonl"},
+    {"type": "cli-wrapper", "id": "generic-jsonl"}
+  ]
+}

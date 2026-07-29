@@ -1,0 +1,31 @@
+{
+  "schema": "system-explorer.config.v1",
+  "database": "./.state/evidence.db",
+  "roots": [
+    {
+      "id": "example-system",
+      "path": "./fixture-system",
+      "max_depth": 5,
+      "include": ["*.md", "*.json", "*.toml", "*.yaml", "*.yml"],
+      "exclude_dirs": [".git", ".venv", "node_modules", "__pycache__"]
+    }
+  ],
+  "transcripts": [],
+  "desired_sources": ["./desired-system.json"],
+  "function_rules": [],
+  "control_documents": [
+    {"pattern": "AGENTS.md", "role": "control", "entry": true},
+    {"pattern": "CLAUDE.md", "role": "control", "entry": true},
+    {"pattern": "README.md", "role": "documentation", "entry": false},
+    {"pattern": "*POLICY*.md", "role": "policy", "entry": false},
+    {"pattern": "DECISIONS.md", "role": "decision", "entry": false}
+  ],
+  "entry_directories": [
+    {"path": ".", "name": "System root"}
+  ],
+  "privacy": {
+    "store_raw_text": false,
+    "store_prompt_text": false,
+    "sensitivity": "user-local"
+  }
+}

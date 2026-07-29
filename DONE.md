@@ -1,39 +1,16 @@
-# DONE.md — Erledigte Tasks (Archiv)
-
-> **Zweck:** Fine-grained Task-Level-History. Umgekehrt chronologisch
-> (neueste oben).
-> **Pflege:** Automatisch via `_tools/todo-archive`. Niemals manuell
-> ergänzen, sonst ist das Datumsformat inkonsistent.
-> **Rotation:** Einträge älter als 6 Monate → nach `archive/done-YYYY-QX.md`
-> verschieben oder in `CHANGELOG.md` unter der entsprechenden Version
-> zusammenfassen.
-
----
+# Erledigt
 
 ## 2026-07-29
 
-- [x] [Erledigte Task mit Kontext]
-- [x] [Noch eine]
-
-## 2026-07-29
-
-- [x] [Erledigte Task]
-
----
-
-## Abgrenzung zu CHANGELOG.md
-
-| File | Granularität | Zielgruppe |
-|---|---|---|
-| **DONE.md** | Fine-grained (einzelne Tasks) | Dev-interner Blick zurück |
-| **CHANGELOG.md** | Coarse-grained (Features, Versionen) | User / Nutzer / externe Stakeholder |
-
-Bei Release werden die DONE.md-Einträge des Zeitraums zu einem CHANGELOG.md
-Unreleased-Block zusammengefasst — **nicht 1:1 kopiert**, sondern destilliert.
-
-## Format-Hinweis
-
-Jeder Eintrag ist ein einzelner Task wie er in TODO.md stand, mit
-`[x]`-Markierung erhalten. Das Datum-Header kommt vom Archivierungs-Tool.
-Wenn du manuell Einträge hinzufügen musst (z.B. vergessene History), nutze
-dasselbe Format für Konsistenz.
+- [x] Architektur und vorhandene Wiederverwendungskomponenten inventarisiert
+- [x] Funktionen und Funktionsträger als getrennte Ebenen modelliert
+- [x] positive, partielle, fehlende, negative und mehrfache Deckung umgesetzt
+- [x] Evidenzregister ohne Rohtextspeicherung implementiert
+- [x] Manifest-, Skill-, Repo-, Stack-, MCP- und Einstiegserkennung ergänzt
+- [x] Provider-Transcript-Adapter implementiert
+- [x] AGENTS-/CLAUDE-/README-/Policy-/Decision- und Verzeichnisgraph ergänzt
+- [x] interaktive Dokumentregistrierung und Suche ergänzt
+- [x] sechs Kartenansichten und vier Exportformate umgesetzt
+- [x] lokale UI und read-only Proposal-Fluss implementiert
+- [x] Trampelpfad-Probeplan und Systemassessment ergänzt
+- [x] Unit-, Schema-, CLI-, API- und Browserprüfung durchgeführt

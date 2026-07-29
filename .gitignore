@@ -8,6 +8,7 @@ desktop.ini
 # Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .venv/
 .pytest_cache/
 .ruff_cache/
@@ -19,6 +20,8 @@ htmlcov/
 node_modules/
 dist/
 build/
+output/
+.playwright-cli/
 
 # IDE / local workspace
 .idea/

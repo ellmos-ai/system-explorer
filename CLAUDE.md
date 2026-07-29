@@ -5,7 +5,7 @@ profile: "FULL"
 version: 0.1.0
 created: "2026-07-29"
 updated: "2026-07-29"
-reason_last_change: "Initiale Projektanlage via init-project"
+reason_last_change: "MVP, Steuerdokumentgraph und Releasevertrag vervollständigt"
 last_verified: "2026-07-29"
 author: "Lukas Geiger"
 anthropic_compatible: true
@@ -31,15 +31,17 @@ description: |
 
 ## Projekt
 
-**system-explorer** — [Einzeiler-Beschreibung was das Projekt ist und für wen]
+**system-explorer** — evidenzgestützte Soll-/Ist-/Deckungs- und
+Steuerdokumentkarten für modulare Agenten- und Softwaresysteme.
 
-**Pfad:** `[absoluter Pfad zum Projekt]`
-**Repository:** `[github.com/owner/repo oder "privat, kein Remote"]`
-**Sprache/Stack:** `[Python 3.11, TypeScript, Bash, ...]`
+**Pfad:** `C:\_Local_DEV\repos\system-explorer`
+**Repository:** `github.com/ellmos-ai/system-explorer` (privat)
+**Sprache/Stack:** Python 3.10+, SQLite, Vanilla HTML/CSS/JavaScript
 
 ## Rolle & Stil
 
-Arbeite als [Senior Dev / Researcher / ...] mit Fokus auf [correctness / speed / security / ...].
+Arbeite als Senior Python-/Systemarchitektur-Entwickler mit Fokus auf
+Evidenztreue, Datenschutz, neutrale Pfade und klar getrennte Wahrheitsgrenzen.
 
 **Kommunikation:**
 - Sprache: Deutsch (Code/Identifier bleiben englisch)
@@ -49,14 +51,15 @@ Arbeite als [Senior Dev / Researcher / ...] mit Fokus auf [correctness / speed /
 ## Einstieg (Quick Commands)
 
 ```bash
-# [Haupt-Einstiegspunkt]
-[COMMAND HIER]
+# Scanner, konfigurierte Sollquellen und Transcripts einlesen
+system-explorer ingest --config examples/self-scan.json
 
-# [Zweiter typischer Run]
-[COMMAND HIER]
+# Lokale Kartenoberfläche
+system-explorer serve --config examples/self-scan.json
 
 # Tests
-[TEST-COMMAND HIER]
+python -m unittest discover -s tests -v
+ruff check src tests
 ```
 
 **Für vollständige Session-Bootstrap-Sequenz siehe [`START.md`](./START.md).**
@@ -91,9 +94,11 @@ Bevor du destructive Git-Operationen ausführst oder Architektur-relevante
 Details siehe [`ARCHITECTURE.md`](./ARCHITECTURE.md). Kurz:
 
 ```
-[projekt-root]/
-├── [haupt-code-ordner]/
-├── [konfig-ordner]/
+system-explorer/
+├── src/system_explorer/  # Scanner, Store, Adapter, Karten, CLI und UI
+├── tests/                # isolierte Unit-/Integrations-Fixtures
+├── examples/             # neutrale Konfigurationen und Sollspezifikation
+├── docs/                 # Evidenz-, Adapter- und Anforderungsdokumentation
 ├── workflows/      # Multi-Step-Playbooks
 ├── _tools/         # Admin-Utilities
 └── .github/        # GitHub-native Config
@@ -117,69 +122,28 @@ Details siehe [`ARCHITECTURE.md`](./ARCHITECTURE.md). Kurz:
 
 ## Domain-Kontext
 
-[Hier projektspezifische Background-Infos: Was macht das Projekt in welchem
-Umfeld, welche externen Abhängigkeiten gibt es, was ist die Zielgruppe, etc.
-Alles was der LLM-Agent braucht um Entscheidungen im Kontext zu treffen.]
+Das Modul trennt gewünschte Systemfunktionen von ihren Funktionsträgern
+(Skills, Repos/Module, MCP, Stacks, Commands und Akteure). Statische
+Deklaration ist kein Nutzungsbeleg. Transcriptinhalte bleiben an ihrer Quelle;
+Explorer registriert nur URI, Hash, Locator und normalisierte Merkmale.
+Steuertextdateien bilden einen eigenen Graph aus Verzeichnis-, Einstiegs-,
+Pointer- und Referenzbeziehungen.
 
 ## Umgebungs-Hinweise
 
-[z.B. OS-Spezifisches, spezielle Shell-Setups, Encoding-Gotchas, Rate-Limits
-externer APIs, Lokale vs. Remote-Infrastruktur.]
+- Standard-Datenbank: `~/.system-explorer/evidence.db`
+- UI nur auf Loopback binden, solange keine externe Authentisierung existiert.
+- Git-Source-of-Truth ist dieser lokale Clone; OneDrive ist nur Mirror.
+- Keine rohen Prompts, Antworten, Toolargumente oder Toolergebnisse speichern.
+- Explorer erzeugt keine Zielsystemmutation; Proposals bleiben read-only.
 
 ---
 
-## Multi-Agent-Setup (optional, nur falls relevant)
+## Externe Schwarmtests
 
-> **Wann ausfüllen:** Nur wenn dieses Projekt **mehrere AI-Agents** orchestriert
-> (Boss-Agent + Experten, oder parallele Agents mit verschiedenen Rollen).
-> Bei Solo-Agent-Projekten diesen ganzen Abschnitt löschen.
-
-```yaml
-agents:
-  primary: claude-code              # Haupt-Tool / Orchestrator
-  orchestrator: [agent-name]        # Optional: Boss-Agent
-  experts:
-    - name: [expert-1]
-      role: [Was dieser Expert macht]
-      trigger: [Wann wird er gerufen]
-    - name: [expert-2]
-      role: [...]
-      trigger: [...]
-  delegation_rules:
-    - [Regel 1: wenn X, dann expert-1]
-    - [Regel 2: wenn Y, dann expert-2]
-  communication:
-    inbox: [Pfad oder Channel]
-    outbox: [Pfad oder Channel]
-```
-
-**Beispiel (fiktives Research-Projekt):**
-
-```yaml
-agents:
-  primary: claude-code
-  orchestrator: research-coordinator
-  experts:
-    - name: literature-scout
-      role: Holt Paper aus arxiv/PubMed
-      trigger: Bei neuem Forschungsthema
-    - name: fact-checker
-      role: Verifiziert Zitate und Referenzen
-      trigger: Vor jedem Publication-Commit
-    - name: stats-reviewer
-      role: Prüft statistische Analysen
-      trigger: Bei Methoden-Sektionen
-  delegation_rules:
-    - "neue Quelle" → literature-scout
-    - "prüfe Referenzen" → fact-checker
-    - "p-Wert diskussion" → stats-reviewer
-  communication:
-    inbox: _data/agent_inbox/
-    outbox: _data/agent_outbox/
-```
-
-**Verweis:** Siehe [`AGENTS.md`](./AGENTS.md) für den tool-agnostischen
-Einstiegspunkt, der auf diese Datei verweist.
+`probe-plan` erzeugt reproduzierbare Trampelpfadaufträge. Die Modulausführung
+startet selbst keine Modelle; swarm-ai oder ein anderer budgetierter Runner
+führt diese Tests extern aus und liefert später referenzierbare Receipts.
 
 ---
 

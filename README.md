@@ -1,78 +1,67 @@
 # system-explorer
 
-> [Einzeiler der erklärt was dies ist und für wen]
+`system-explorer` erstellt evidenzgestützte Karten eines modularen Agenten- und
+Softwaresystems. Das Werkzeug trennt dabei zwei Ebenen:
 
-[1-Absatz-Beschreibung mit den wichtigsten Features und dem Problem, das
-dieses Projekt löst.]
+1. **Sollfunktionen** – was das Gesamtsystem leisten soll.
+2. **Funktionsträger** – Skills, Repositories/Module, MCP-Schnittstellen,
+   Stacks, Akteure, Befehle oder andere Komponenten, die diese Funktionen
+   tatsächlich oder geplant tragen.
 
-## Status
+Aus dieser Zuordnung erkennt es Voll-, Unter-, Nicht-, Mehrfach- und
+Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
+„unbekannt“, sondern eine sichtbare Systemlücke.
 
-[![Status](https://img.shields.io/badge/status-[Alpha|Beta|Stable]-[red|yellow|green])]()
+## Eigenschaften
 
-## Installation
+- begrenzter Scanner für Manifeste, Skills, Einstiegspunkte und Dokumentlinks
+- typisierte Steuerkarten für `AGENTS.md`, `CLAUDE.md`, `README.md`, Policies,
+  Decisions, frei konfigurierte Steuerdateien und Eintrittsverzeichnisse
+- lokales SQLite-Evidenzregister mit URI, Locator, Hash und Zeitbezug statt
+  kopierter Quelldaten
+- Sollspezifikation für Funktionen, Träger, Deckung und Struktur
+- Transcript-Adapter für Codex, Claude Code, Claude Desktop, Gemini/agy, Kimi
+  und generisches JSONL
+- Actual-, Desired-, Diff- und Coverage-Karten als JSON, ASCII, Mermaid und HTML
+- lokale grafische Oberfläche mit belegbezogenen Details
+- schreibgeschützte, promptgestützte Änderungsentwürfe mit Pflichtgates
+- Trampelpfad-Probepläne für externe, budgetierte Schwarmtests
 
-```bash
-# [Installationsschritte]
-git clone [repo-url]
-cd [projekt]
-[install-command]
+## Schnellstart
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e .
+system-explorer init --config explorer.json
+system-explorer ingest --config explorer.json
+system-explorer coverage --config explorer.json
+system-explorer assess --config explorer.json
+system-explorer map --config explorer.json --view control --format mermaid
+system-explorer documents --config explorer.json --role policy
+system-explorer register X:\system\SPECIAL-ENTRY.md --role control --entry --config explorer.json
+system-explorer map --config explorer.json --view coverage --format html --output map.html
+system-explorer serve --config explorer.json
 ```
 
-## Quick Start
+Die Oberfläche bindet standardmäßig nur an `127.0.0.1:8765`.
 
-```bash
-# [Minimaler Start-Befehl]
-[command]
-```
+Eigene Steuerdateien werden über `control_documents` (Glob, Rolle,
+Entry-Flag), Eintrittsordner über `entry_directories` konfiguriert. Die
+Control- und Tree-Ansichten zeigen aufgelöste und fehlende Pointer samt
+Quellzeile. Auch über CLI und lokale UI lassen sich zusätzliche Dokumente
+interaktiv registrieren und wiederfinden.
 
-## Usage
+## Sicherheits- und Wahrheitsgrenzen
 
-[Konkrete Beispiele für die häufigsten Use-Cases. Code-Blöcke bevorzugen.]
+- Quellen bleiben an ihrem Ort; gespeichert werden Referenzen und Prüfsummen.
+- Prompt- und Transcript-Inhalte werden nicht gespeichert.
+- Eine Manifestdeklaration beweist keine tatsächliche Nutzung.
+- Ein Toolaufruf beweist erst zusammen mit Ergebnis, Readback oder Test einen
+  erfolgreichen Funktionsvollzug.
+- Das Modul erzeugt Vorschläge, führt aber keine Zielsystemänderungen aus.
+- Neuere Evidenz gewinnt nur innerhalb derselben Beziehung; negative Evidenz
+  wird nicht durch ältere positive Evidenz verdeckt.
 
-```bash
-# Beispiel 1: [Was macht es]
-[command mit output]
-```
-
-```bash
-# Beispiel 2
-[command]
-```
-
-## Projekt-Struktur
-
-```
-[projekt]/
-├── [haupt-code]/
-├── [config]/
-├── workflows/      # Multi-Step-Playbooks
-├── _tools/         # Admin-Utilities
-└── .github/        # GitHub-Config
-```
-
-Für Details siehe [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-## Documentation
-
-| Für... | lies... |
-|---|---|
-| Erste Schritte | [START.md](./START.md) |
-| Aktuellen Stand | [STATE.md](./STATE.md) |
-| Architektur & Module | [ARCHITECTURE.md](./ARCHITECTURE.md) |
-| Header-Konventionen | [HEADER-RULES.md](./HEADER-RULES.md) |
-| Zu lange Dateien aufteilen | [CUT-AND-CLUE.md](./CUT-AND-CLUE.md) |
-| Design-Entscheidungen | [DECISIONS.md](./DECISIONS.md) |
-| Best Practices | [PATTERNS.md](./PATTERNS.md) |
-| Workflows | [WORKFLOWS.md](./WORKFLOWS.md) |
-| Begriffe | [GLOSSARY.md](./GLOSSARY.md) |
-| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
-
-## Contributing
-
-[Hinweis zu Contributions, PR-Prozess, Code-of-Conduct, etc.]
-
-Lege bei Bedarf eine projektspezifische `CONTRIBUTING.md` an.
-
-## License
-
-[Lizenz oder Hinweis „proprietär / nicht zur Weitergabe"]
+Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), die Datenregeln in
+[`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und die Adaptergrenzen in
+[`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).

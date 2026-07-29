@@ -1,77 +1,82 @@
-# DECISIONS.md — Architekturentscheidungen
+# Architekturentscheidungen
 
-> **ADR-Pattern:** Architecture Decision Records.
-> **Chronologisch**, neueste oben.
-> **Append-only** — alte Entscheidungen werden nicht gelöscht, sondern
-> durch neue ersetzt (mit Verweis).
+Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
+Verweis erhalten.
 
----
-
-## 2026-07-29: [Kurze Entscheidungs-Überschrift]
+## 2026-07-29: Steuertextdateien bilden einen eigenen Graph
 
 ### Kontext
 
-[Was war die Situation? Welches Problem mussten wir lösen? Was waren die
-Rahmenbedingungen?]
-
-### Optionen
-
-| Option | Ansatz | Bewertung |
-|---|---|---|
-| **A** | [Alternative 1] | [Warum verworfen] |
-| **B** | [Alternative 2] | **Gewählt** — [Warum] |
-| **C** | [Alternative 3] | [Warum verworfen] |
+`AGENTS.md`, `CLAUDE.md`, Policies, Decisions und READMEs steuern ein
+Agentensystem über Bootreihenfolgen, Pointer und Verzeichnisgrenzen. Eine
+flache Dateiliste bildet diese Wirkung nicht ab.
 
 ### Entscheidung
 
-[Welche Option wurde gewählt? Konkret beschreiben was umgesetzt wurde.]
+Explorer typisiert Steuer-, Policy-, Decision- und Dokumentationsknoten.
+`contains`, `enters_at`, `points_to` und `references` modellieren Baum,
+Einstieg und Abhängigkeit. Frei definierte Dateien und Eintrittsordner können
+per Konfiguration, CLI oder lokaler UI registriert werden. Fehlende Pointer
+bleiben als Referenzknoten sichtbar.
 
-### Kern-Prinzipien
+### Grenze
 
-1. [Prinzip 1, mit Begründung]
-2. [Prinzip 2, mit Begründung]
-3. [Prinzip 3, mit Begründung]
+Der Scanner bewertet Beziehungen und Provenienz, führt aber keine Anweisung
+aus den gefundenen Dokumenten aus.
 
-### Technische Details
+## 2026-07-29: Sollfunktion und Funktionsträger sind getrennte Ebenen
 
-- [Konkrete Implementierung]
-- [Verwendete Libraries/Tools]
-- [Schnittstellen zu anderen Modulen]
+### Kontext
 
-### Limitationen (bewusst akzeptiert)
+Die Existenz eines Skills oder Moduls beweist nicht, dass die beabsichtigte
+Systemfunktion getragen wird. Ein Träger kann vollständig, teilweise, gar
+nicht oder sogar entgegengesetzt wirken.
 
-- [Was diese Entscheidung NICHT löst]
-- [Welche Trade-offs wir eingehen]
-- [Was bei Änderung der Rahmenbedingungen neu bewertet werden müsste]
+### Entscheidung
 
-### Revisit-Trigger
+Funktionen und Träger sind getrennte Knoten. `carries`-Beziehungen besitzen
+Soll-/Ist-Modus, Status, Konfidenz, Zeit und Evidenz. Deckungsurteile sind
+`full`, `partial`, `uncovered`, `negative` und `unproven`; Mehrfachdeckung ist
+eine zusätzliche Eigenschaft.
 
-Diese Entscheidung ist gültig solange:
-- [Bedingung 1]
-- [Bedingung 2]
+### Grenze
 
-Bei [Ereignis X] sollte die Entscheidung neu bewertet werden.
+Mehrfachdeckung ist zunächst neutral. Ob sie erwünscht ist, entscheidet eine
+externe Kardinalitäts- oder Policy-Regel.
 
-### Folge-Aktionen
+## 2026-07-29: Evidenz wird referenziert, nicht kopiert
 
-- [x] [Erledigte Schritte]
-- [ ] [Offene Schritte]
+### Kontext
 
----
+Provider-Transcripts und Systemdokumente enthalten sensible Inhalte. Eine
+zweite Inhaltsdatenbank würde Datenschutz-, Aktualitäts- und
+Source-of-Truth-Probleme erzeugen.
 
-## 2026-07-29: [Nächste Entscheidung]
+### Entscheidung
 
-[Gleiche Struktur wiederholen]
+SQLite speichert URI, Locator, Hash, Zeitbezug, Konfidenz, Sensitivität und
+normalisierte Ereignismerkmale. Prompt-, Antwort-, Argument- und
+Ergebnisrohtexte bleiben an der Quelle. Neuere wirksame Evidenz gewinnt
+innerhalb derselben Beziehung.
 
----
+### Grenze
 
-## Format-Hinweis
+Ein Hash ist Integritätsbeleg, keine Anonymisierung.
 
-> **Wann etwas hierher gehört:** Wenn du eine Entscheidung triffst, die
-> **schwer rückgängig zu machen** ist, **systemisch** wirkt, oder deren
-> **Warum** in Zukunft jemand (oder du selbst) verstehen muss.
->
-> **Wann NICHT:** Kleine Refactorings, Style-Entscheidungen, reversible
-> Optimierungen. Dafür ist `PATTERNS.md` da.
->
-> **Commits zeigen nur „was"**, DECISIONS.md zeigt „warum".
+## 2026-07-29: Explorer bleibt read-only gegenüber dem Zielsystem
+
+### Kontext
+
+Ein grafischer Prompt könnte leicht zu einer zweiten, unkontrollierten
+Ausführungs- oder Control-Plane werden.
+
+### Entscheidung
+
+Prompts erzeugen ausschließlich `ChangeProposal`-Entwürfe mit
+Schema-, Ontologie-, Kardinalitäts-, Policy-, Lock-, Freigabe-, Dry-Run- und
+Readback-Gates. `apply.authorized` ist im MVP immer `false`.
+
+### Grenze
+
+Eine spätere Ausführung muss außerhalb von Explorer durch vorhandene,
+autorisierte Adapter erfolgen.

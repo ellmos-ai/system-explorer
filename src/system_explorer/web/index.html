@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>system-explorer</title>
+  <style>
+    :root{color-scheme:dark;--ink:#e8edf5;--muted:#9aa8ba;--panel:#151b26;--line:#344153;--accent:#66d9c1}
+    *{box-sizing:border-box} body{margin:0;background:#0b0f16;color:var(--ink);font:14px Inter,Segoe UI,sans-serif}
+    header{display:flex;align-items:center;gap:16px;padding:15px 22px;border-bottom:1px solid #273141;background:#101620}
+    h1{font-size:16px;margin:0;letter-spacing:.04em}.tag{color:var(--muted);font-size:12px}
+    main{display:grid;grid-template-columns:minmax(0,1fr) 340px;height:calc(100vh - 60px)}
+    .canvas{overflow:auto;padding:20px}.side{border-left:1px solid #273141;background:var(--panel);padding:18px;overflow:auto}
+    .toolbar{display:flex;gap:9px;align-items:center;margin-bottom:16px}button,select,textarea,input{background:#202938;color:var(--ink);border:1px solid #3b485b;border-radius:7px;padding:8px}
+    button{cursor:pointer}button:hover{border-color:var(--accent)}textarea{width:100%;min-height:90px;resize:vertical}
+    .lanes{display:grid;grid-template-columns:1fr 1fr;gap:70px;position:relative;min-width:760px}.lane h2{font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.13em}
+    .node{position:relative;margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-left:5px solid #768397;border-radius:7px;background:#151d29;cursor:pointer}
+    .node small{display:block;margin-top:7px;color:var(--muted);font-size:10px;line-height:1.45}
+    .node.function{border-left-color:#45b58c}.node.carrier{border-left-color:#5d8ee7}.node.gap{border-left-color:#ef6b73}
+    .node.full{box-shadow:inset 0 0 0 1px #2f865e}.node.partial{box-shadow:inset 0 0 0 1px #b88a2e}.node.uncovered{box-shadow:inset 0 0 0 1px #b94a55}.node.negative{box-shadow:inset 0 0 0 2px #f05261}.node.overlap:after{content:"MEHRFACH";position:absolute;right:8px;top:8px;color:#d59cff;font-size:9px}
+    .count{margin-left:auto;color:var(--muted)}pre{white-space:pre-wrap;word-break:break-word;background:#0d121a;padding:12px;border-radius:7px;border:1px solid #293344;max-height:310px;overflow:auto}
+    .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+    @media(max-width:850px){main{grid-template-columns:1fr;height:auto}.side{border-left:0;border-top:1px solid #273141}.lanes{min-width:0;grid-template-columns:1fr;gap:20px}}
+  </style>
+</head>
+<body>
+<header><h1>SYSTEM EXPLORER</h1><span class="tag">Sollfunktionen ↔ Funktionsträger ↔ Evidenz</span><span class="count" id="count"></span></header>
+<main>
+  <section class="canvas">
+    <div class="toolbar">
+      <label>Ansicht <select id="view"><option>coverage</option><option>control</option><option>tree</option><option>diff</option><option>actual</option><option>desired</option></select></label>
+      <button id="reload">Neu laden</button>
+      <div class="legend">
+        <span><i class="dot" style="background:#2f865e"></i>voll</span><span><i class="dot" style="background:#b88a2e"></i>unterdeckt</span>
+        <span><i class="dot" style="background:#b94a55"></i>ungedeckt</span><span><i class="dot" style="background:#f05261"></i>Minusdeckung</span>
+      </div>
+    </div>
+    <div class="lanes">
+      <div class="lane"><h2 id="left-title">Funktionsträger</h2><div id="carriers"></div></div>
+      <div class="lane"><h2 id="right-title">Funktionen im Gesamtsystem</h2><div id="functions"></div></div>
+    </div>
+  </section>
+  <aside class="side">
+    <h2>Beleg / Beziehung</h2><pre id="details">Knoten auswählen.</pre>
+    <h2>Änderungsplan entwerfen</h2>
+    <p class="tag">Der Prompt erzeugt nur einen Plan mit Prüfgates. Es werden keine Systemänderungen ausgeführt und kein Prompttext gespeichert.</p>
+    <textarea id="prompt" placeholder="Zum Beispiel: Ergänze einen Träger für die ungedeckte Funktion …"></textarea>
+    <button id="propose">Plan erzeugen</button>
+    <pre id="proposal">Noch kein Entwurf.</pre>
+    <h2>Dokument registrieren</h2>
+    <p class="tag">Registriert nur Pfad, Hash, Rolle und Pointer. Quelldateien werden nicht kopiert.</p>
+    <input id="doc-path" style="width:100%" placeholder="Vollständiger Datei- oder Ordnerpfad">
+    <select id="doc-role"><option>control</option><option>policy</option><option>decision</option><option>documentation</option><option>entry</option></select>
+    <button id="register">Registrieren</button>
+    <pre id="registration">Noch keine Registrierung.</pre>
+  </aside>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+async function load(){
+  const g=await fetch('/api/map?view='+encodeURIComponent($('view').value)).then(r=>r.json());
+  $('carriers').replaceChildren();$('functions').replaceChildren();
+  const nodes=Object.fromEntries((g.nodes||[]).map(n=>[n.id,n]));
+  const structural=['control','tree'].includes($('view').value);
+  $('left-title').textContent=structural?'Steuer-/Einstiegsknoten':'Funktionsträger';
+  $('right-title').textContent=structural?'Ziele und Abhängigkeiten':'Funktionen im Gesamtsystem';
+  for(const n of g.nodes||[]){
+    const relations=(g.edges||[]).filter(e=>e.source_id===n.id||e.target_id===n.id);
+    const actual=relations.filter(e=>e.source_id===n.id&&e.mode==='actual');
+    const worst=actual.some(e=>['negative','contradicted'].includes(e.status))?'negative':actual.some(e=>e.status==='partial')?'partial':'';
+    const el=document.createElement('div'),v=n.metadata?.coverage_verdict||worst,over=n.metadata?.overlap?' overlap':'';
+    el.className='node '+n.node_type+' '+v+over; el.textContent=n.name;
+    if(n.node_type!=='function'&&relations.length){const sub=document.createElement('small');sub.textContent=relations.map(e=>`${e.mode==='desired'?'SOLL':e.relation.toUpperCase()} → ${nodes[e.target_id]?.name||e.target_id} [${e.status}]`).join(' · ');el.appendChild(sub)}
+    el.title=n.id;el.onclick=()=>show({node:n,relations});
+    const leftTypes=['carrier','control_document','entrypoint','directory','system'];
+    ((structural&&!leftTypes.includes(n.node_type))||(!structural&&n.node_type==='function')?$('functions'):$('carriers')).appendChild(el);
+  }
+  $('count').textContent=`${g.nodes?.length||0} Knoten · ${g.edges?.length||0} Beziehungen`;
+}
+function show(v){$('details').textContent=JSON.stringify(v,null,2)}
+$('reload').onclick=load;$('view').onchange=load;
+$('propose').onclick=async()=>{const r=await fetch('/api/proposals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:$('prompt').value})});$('proposal').textContent=JSON.stringify(await r.json(),null,2)};
+$('register').onclick=async()=>{const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:$('doc-path').value,role:$('doc-role').value,entry:$('doc-role').value==='entry'})});$('registration').textContent=JSON.stringify(await r.json(),null,2);if(r.ok)load()};
+load();
+</script>
+</body>
+</html>

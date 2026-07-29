@@ -1,0 +1,32 @@
+{
+  "schema": "system-explorer.config.v1",
+  "database": "./.state/self-scan.db",
+  "roots": [
+    {
+      "id": "system-explorer",
+      "path": "..",
+      "max_depth": 4,
+      "include": ["*.md", "*.txt", "*.json", "*.toml", "*.yaml", "*.yml"],
+      "exclude_dirs": [".git", ".venv", ".playwright-cli", "output", "node_modules", "__pycache__", ".state", "system_explorer.egg-info"]
+    }
+  ],
+  "transcripts": [],
+  "desired_sources": [],
+  "function_rules": [],
+  "control_documents": [
+    {"pattern": "AGENTS.md", "role": "control", "entry": true},
+    {"pattern": "CLAUDE.md", "role": "control", "entry": true},
+    {"pattern": "README.md", "role": "documentation", "entry": false},
+    {"pattern": "DECISIONS.md", "role": "decision", "entry": false},
+    {"pattern": "*POLICY*.md", "role": "policy", "entry": false}
+  ],
+  "entry_directories": [
+    {"path": "."},
+    {"path": "src"}
+  ],
+  "privacy": {
+    "store_raw_text": false,
+    "store_prompt_text": false,
+    "sensitivity": "user-local"
+  }
+}

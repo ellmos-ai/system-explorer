@@ -1,0 +1,8 @@
+# system-explorer
+
+Purpose: map desired system functions to evidenced function carriers.
+Truth boundary: source systems remain authoritative; evidence is referenced.
+Safety boundary: proposals are read-only and never authorize target mutation.
+Key command: system-explorer --help
+Architecture: ARCHITECTURE.md
+Evidence rules: docs/EVIDENCE-MODEL.md
