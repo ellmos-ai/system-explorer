@@ -7,7 +7,16 @@ import re
 from pathlib import Path
 from typing import Any, Iterable
 
+from .infrastructure import (
+    DATABASE_SUFFIXES,
+    register_database_file,
+    register_declared_infrastructure,
+    register_registry_file,
+)
+from .deployment import register_deployment
+from .federation import register_federation
 from .manifests import load_manifest
+from .resources import register_software_resources
 from .store import Store
 from .util import (
     expand_path,
@@ -65,6 +74,21 @@ def scan(config: dict[str, Any], store: Store) -> dict[str, int]:
         "nodes": 0,
         "edges": 0,
         "errors": 0,
+        "registries": 0,
+        "registry_collections": 0,
+        "databases": 0,
+        "database_tables": 0,
+        "servers": 0,
+        "server_surfaces": 0,
+        "purposes": 0,
+        "provider_documents": 0,
+        "cost_offers": 0,
+        "federated_systems": 0,
+        "map_imports": 0,
+        "map_import_errors": 0,
+        "software_resources": 0,
+        "software_interfaces": 0,
+        "software_functions": 0,
     }
     base = Path(config["_base"])
     for root_config in config.get("roots", []):
@@ -105,6 +129,26 @@ def scan(config: dict[str, Any], store: Store) -> dict[str, int]:
                 )
             except (OSError, UnicodeError, json.JSONDecodeError):
                 stats["errors"] += 1
+    if config.get("_config_path"):
+        infrastructure = register_declared_infrastructure(config, store)
+        stats["registries"] += infrastructure["registries"]
+        stats["databases"] += infrastructure["databases"]
+        stats["database_tables"] += infrastructure["tables"]
+        deployment = register_deployment(config, store)
+        stats["servers"] += deployment["servers"]
+        stats["server_surfaces"] += deployment["surfaces"]
+        stats["purposes"] += deployment["purposes"]
+        stats["provider_documents"] += deployment["provider_documents"]
+        stats["cost_offers"] += deployment["cost_offers"]
+        resources = register_software_resources(config, store)
+        stats["software_resources"] += resources["software_resources"]
+        stats["software_interfaces"] += resources["software_interfaces"]
+        stats["software_functions"] += resources["software_functions"]
+        federation = register_federation(config, store)
+        stats["federated_systems"] += federation["systems"]
+        stats["map_imports"] += federation["map_imports"]
+        stats["map_import_errors"] += federation["map_import_errors"]
+        stats["errors"] += federation["map_import_errors"]
     store.commit()
     return stats
 
@@ -218,6 +262,21 @@ def _scan_file(
 
     if path.name in MANIFEST_NAMES or _is_schema_manifest(path):
         _scan_manifest(path, root_id, evidence_id, store, stats)
+    registry_stats = register_registry_file(
+        path, artifact_id, evidence_id, config, store
+    )
+    stats["registries"] += registry_stats["registries"]
+    stats["registry_collections"] += registry_stats["collections"]
+    stats["nodes"] += registry_stats["collections"]
+    stats["edges"] += registry_stats["edges"]
+    if path.suffix.casefold() in DATABASE_SUFFIXES:
+        database_stats = register_database_file(
+            path, artifact_id, evidence_id, store
+        )
+        stats["databases"] += database_stats["databases"]
+        stats["database_tables"] += database_stats["tables"]
+        stats["nodes"] += database_stats["tables"]
+        stats["edges"] += database_stats["edges"]
     if path.name == "SKILL.md":
         _scan_skill(path, root_id, evidence_id, store, stats)
     if path.name in ENTRY_NAMES or configured_entry:
@@ -273,6 +332,7 @@ def _scan_manifest(
             "status": value.get("status"),
             "entrypoints": value.get("entrypoints", {}),
             "surfaces": value.get("surfaces", []),
+            "encapsulation": value.get("encapsulation", "unproven"),
         },
     )
     store.add_edge(root_id, "contains", carrier_id, evidence_id=evidence_id)
@@ -309,6 +369,117 @@ def _scan_manifest(
         store.add_edge(carrier_id, "enters_at", entry_id, evidence_id=evidence_id)
         stats["nodes"] += 1
         stats["edges"] += 1
+    for surface in value.get("surfaces", []):
+        item = surface if isinstance(surface, dict) else {"name": str(surface)}
+        name = str(item.get("name") or item.get("id") or "surface")
+        interface_id = store.add_node(
+            "interface",
+            name,
+            node_id=f"interface:{stable_id(carrier_id, name)}",
+            scope=str(path.parent),
+            metadata={**item, "interface_kind": "surface"},
+        )
+        store.add_edge(
+            carrier_id,
+            "exposes_interface",
+            interface_id,
+            status="declared",
+            evidence_id=evidence_id,
+        )
+        stats["nodes"] += 1
+        stats["edges"] += 1
+    for index, output in enumerate(value.get("outputs", []), start=1):
+        item = output if isinstance(output, dict) else {"name": str(output)}
+        name = str(item.get("name") or item.get("id") or f"output-{index}")
+        output_id = store.add_node(
+            "output",
+            name,
+            node_id=f"output:{stable_id(carrier_id, name)}",
+            scope=str(path.parent),
+            metadata=dict(item),
+        )
+        store.add_edge(
+            carrier_id,
+            "produces",
+            output_id,
+            status="declared",
+            evidence_id=evidence_id,
+        )
+        stats["nodes"] += 1
+        stats["edges"] += 1
+        for consumer in item.get("consumers", []):
+            consumer_id = _declared_carrier(str(consumer), store)
+            store.add_edge(
+                output_id,
+                "delivers_to",
+                consumer_id,
+                status="declared",
+                evidence_id=evidence_id,
+            )
+            stats["nodes"] += 1
+            stats["edges"] += 1
+    for index, handoff in enumerate(value.get("handoffs", []), start=1):
+        item = handoff if isinstance(handoff, dict) else {"target": str(handoff)}
+        name = str(item.get("name") or item.get("purpose") or f"handoff-{index}")
+        handoff_id = store.add_node(
+            "handoff",
+            name,
+            node_id=f"module-handoff:{stable_id(carrier_id, name)}",
+            scope=str(path.parent),
+            metadata={**item, "handoff_kind": "module"},
+        )
+        store.add_edge(
+            carrier_id,
+            "hands_off",
+            handoff_id,
+            status="declared",
+            evidence_id=evidence_id,
+        )
+        target = item.get("target")
+        if target:
+            target_id = _declared_carrier(str(target), store)
+            store.add_edge(
+                handoff_id,
+                "assigned_to",
+                target_id,
+                status="declared",
+                evidence_id=evidence_id,
+            )
+            stats["nodes"] += 1
+            stats["edges"] += 1
+        stats["nodes"] += 1
+        stats["edges"] += 1
+    for alternative in value.get("alternative_paths", []):
+        item = (
+            alternative
+            if isinstance(alternative, dict)
+            else {"target": str(alternative)}
+        )
+        target = item.get("target")
+        if not target:
+            continue
+        target_id = _declared_carrier(str(target), store)
+        store.add_edge(
+            carrier_id,
+            "alternative_to",
+            target_id,
+            status="declared",
+            evidence_id=evidence_id,
+            metadata=dict(item),
+        )
+        stats["nodes"] += 1
+        stats["edges"] += 1
+
+
+def _declared_carrier(name: str, store: Store) -> str:
+    node_id = name if name.startswith("carrier:") else f"carrier:{name}"
+    store.add_node(
+        "carrier",
+        name.removeprefix("carrier:"),
+        node_id=node_id,
+        metadata={"carrier_kind": "declared-reference"},
+    )
+    return node_id
 
 
 def _scan_skill(

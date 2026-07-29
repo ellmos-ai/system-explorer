@@ -11,10 +11,27 @@ from urllib.parse import parse_qs, urlparse
 from .assessment import assess
 from .config import database_path
 from .coverage import coverage_report
+from .deployment import deployment_report, purpose_report
 from .maps import graph_view
 from .proposals import propose
 from .registry import find_documents, register_path
+from .resources import resource_report
 from .store import Store
+
+
+STATIC_FILES = {
+    "/favicon.ico": ("favicon.ico", "image/x-icon"),
+    "/favicon.png": ("favicon.png", "image/png"),
+    "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
+    "/apple-touch-icon-180.png": ("apple-touch-icon-180.png", "image/png"),
+    "/icon.png": ("icon.png", "image/png"),
+    "/icon.svg": ("icon.svg", "image/svg+xml"),
+    "/icon-192.png": ("icon-192.png", "image/png"),
+    "/icon-512.png": ("icon-512.png", "image/png"),
+    "/icon-maskable-192.png": ("icon-maskable-192.png", "image/png"),
+    "/icon-maskable-512.png": ("icon-maskable-512.png", "image/png"),
+    "/manifest.json": ("manifest.json", "application/manifest+json"),
+}
 
 
 def serve(config: dict[str, Any], host: str = "127.0.0.1", port: int = 8765) -> None:
@@ -39,14 +56,20 @@ def _handler(config: dict[str, Any]) -> type[BaseHTTPRequestHandler]:
                 body = files("system_explorer").joinpath("web/index.html").read_bytes()
                 self._send(HTTPStatus.OK, body, "text/html; charset=utf-8")
                 return
-            if parsed.path == "/favicon.ico":
-                self._send(HTTPStatus.NO_CONTENT, b"", "image/x-icon")
+            if parsed.path in STATIC_FILES:
+                filename, content_type = STATIC_FILES[parsed.path]
+                body = files("system_explorer").joinpath(f"web/{filename}").read_bytes()
+                self._send(HTTPStatus.OK, body, content_type)
                 return
             if parsed.path == "/api/map":
                 view = parse_qs(parsed.query).get("view", ["coverage"])[0]
+                system_id = parse_qs(parsed.query).get("system", [None])[0]
                 try:
                     with Store(db_path) as store:
-                        self._json(HTTPStatus.OK, graph_view(store, view))
+                        self._json(
+                            HTTPStatus.OK,
+                            graph_view(store, view, system_id=system_id),
+                        )
                 except ValueError as exc:
                     self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                 return
@@ -57,6 +80,22 @@ def _handler(config: dict[str, Any]) -> type[BaseHTTPRequestHandler]:
             if parsed.path == "/api/assessment":
                 with Store(db_path) as store:
                     self._json(HTTPStatus.OK, assess(store))
+                return
+            if parsed.path == "/api/deployment":
+                with Store(db_path) as store:
+                    self._json(HTTPStatus.OK, deployment_report(store))
+                return
+            if parsed.path == "/api/purposes":
+                query = parse_qs(parsed.query)
+                with Store(db_path) as store:
+                    self._json(
+                        HTTPStatus.OK,
+                        purpose_report(store, query.get("target", [None])[0]),
+                    )
+                return
+            if parsed.path == "/api/resources":
+                with Store(db_path) as store:
+                    self._json(HTTPStatus.OK, resource_report(store))
                 return
             if parsed.path == "/api/evidence":
                 with Store(db_path) as store:

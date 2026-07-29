@@ -3,6 +3,92 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-07-29: Software ist kristallisierte Randressource
+
+### Kontext
+
+Installierte Programme, Fremdmodule und Repositories verkörpern bereits
+entwickelte kognitive Strukturen und standardisierte Workflows. LLMs können
+dadurch Reasoning wiederverwenden, sofern ein steuerbarer Zugang existiert.
+
+### Entscheidung
+
+Explorer trennt `software_resource`, `interface`, `actor` und `function`.
+Symbole markieren die LLM-Bereitschaft des besten registrierten Steuerwegs.
+Kristallisierungsgrad, Flexibilität und Tokenersparnis werden als getrennte
+Eigenschaften geführt. Breite Inventarscans unterbleiben; Erkennung erfolgt
+explizit oder über eine begrenzte Befehls-Allowlist.
+
+### Grenze
+
+Installation beweist keine LLM-Nutzbarkeit. Deklariertes
+Tokenersparnispotenzial wird erst mit Trampelpfad- oder Laufzeitevidenz zu
+einem beobachteten Nutzen.
+
+## 2026-07-29: Fachansicht und Systemebene sind orthogonal
+
+### Kontext
+
+Workstation, Laptop und Server sollen sich selbst kartieren und ihre Karten
+gegenseitig importieren können. Eine reine Übersichtszeichnung würde die
+fachlichen Analysefähigkeiten auf Fremdsystemen verlieren.
+
+### Entscheidung
+
+`system-explorer.map.v1` exportiert eine herkunftsgebundene, portable Karte
+mit referenziellen Evidenzmetadaten. Importierte IDs werden pro System
+gekapselt. Control-, Tree-, Coverage-, Purpose-, Deployment-, Data-,
+LLM-Spuren- und LLM-Handlungsansichten sind auf `origin_system` filterbar und
+ohne Filter als Gesamtebenenanalyse nutzbar. `federation` zeigt zusätzlich
+Systemgrenzen, direkte Verbindungen und asynchrone Übergaben.
+
+### Grenze
+
+Eine kartierte SSH-, Tailscale- oder `.SYNC`-Verbindung ist keine
+Ausführungsfreigabe. Explorer visualisiert Aufträge, führt sie aber nicht aus.
+
+## 2026-07-29: Privatheit und Zweck benötigen positive Gegenprobe
+
+### Kontext
+
+Ein Server mit dem Label „privat“ verfehlt seinen Zweck, sobald eine nicht
+gewünschte öffentliche Oberfläche erreichbar ist. Eine Firewalldeklaration
+beweist aber noch keine externe Nichterreichbarkeit.
+
+### Entscheidung
+
+Privatserver erhalten nur bei vollständiger externer Blockierungsevidenz das
+Urteil `full`; öffentliche Erreichbarkeit ergibt `negative`. Teiloffene
+Dienste werden gegen TLS, Authentifizierung, Default-Deny/Allowlist,
+Rate-Limit, Logging und sichere Secret-Ablage geprüft. Anbieterpreise und
+Dokumente werden als datierte, refresh-pflichtige Referenzen modelliert.
+ApiProber bleibt optional, passiv, rate-limitiert und autorisierungspflichtig.
+
+### Grenze
+
+Die Prüfung ersetzt weder Penetrationstest noch Compliance-Audit. Ein
+Kostenurteil ersetzt keine Zweck-, Risiko- oder Verfügbarkeitsentscheidung.
+
+## 2026-07-29: Daten- und Cloudtopologie speichert keine Nutzdaten
+
+### Kontext
+
+Registry-, Datenbank- und Cloudbeziehungen müssen sichtbar sein, ohne
+Datenbankzeilen, Secrets oder Connection Strings in eine zweite Wahrheit zu
+kopieren.
+
+### Entscheidung
+
+JSON-Registries werden über Struktur und Collection-Größen, SQLite über
+Tabellen- und Spaltennamen kartiert. Writer/Reader besitzen Soll-/Ist-Modus.
+Cloud-, Mirror- und Transferbeziehungen sind Kanten. Credentials erscheinen
+nur als logische Referenzknoten mit `value_retained=false`.
+
+### Grenze
+
+Für nicht-SQLite-Datenbanken werden Schema und Zwecke im MVP deklarativ
+konfiguriert; es wird keine produktive Verbindung geöffnet.
+
 ## 2026-07-29: Steuertextdateien bilden einen eigenen Graph
 
 ### Kontext

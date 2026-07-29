@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ellmos.ai/schemas/system-explorer.map.v1.schema.json",
+  "title": "system-explorer portable system map",
+  "type": "object",
+  "required": [
+    "schema",
+    "generated_at",
+    "system",
+    "view",
+    "nodes",
+    "edges",
+    "privacy"
+  ],
+  "properties": {
+    "schema": {"const": "system-explorer.map.v1"},
+    "generated_at": {"type": "string"},
+    "system": {
+      "type": "object",
+      "required": ["id", "name", "kind", "level"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "kind": {"type": "string", "minLength": 1},
+        "level": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "view": {"type": "string", "minLength": 1},
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "node_type", "name", "metadata"],
+        "properties": {
+          "id": {"type": "string"},
+          "node_type": {"type": "string"},
+          "name": {"type": "string"},
+          "metadata": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "relation", "target_id", "mode", "status"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "relation": {"type": "string"},
+          "target_id": {"type": "string"},
+          "mode": {"type": "string"},
+          "status": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "evidence_references": {"type": "array"},
+    "privacy": {
+      "type": "object",
+      "required": ["raw_evidence_included", "credential_values_included"],
+      "properties": {
+        "raw_evidence_included": {"const": false},
+        "credential_values_included": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

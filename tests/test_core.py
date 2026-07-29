@@ -7,11 +7,24 @@ import unittest
 from pathlib import Path
 
 from system_explorer.assessment import assess
+from system_explorer.config import database_path, load_config
 from system_explorer.coverage import coverage_report
+from system_explorer.deployment import (
+    deployment_report,
+    import_apiprober_export,
+    purpose_report,
+    refresh_provider_sources,
+)
+from system_explorer.federation import (
+    export_system_map,
+    import_system_map,
+    register_federation,
+)
 from system_explorer.manifests import load_manifest, validate_manifest
 from system_explorer.maps import graph_view, render_ascii, render_html, render_mermaid
 from system_explorer.proposals import propose
 from system_explorer.registry import find_documents, register_path
+from system_explorer.resources import resource_report
 from system_explorer.scanner import scan
 from system_explorer.specs import import_spec
 from system_explorer.store import Store
@@ -43,6 +56,21 @@ class ExplorerTest(unittest.TestCase):
                     "provides": ["system.map"],
                     "entrypoints": {"cli": "module-a"},
                     "surfaces": ["cli"],
+                    "encapsulation": "process-boundary",
+                    "outputs": [
+                        {
+                            "name": "system-map.json",
+                            "purpose": "portable map",
+                            "consumers": ["control-center"],
+                        }
+                    ],
+                    "handoffs": [
+                        {
+                            "name": "mapping receipt",
+                            "target": "system-gap-master",
+                        }
+                    ],
+                    "alternative_paths": [{"target": "fallback-mapper"}],
                     "status": "active",
                 }
             ),
@@ -91,6 +119,7 @@ class ExplorerTest(unittest.TestCase):
             }
             control = graph_view(store, "control")
             tree = graph_view(store, "tree")
+            paths = graph_view(store, "function-paths")
         self.assertEqual(stats["errors"], 0)
         self.assertIn(("carrier", "module"), kinds)
         self.assertIn(("carrier", "skill"), kinds)
@@ -110,6 +139,12 @@ class ExplorerTest(unittest.TestCase):
                 for node in tree["nodes"]
             )
         )
+        path_relations = {edge["relation"] for edge in paths["edges"]}
+        self.assertIn("produces", path_relations)
+        self.assertIn("delivers_to", path_relations)
+        self.assertIn("exposes_interface", path_relations)
+        self.assertIn("hands_off", path_relations)
+        self.assertIn("alternative_to", path_relations)
 
     def test_interactive_document_registration_and_lookup(self) -> None:
         policy = self.root / "SPECIAL-RULES.md"
@@ -131,6 +166,215 @@ class ExplorerTest(unittest.TestCase):
                 and edge["metadata"].get("resolved")
                 for edge in control["edges"]
             )
+        )
+
+    def test_crystallized_resource_separates_installation_control_and_savings(
+        self,
+    ) -> None:
+        script = self.root / "bridge-tool.py"
+        script.write_text("print('bridge')\n", encoding="utf-8")
+        config_path = self.root / "resources.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.config.v1",
+                    "database": str(self.db),
+                    "roots": [],
+                    "system": {"id": "WORKSTATION", "name": "Workstation"},
+                    "software_resources": [
+                        {
+                            "id": "bridge-tool",
+                            "name": "Bridge tool",
+                            "kind": "script",
+                            "origin": "llm-generated",
+                            "path": str(script),
+                            "generated_by": "kimi",
+                            "interfaces": [
+                                {
+                                    "method": "mcp",
+                                    "entrypoint": "bridge-tool",
+                                    "actors": [
+                                        {
+                                            "id": "codex",
+                                            "name": "Codex",
+                                            "provider": "openai",
+                                        }
+                                    ],
+                                },
+                                {
+                                    "method": "cli",
+                                    "entrypoint": "python bridge-tool.py",
+                                },
+                            ],
+                            "functions": [
+                                {
+                                    "id": "bridge-missing-interface",
+                                    "name": "Bridge a missing interface",
+                                }
+                            ],
+                            "token_saving": {
+                                "status": "declared",
+                                "level": "medium",
+                            },
+                        }
+                    ],
+                    "software_discovery": {
+                        "commands": [
+                            {
+                                "id": "definitely-missing-tool",
+                                "command": "system-explorer-definitely-missing",
+                            }
+                        ]
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = load_config(config_path)
+        with Store(self.db) as store:
+            stats = scan(config, store)
+            report = resource_report(store)
+            graph = graph_view(store, "resources", system_id="WORKSTATION")
+        resource = report["resources"][0]["resource"]
+        self.assertTrue(resource["metadata"]["installed"])
+        self.assertEqual(resource["metadata"]["llm_readiness"], "native")
+        self.assertEqual(resource["metadata"]["llm_ready_symbol"], "◆")
+        self.assertEqual(resource["metadata"]["flexibility"], "medium")
+        self.assertEqual(
+            resource["metadata"]["token_saving"]["status"], "declared"
+        )
+        self.assertEqual(stats["software_resources"], 2)
+        self.assertTrue(
+            any(
+                row["resource"]["metadata"]["installed"] is False
+                for row in report["resources"]
+            )
+        )
+        relations = {edge["relation"] for edge in graph["edges"]}
+        self.assertIn("exposes_interface", relations)
+        self.assertIn("controls_via", relations)
+        self.assertIn("carries", relations)
+        self.assertIn("generated_by", relations)
+        self.assertEqual(graph["report"]["summary"]["native"], 1)
+
+    def test_registry_database_dataflow_cloud_and_credentials_graph(self) -> None:
+        data = self.root / "data"
+        data.mkdir()
+        registry = data / "service-registry.json"
+        registry.write_text(
+            json.dumps({"items": [{"id": "alpha"}, {"id": "beta"}]}),
+            encoding="utf-8",
+        )
+        source_db = data / "inventory.sqlite"
+        db = sqlite3.connect(source_db)
+        db.execute("CREATE TABLE components (id TEXT, status TEXT)")
+        db.commit()
+        db.close()
+        config_path = self.root / "explorer.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.config.v1",
+                    "database": "./state/map.db",
+                    "roots": [
+                        {
+                            "id": "data-system",
+                            "path": "./data",
+                            "max_depth": 3,
+                            "include": ["*.json", "*.sqlite"],
+                            "exclude_dirs": [],
+                        }
+                    ],
+                    "registry_documents": ["*registry*"],
+                    "registries": [
+                        {
+                            "path": "./data/service-registry.json",
+                            "purpose": "Locate services",
+                            "writers_actual": ["registry-builder"],
+                            "readers_desired": ["router"],
+                            "entrypoints": {"read": "service-registry.json"},
+                        }
+                    ],
+                    "databases": [
+                        {
+                            "path": "./data/inventory.sqlite",
+                            "name": "Inventory",
+                            "purpose": "Track components",
+                            "fill_purpose": "Store discovered component state",
+                            "retrieval_purpose": "Resolve available components",
+                            "cloud_ready": True,
+                            "cloud_provider": "cloud-a",
+                            "transfer": "encrypted-snapshot",
+                            "credential_ref": "cloud-a-token",
+                            "writers_actual": ["inventory-writer"],
+                            "writers_desired": ["inventory-writer-v2"],
+                            "readers_actual": ["inventory-ui"],
+                            "readers_desired": ["control-center"],
+                            "entrypoints": {"sqlite": "inventory.sqlite"},
+                            "tables": [
+                                {
+                                    "name": "components",
+                                    "fill_purpose": "Component state",
+                                    "retrieval_purpose": "Availability lookup",
+                                }
+                            ],
+                        }
+                    ],
+                    "credentials": [
+                        {
+                            "id": "cloud-a-token",
+                            "provider": "cloud-a",
+                            "storage": "os-keyring",
+                            "location_hint": "logical-reference-only",
+                        }
+                    ],
+                    "cloud": {
+                        "providers": [
+                            {
+                                "id": "cloud-a",
+                                "name": "Cloud A",
+                                "kind": "object-storage",
+                            }
+                        ],
+                        "paths": [
+                            {
+                                "path": "./data",
+                                "mode": "indirect-mirror",
+                                "provider": "cloud-a",
+                                "transfer": "encrypted-snapshot",
+                                "credential_ref": "cloud-a-token",
+                            }
+                        ],
+                    },
+                    "privacy": {"sensitivity": "test"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = load_config(config_path)
+        with Store(database_path(config)) as store:
+            stats = scan(config, store)
+            graph = graph_view(store, "data")
+            node_types = {node["node_type"] for node in graph["nodes"]}
+            edges = graph["edges"]
+            credential = store.nodes("credential_reference")[0]
+            directories = store.nodes("directory")
+        self.assertEqual(stats["errors"], 0)
+        self.assertIn("registry", node_types)
+        self.assertIn("registry_collection", node_types)
+        self.assertIn("database", node_types)
+        self.assertIn("database_table", node_types)
+        self.assertIn("cloud_provider", node_types)
+        self.assertIn("credential_reference", node_types)
+        self.assertTrue(
+            any(edge["relation"] == "fills" and edge["mode"] == "desired" for edge in edges)
+        )
+        self.assertTrue(any(edge["relation"] == "reads" for edge in edges))
+        self.assertTrue(any(edge["relation"] == "mirrors_to" for edge in edges))
+        self.assertTrue(any(edge["relation"] == "uses_credential" for edge in edges))
+        self.assertFalse(credential["metadata"]["value_retained"])
+        self.assertTrue(
+            any(node["metadata"].get("cloud_symbol") == "⇄☁" for node in directories)
         )
 
     def test_coverage_full_partial_uncovered_negative_and_overlap(self) -> None:
@@ -252,10 +496,12 @@ class ExplorerTest(unittest.TestCase):
             store.add_edge(carrier, "carries", function, mode="actual", status="partial")
             store.commit()
             graph = graph_view(store, "coverage")
+            paths = graph_view(store, "function-paths")
             proposal = propose("Verbessere Knowledge search", store)
         self.assertIn("SYSTEM MAP", render_ascii(graph))
         self.assertIn("flowchart LR", render_mermaid(graph))
         self.assertIn("<!doctype html>", render_html(graph))
+        self.assertTrue(any(edge["relation"] == "carries" for edge in paths["edges"]))
         self.assertFalse(proposal["prompt_retained"])
         self.assertFalse(proposal["apply"]["authorized"])
         self.assertNotIn("Verbessere Knowledge search", json.dumps(proposal))
@@ -388,9 +634,287 @@ class ExplorerTest(unittest.TestCase):
         self.assertNotIn("private kimi prompt", serialized)
         self.assertNotIn("private kimi result", serialized)
 
+    def test_private_server_public_surface_is_negative_and_cost_is_compared(self) -> None:
+        config_path = self.root / "server-explorer.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.config.v1",
+                    "database": str(self.db),
+                    "roots": [],
+                    "provider_sources": [
+                        {
+                            "provider": "example-cloud",
+                            "document_type": "pricing",
+                            "url": "https://example.invalid/pricing",
+                            "accessed_at": "2026-07-29",
+                        }
+                    ],
+                    "servers": [
+                        {
+                            "id": "private-node",
+                            "name": "Private Node",
+                            "purpose": "private-server",
+                            "location": "cloud",
+                            "provider": "example-cloud",
+                            "surfaces": [
+                                {
+                                    "id": "ssh",
+                                    "url": "ssh://example.invalid:22",
+                                    "reachable": True,
+                                    "desired_public": False,
+                                    "vantage": "external",
+                                    "probe_adapter": "api-prober",
+                                }
+                            ],
+                            "controls": {"firewall_default_deny": True},
+                            "monthly_cost": {
+                                "amount": 12,
+                                "currency": "EUR",
+                                "source": "provider-price-page",
+                                "effective_at": "2026-07-29",
+                                "verified": True,
+                            },
+                            "local_alternative": {
+                                "one_time_cost": 180,
+                                "amortization_months": 36,
+                                "monthly_cost": 2,
+                            },
+                        }
+                    ],
+                    "privacy": {"sensitivity": "test"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = load_config(config_path)
+        with Store(self.db) as store:
+            scan(config, store)
+            report = deployment_report(store)
+            graph = graph_view(store, "deployment", system_id="current-system")
+        row = report["servers"][0]
+        self.assertEqual(row["verdict"], "negative")
+        self.assertEqual(row["cost_comparison"]["lower_cost"], "local")
+        self.assertTrue(row["api_prober_plan"]["authorized_targets_only"])
+        self.assertTrue(any(edge["relation"] == "probed_by" for edge in graph["edges"]))
+        self.assertTrue(
+            any(node["node_type"] == "provider_document" for node in graph["nodes"])
+        )
+        self.assertTrue(any(node["node_type"] == "cost_offer" for node in graph["nodes"]))
+
+    def test_part_open_server_controls_and_module_purpose(self) -> None:
+        config_path = self.root / "purpose-explorer.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.config.v1",
+                    "database": str(self.db),
+                    "roots": [],
+                    "servers": [
+                        {
+                            "id": "service",
+                            "purpose": "part-open-service",
+                            "surfaces": [
+                                {
+                                    "id": "api",
+                                    "url": "https://example.invalid/api",
+                                    "desired_public": True,
+                                }
+                            ],
+                            "controls": {
+                                "tls": True,
+                                "authentication": True,
+                                "firewall_default_deny": True,
+                                "rate_limit": False,
+                                "logging": True,
+                                "secret_storage": True,
+                            },
+                        }
+                    ],
+                    "purposes": [
+                        {
+                            "id": "maps-systems",
+                            "target": "carrier:repo:explorer",
+                            "target_name": "Explorer repo",
+                            "criteria": [
+                                {"function": "scan", "name": "Scan systems"},
+                                {"function": "render", "name": "Render maps"},
+                            ],
+                        }
+                    ],
+                    "privacy": {"sensitivity": "test"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = load_config(config_path)
+        with Store(self.db) as store:
+            scan(config, store)
+            store.add_edge(
+                "carrier:repo:explorer",
+                "carries",
+                "function:scan",
+                mode="actual",
+                status="full",
+            )
+            store.add_edge(
+                "carrier:repo:explorer",
+                "carries",
+                "function:render",
+                mode="actual",
+                status="partial",
+            )
+            store.commit()
+            servers = deployment_report(store)
+            purposes = purpose_report(store)
+        self.assertEqual(servers["servers"][0]["verdict"], "partial")
+        self.assertEqual(purposes["purposes"][0]["verdict"], "partial")
+
+    def test_federated_maps_keep_origins_levels_and_cross_system_routes(self) -> None:
+        workstation_config = {
+            "system": {
+                "id": "WORKSTATION",
+                "name": "Workstation",
+                "kind": "workstation",
+                "level": "own-system",
+            },
+            "_base": str(self.root),
+            "connections": [
+                {
+                    "source": "WORKSTATION",
+                    "target": "HETZNER",
+                    "transport": "ssh+tailscale",
+                    "status": "observed",
+                }
+            ],
+            "handoffs": [
+                {
+                    "source": "WORKSTATION",
+                    "target": "LAPTOP",
+                    "via": "system-gap-master",
+                    "route": ".SYNC",
+                    "purpose": "close remote gap",
+                }
+            ],
+        }
+        laptop_map_path = self.root / "system-map-LAPTOP.json"
+        with Store(self.db) as store:
+            node = store.add_node("actor", "Codex", node_id="actor:codex")
+            session = store.add_node("session", "session-1")
+            store.add_edge(node, "participates_in", session, status="observed")
+            register_federation(workstation_config, store)
+            exported = export_system_map(
+                store,
+                system=workstation_config["system"],
+                view="llm-traces",
+            )
+        laptop_export = {
+            **exported,
+            "system": {
+                "id": "LAPTOP",
+                "name": "Laptop",
+                "kind": "laptop",
+                "level": "remote-system",
+            },
+        }
+        laptop_map_path.write_text(json.dumps(laptop_export), encoding="utf-8")
+        other_db = self.root / "federated.db"
+        with Store(other_db) as store:
+            imported = import_system_map(laptop_map_path, store)
+            register_federation(workstation_config, store)
+            all_graph = graph_view(store, "federation")
+            laptop_traces = graph_view(store, "llm-traces", system_id="LAPTOP")
+        self.assertEqual(imported["system"], "LAPTOP")
+        self.assertTrue(any(level["id"] == "LAPTOP" for level in all_graph["levels"]))
+        self.assertTrue(
+            any(edge["relation"] == "connects_via" for edge in all_graph["edges"])
+        )
+        self.assertTrue(
+            any(edge["relation"] == "hands_off" for edge in all_graph["edges"])
+        )
+        self.assertTrue(laptop_traces["nodes"])
+        self.assertTrue(
+            all(
+                node["metadata"].get("origin_system") == "LAPTOP"
+                for node in laptop_traces["nodes"]
+            )
+        )
+
+    def test_apiprober_export_registers_referenced_endpoint_evidence(self) -> None:
+        export = self.root / "apiprober-export.json"
+        export.write_text(
+            json.dumps(
+                {
+                    "endpoints": [
+                        {"path": "/health", "method": "GET", "status_code": 200}
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        with Store(self.db) as store:
+            stats = import_apiprober_export(export, store, server_id="api")
+            serialized = json.dumps(
+                {"nodes": store.nodes(), "evidence": store.evidence()}
+            )
+        self.assertEqual(stats["endpoints"], 1)
+        self.assertIn("/health", serialized)
+        self.assertNotIn("response_body", serialized)
+
+    def test_provider_refresh_rejects_non_http_source_before_fetch(self) -> None:
+        with Store(self.db) as store:
+            with self.assertRaises(ValueError):
+                refresh_provider_sources(
+                    {
+                        "provider_sources": [
+                            {
+                                "provider": "local",
+                                "url": "file:///etc/provider-pricing.txt",
+                            }
+                        ]
+                    },
+                    store,
+                )
+
+    def test_missing_configured_map_is_reported_as_scan_error(self) -> None:
+        config_path = self.root / "missing-map.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.config.v1",
+                    "database": str(self.db),
+                    "roots": [],
+                    "system": {"id": "HOST", "name": "Host"},
+                    "map_imports": ["./does-not-exist.json"],
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = load_config(config_path)
+        with Store(self.db) as store:
+            stats = scan(config, store)
+        self.assertEqual(stats["map_imports"], 0)
+        self.assertEqual(stats["map_import_errors"], 1)
+        self.assertEqual(stats["errors"], 1)
+
     def test_project_manifest_validates(self) -> None:
         path = Path(__file__).resolve().parents[1] / "ellmos-module.v2.json"
         self.assertEqual(validate_manifest(load_manifest(path)), [])
+
+    def test_web_manifest_assets_and_portable_map_schema_exist(self) -> None:
+        project = Path(__file__).resolve().parents[1]
+        web = project / "src" / "system_explorer" / "web"
+        manifest = json.loads((web / "manifest.json").read_text(encoding="utf-8"))
+        for item in manifest["icons"]:
+            self.assertTrue((web / item["src"]).is_file())
+        schema = json.loads(
+            (project / "schemas" / "system-explorer.map.v1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            schema["properties"]["schema"]["const"], "system-explorer.map.v1"
+        )
 
 
 if __name__ == "__main__":

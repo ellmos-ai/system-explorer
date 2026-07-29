@@ -16,4 +16,6 @@ description: |
 - Architektur: evidenzgestützte Soll-/Ist-/Deckungskarten
 - Mutationen am Zielsystem: absichtlich nicht implementiert
 - Datenspeicherung: lokale SQLite-Referenzen, keine rohen Transcripttexte
+- Randressourcen: installierte Software mit Funktionen, LLM-Steuerwegen,
+  Readiness-Symbolen und getrenntem Tokenersparnisstatus
 - Nächster Freigabepunkt: Test-, UI- und Mirror-Readback

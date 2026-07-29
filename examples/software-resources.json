@@ -1,0 +1,66 @@
+{
+  "schema": "system-explorer.config.v1",
+  "database": "./software-resources.db",
+  "roots": [],
+  "system": {
+    "id": "WORKSTATION",
+    "name": "Workstation",
+    "kind": "workstation",
+    "level": "own-system"
+  },
+  "software_resources": [
+    {
+      "id": "git",
+      "name": "Git",
+      "kind": "external-program",
+      "origin": "third-party",
+      "command": "git",
+      "crystallization": "high",
+      "flexibility": "low",
+      "interfaces": [
+        {
+          "method": "cli",
+          "entrypoint": "git",
+          "actors": [
+            {
+              "id": "codex",
+              "name": "Codex",
+              "provider": "openai"
+            }
+          ]
+        }
+      ],
+      "functions": [
+        {
+          "id": "version-control",
+          "name": "Version control"
+        }
+      ],
+      "token_saving": {
+        "status": "declared",
+        "level": "medium",
+        "basis": "standardized version-control operations"
+      }
+    }
+  ],
+  "software_discovery": {
+    "commands": [
+      {
+        "id": "python-runtime",
+        "name": "Python runtime",
+        "command": "python",
+        "functions": [
+          {
+            "id": "python-execution",
+            "name": "Execute Python programs"
+          }
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "store_raw_text": false,
+    "store_prompt_text": false,
+    "sensitivity": "user-local"
+  }
+}

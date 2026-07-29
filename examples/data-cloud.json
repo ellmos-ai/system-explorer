@@ -1,0 +1,77 @@
+{
+  "schema": "system-explorer.config.v1",
+  "database": "./.state/data-cloud-map.db",
+  "roots": [],
+  "transcripts": [],
+  "desired_sources": [],
+  "control_documents": [],
+  "entry_directories": [],
+  "registry_documents": ["*registry*", "*catalog*.json", "*inventory*.json"],
+  "registries": [
+    {
+      "path": "./data/component-registry.json",
+      "name": "Component Registry",
+      "kind": "json",
+      "purpose": "Find available components",
+      "writers_actual": ["catalog-builder"],
+      "writers_desired": ["catalog-builder"],
+      "readers_actual": ["control-center"],
+      "readers_desired": ["system-explorer"],
+      "entrypoints": {"read": "component-registry.json"}
+    }
+  ],
+  "databases": [
+    {
+      "path": "./data/evidence.db",
+      "name": "Evidence Registry",
+      "kind": "sqlite",
+      "purpose": "Reference evidence without copying source content",
+      "fill_purpose": "Store hashes, locators and normalized relationships",
+      "retrieval_purpose": "Build actual, desired and diff maps",
+      "cloud_ready": false,
+      "cloud_provider": "example-cloud",
+      "transfer": "encrypted-backup-adapter",
+      "credential_ref": "example-cloud-token",
+      "tables": [
+        {
+          "name": "evidence",
+          "fill_purpose": "Register evidence references",
+          "retrieval_purpose": "Resolve provenance"
+        }
+      ],
+      "writers_actual": ["system-explorer"],
+      "writers_desired": ["system-explorer"],
+      "readers_actual": ["system-explorer-ui"],
+      "readers_desired": ["control-center"],
+      "entrypoints": {"sqlite": "~/.system-explorer/evidence.db"}
+    }
+  ],
+  "credentials": [
+    {
+      "id": "example-cloud-token",
+      "provider": "example-cloud",
+      "storage": "os-keyring",
+      "location_hint": "provider-scoped secret reference"
+    }
+  ],
+  "cloud": {
+    "providers": [
+      {"id": "example-cloud", "name": "Example Cloud", "kind": "object-storage"}
+    ],
+    "paths": [
+      {
+        "path": "./data",
+        "name": "Data directory",
+        "mode": "indirect-mirror",
+        "provider": "example-cloud",
+        "transfer": "encrypted-backup-adapter",
+        "credential_ref": "example-cloud-token"
+      }
+    ]
+  },
+  "privacy": {
+    "store_raw_text": false,
+    "store_prompt_text": false,
+    "sensitivity": "sensitive"
+  }
+}

@@ -18,10 +18,35 @@ wird durch welchen Träger mit welchem Beleg getragen?“.
   Steuerdateien und Eintrittsordner typisieren
 - Verzeichnisbäume, Dokumentpointer und Steuerabhängigkeiten als Graph
 - Dokumente automatisch sowie interaktiv registrieren und wiederfinden
+- JSON-Registries und `*registry*`-Dateien erkennen
+- Datenbanken mit Tabellen, Füll-/Abrufzweck, Einstiegen sowie Ist-/Soll-
+  Writern und -Readern kartieren
+- lokale, direkt cloudverbundene und indirekt gespiegelte Pfade,
+  Mappingpunkte, Anbieter, Transferwege und Credential-Referenzen zeigen
 - Provider-Sessions ohne Inhaltskopie auswerten
 - LLM-lesbare JSON-/ASCII-/Mermaid-Karten und grafische UI
 - promptgestützte Pläne ohne direkte Mutation
 - empirische Trampelpfade und günstige Schwärme vorbereiten
+- Privatserverzweck gegen extern belegte öffentliche Nichterreichbarkeit
+  prüfen; teiloffene Server gegen Schutzkontrollen prüfen
+- Kosten-/Nutzenvergleich Cloudserver gegen lokale Zweckerfüllung mit
+  datierten Anbieterquellen
+- Zweckdeckung einzelner Module, Repositories und Server über Kriterien
+- ApiProber als optionalen passiven, autorisierten Evidenzadapter einbinden
+- portable Karten pro System exportieren, fremde Karten kollisionsfrei
+  importieren und als Gesamtebene analysieren
+- identische Steuerungs-, Funktions-, Deckungs-, Daten-, Deployment-,
+  LLM-Spuren- und LLM-Handlungsansichten auf jeder Systemebene
+- Systemgrenzen und direkte SSH-/Tailscale-Verbindungen sowie asynchrone
+  `.SYNC`-/`system-gap-master`-Übergaben modellieren
+
+- Eintrittspunkte, Interfaces, Outputs, Konsumenten, Handoffs,
+  Alternativpfade und Kapselungsdeklarationen aus Manifesten kartieren
+- installierte Fremdsoftware, Module, Repositories, Skripte und Skills als
+  kristallisierte Randressourcen mit Funktionen und LLM-Steuerwegen erfassen
+- LLM-Bereitschaft sichtbar typisieren und von bloßer Installation trennen
+- Standardisierungs-, Flexibilitäts- und Tokenersparnispotenzial getrennt
+  führen; Tokenersparnis erst nach empirischem Beleg als beobachtet bewerten
 
 ## Nichtziel im MVP
 

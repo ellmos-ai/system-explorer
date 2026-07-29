@@ -22,6 +22,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "*.toml",
                 "*.yaml",
                 "*.yml",
+                "*.db",
+                "*.sqlite",
+                "*.sqlite3",
                 "pyproject.toml",
             ],
             "exclude_dirs": [
@@ -49,6 +52,32 @@ DEFAULT_CONFIG: dict[str, Any] = {
         {"pattern": "*POLICY*.md", "role": "policy", "entry": False},
     ],
     "entry_directories": [],
+    "registry_documents": [
+        "*registry*",
+        "*catalog*.json",
+        "*inventory*.json",
+    ],
+    "registries": [],
+    "databases": [],
+    "servers": [],
+    "purposes": [],
+    "provider_sources": [],
+    "software_resources": [],
+    "software_discovery": {"commands": []},
+    "system": {
+        "id": "current-system",
+        "name": "Current system",
+        "kind": "workstation",
+        "level": "own-system",
+    },
+    "map_imports": [],
+    "connections": [],
+    "handoffs": [],
+    "credentials": [],
+    "cloud": {
+        "providers": [],
+        "paths": [],
+    },
     "privacy": {
         "store_raw_text": False,
         "store_prompt_text": False,
@@ -63,9 +92,14 @@ def write_default_config(path: Path) -> None:
 
 
 def load_config(path: Path) -> dict[str, Any]:
-    config = json.loads(path.read_text(encoding="utf-8"))
-    if config.get("schema") != "system-explorer.config.v1":
+    provided = json.loads(path.read_text(encoding="utf-8"))
+    if provided.get("schema") != "system-explorer.config.v1":
         raise ValueError("Unsupported config schema")
+    config = json.loads(json.dumps(DEFAULT_CONFIG))
+    config.update(provided)
+    for key in ("privacy", "cloud", "system"):
+        if isinstance(DEFAULT_CONFIG.get(key), dict) and isinstance(provided.get(key), dict):
+            config[key] = {**DEFAULT_CONFIG[key], **provided[key]}
     config["_config_path"] = str(path.resolve())
     config["_base"] = str(path.resolve().parent)
     return config

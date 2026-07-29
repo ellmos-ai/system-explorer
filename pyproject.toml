@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Evidence-backed system maps for functions, carriers, entry points, and architecture drift."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Lukas Geiger" }]
 dependencies = []
 
@@ -22,7 +22,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-system_explorer = ["web/*.html"]
+system_explorer = ["web/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

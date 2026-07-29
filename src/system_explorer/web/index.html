@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="de">
 <head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
+  <link rel="manifest" href="manifest.json">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>system-explorer</title>
@@ -28,7 +32,8 @@
 <main>
   <section class="canvas">
     <div class="toolbar">
-      <label>Ansicht <select id="view"><option>coverage</option><option>control</option><option>tree</option><option>diff</option><option>actual</option><option>desired</option></select></label>
+      <label>Ansicht <select id="view"><option>coverage</option><option>function-paths</option><option>resources</option><option>control</option><option>tree</option><option>data</option><option>deployment</option><option>purpose</option><option>llm-traces</option><option>llm-actions</option><option>federation</option><option>diff</option><option>actual</option><option>desired</option></select></label>
+      <label>Systemebene <select id="system"><option value="all">Alle Systeme</option></select></label>
       <button id="reload">Neu laden</button>
       <div class="legend">
         <span><i class="dot" style="background:#2f865e"></i>voll</span><span><i class="dot" style="background:#b88a2e"></i>unterdeckt</span>
@@ -58,27 +63,57 @@
 <script>
 const $=id=>document.getElementById(id);
 async function load(){
-  const g=await fetch('/api/map?view='+encodeURIComponent($('view').value)).then(r=>r.json());
+  const g=await fetch('/api/map?view='+encodeURIComponent($('view').value)+'&system='+encodeURIComponent($('system').value)).then(r=>r.json());
   $('carriers').replaceChildren();$('functions').replaceChildren();
   const nodes=Object.fromEntries((g.nodes||[]).map(n=>[n.id,n]));
-  const structural=['control','tree'].includes($('view').value);
-  $('left-title').textContent=structural?'Steuer-/Einstiegsknoten':'Funktionsträger';
-  $('right-title').textContent=structural?'Ziele und Abhängigkeiten':'Funktionen im Gesamtsystem';
+  const view=$('view').value,structural=['control','tree','data','deployment','purpose','federation','llm-traces','llm-actions','function-paths','resources'].includes(view);
+  const titles={
+    data:['Datenquellen und Akteure','Tabellen, Cloud und Credentials'],
+    deployment:['Server, Anbieter und Kosten','Oberflächen, Schutz und Belege'],
+    purpose:['Funktionsträger','Zwecke und Kriterien'],
+    federation:['Systemebenen','Verbindungen, Übergaben und Kartenknoten'],
+    'llm-traces':['LLMs und Sessions','Genutzte Tools, Entrypoints und Artefakte'],
+    'llm-actions':['LLMs und erreichbare Systeme','CLI-, API-, Tool- und Übergabewege'],
+    'function-paths':['Entrypoints, Akteure und Träger','Funktionen, Outputs und Übergaben'],
+    resources:['Kristallisierte Randressourcen','Funktionen und LLM-Schnittstellen'],
+    control:['Steuer-/Einstiegsknoten','Ziele und Abhängigkeiten'],
+    tree:['Systeme und Verzeichnisse','Dokumente und Einstiegspunkte']
+  };
+  const laneTitles=titles[view]||['Funktionsträger','Funktionen im Gesamtsystem'];
+  $('left-title').textContent=laneTitles[0];$('right-title').textContent=laneTitles[1];
   for(const n of g.nodes||[]){
     const relations=(g.edges||[]).filter(e=>e.source_id===n.id||e.target_id===n.id);
     const actual=relations.filter(e=>e.source_id===n.id&&e.mode==='actual');
     const worst=actual.some(e=>['negative','contradicted'].includes(e.status))?'negative':actual.some(e=>e.status==='partial')?'partial':'';
-    const el=document.createElement('div'),v=n.metadata?.coverage_verdict||worst,over=n.metadata?.overlap?' overlap':'';
-    el.className='node '+n.node_type+' '+v+over; el.textContent=n.name;
-    if(n.node_type!=='function'&&relations.length){const sub=document.createElement('small');sub.textContent=relations.map(e=>`${e.mode==='desired'?'SOLL':e.relation.toUpperCase()} → ${nodes[e.target_id]?.name||e.target_id} [${e.status}]`).join(' · ');el.appendChild(sub)}
+    const el=document.createElement('div'),v=n.metadata?.coverage_verdict||n.metadata?.purpose_verdict||worst,over=n.metadata?.overlap?' overlap':'';
+    el.className='node '+n.node_type+' '+v+over;
+    const symbol=n.metadata?.cloud_symbol||n.metadata?.llm_ready_symbol||'';
+    el.textContent=(symbol?`${symbol} `:'')+n.name;
+    if(n.node_type!=='function'&&relations.length){const sub=document.createElement('small');sub.textContent=relations.map(e=>{const outgoing=e.source_id===n.id,other=outgoing?e.target_id:e.source_id;return `${e.mode==='desired'?'SOLL':'IST'} ${e.relation.toUpperCase()} ${outgoing?'→':'←'} ${nodes[other]?.name||other} [${e.status}]`}).join(' · ');el.appendChild(sub)}
     el.title=n.id;el.onclick=()=>show({node:n,relations});
-    const leftTypes=['carrier','control_document','entrypoint','directory','system'];
+    const leftByView={
+      data:['registry','database','data_actor','entrypoint'],
+      deployment:['server','cloud_provider','cost_offer'],
+      purpose:['carrier','server','repository'],
+      federation:['system_instance'],
+      'llm-traces':['actor','session'],
+      'llm-actions':['actor','system_instance'],
+      'function-paths':['entrypoint','actor','carrier','system_instance'],
+      resources:['software_resource','carrier','actor'],
+      control:['system','directory','control_document','entrypoint'],
+      tree:['system','directory']
+    };
+    const leftTypes=leftByView[view]||['carrier','control_document','entrypoint','directory','system'];
     ((structural&&!leftTypes.includes(n.node_type))||(!structural&&n.node_type==='function')?$('functions'):$('carriers')).appendChild(el);
   }
   $('count').textContent=`${g.nodes?.length||0} Knoten · ${g.edges?.length||0} Beziehungen`;
 }
 function show(v){$('details').textContent=JSON.stringify(v,null,2)}
-$('reload').onclick=load;$('view').onchange=load;
+$('reload').onclick=load;$('view').onchange=load;$('system').onchange=load;
+async function loadLevels(){const g=await fetch('/api/map?view=federation').then(r=>r.json());
+ const s=$('system'),current=s.value;for(const level of (g.levels||[])){if([...s.options].some(o=>o.value===level.id))continue;
+  const o=document.createElement('option');o.value=level.id;o.textContent=level.label||level.id;s.appendChild(o)}s.value=current;}
+loadLevels();
 $('propose').onclick=async()=>{const r=await fetch('/api/proposals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:$('prompt').value})});$('proposal').textContent=JSON.stringify(await r.json(),null,2)};
 $('register').onclick=async()=>{const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:$('doc-path').value,role:$('doc-role').value,entry:$('doc-role').value==='entry'})});$('registration').textContent=JSON.stringify(await r.json(),null,2);if(r.ok)load()};
 load();

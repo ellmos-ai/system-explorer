@@ -1,0 +1,104 @@
+{
+  "schema": "system-explorer.config.v1",
+  "database": "./deployment-federation.db",
+  "system": {
+    "id": "WORKSTATION",
+    "name": "Workstation",
+    "kind": "workstation",
+    "level": "own-system"
+  },
+  "roots": [],
+  "map_imports": [],
+  "connections": [
+    {
+      "source": "WORKSTATION",
+      "target": "HETZNER",
+      "transport": "ssh+tailscale",
+      "status": "declared"
+    }
+  ],
+  "provider_sources": [
+    {
+      "provider": "hetzner",
+      "name": "Cloud pricing",
+      "document_type": "pricing",
+      "url": "https://www.hetzner.com/cloud/",
+      "accessed_at": "2026-07-29"
+    },
+    {
+      "provider": "hetzner",
+      "name": "Cloud firewall overview",
+      "document_type": "security",
+      "url": "https://docs.hetzner.com/cloud/firewalls/overview/",
+      "accessed_at": "2026-07-29"
+    }
+  ],
+  "handoffs": [
+    {
+      "source": "WORKSTATION",
+      "target": "LAPTOP",
+      "via": "system-gap-master",
+      "route": ".SYNC",
+      "purpose": "Close an evidenced system gap"
+    }
+  ],
+  "servers": [
+    {
+      "id": "HETZNER",
+      "name": "Private cloud node",
+      "purpose": "private-server",
+      "location": "cloud",
+      "provider": "hetzner",
+      "surfaces": [
+        {
+          "id": "ssh",
+          "url": "ssh://server.example:22",
+          "desired_public": false,
+          "reachable": false,
+          "vantage": "external"
+        }
+      ],
+      "controls": {
+        "tls": true,
+        "authentication": true,
+        "firewall_default_deny": true,
+        "rate_limit": true,
+        "logging": true,
+        "secret_storage": true
+      },
+      "monthly_cost": {
+        "amount": 0,
+        "currency": "EUR",
+        "source": "refresh-required",
+        "effective_at": "2026-07-29",
+        "verified": false
+      },
+      "local_alternative": {
+        "one_time_cost": 240,
+        "amortization_months": 36,
+        "energy_kwh_month": 8,
+        "energy_price_per_kwh": 0.35,
+        "admin_hours_month": 1,
+        "admin_hour_rate": 20
+      }
+    }
+  ],
+  "purposes": [
+    {
+      "id": "system-mapping",
+      "target": "carrier:system-explorer",
+      "target_name": "system-explorer",
+      "target_kind": "repository",
+      "criteria": [
+        {"function": "scan-system", "name": "Scan a bounded system"},
+        {"function": "export-map", "name": "Export a portable system map"},
+        {"function": "compare-coverage", "name": "Compare desired and actual coverage"}
+      ]
+    }
+  ],
+  "privacy": {
+    "store_raw_text": false,
+    "store_prompt_text": false,
+    "sensitivity": "user-local"
+  }
+}

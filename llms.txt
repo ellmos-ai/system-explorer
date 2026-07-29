@@ -6,3 +6,10 @@ Safety boundary: proposals are read-only and never authorize target mutation.
 Key command: system-explorer --help
 Architecture: ARCHITECTURE.md
 Evidence rules: docs/EVIDENCE-MODEL.md
+Data and cloud rules: docs/DATA-CLOUD-MODEL.md
+Deployment and purpose rules: docs/DEPLOYMENT-PURPOSE-MODEL.md
+Federated map contract: docs/FEDERATED-MAPS.md
+Time-bound provider baseline: docs/CLOUD-SERVER-BASELINE_2026-07-29.md
+Crystallized software resources: docs/CRYSTALLIZED-RESOURCES.md
+Portable map: system-explorer map-export --config <config> --view all --output <map.json>
+Cross-system analysis: system-explorer map --config <config> --view <view> [--system <id>]

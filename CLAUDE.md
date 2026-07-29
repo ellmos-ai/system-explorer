@@ -5,7 +5,7 @@ profile: "FULL"
 version: 0.1.0
 created: "2026-07-29"
 updated: "2026-07-29"
-reason_last_change: "MVP, Steuerdokumentgraph und Releasevertrag vervollständigt"
+reason_last_change: "Kristallisierte Software-Randressourcen ergänzt"
 last_verified: "2026-07-29"
 author: "Lukas Geiger"
 anthropic_compatible: true
@@ -128,6 +128,11 @@ Deklaration ist kein Nutzungsbeleg. Transcriptinhalte bleiben an ihrer Quelle;
 Explorer registriert nur URI, Hash, Locator und normalisierte Merkmale.
 Steuertextdateien bilden einen eigenen Graph aus Verzeichnis-, Einstiegs-,
 Pointer- und Referenzbeziehungen.
+
+Installierte Fremdprogramme, Module, Repositories und Skripte werden als
+kristallisierte Randressourcen modelliert. Installation, LLM-Steuerbarkeit,
+Funktionsdeckung, Flexibilität und empirisch belegte Tokenersparnis sind
+getrennte Aussagen; siehe `docs/CRYSTALLIZED-RESOURCES.md`.
 
 ## Umgebungs-Hinweise
 

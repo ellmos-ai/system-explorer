@@ -53,6 +53,15 @@ Beziehungen besitzen:
 6. **Proposal** – unverbindlicher ChangeProposal; nie unmittelbare Mutation.
 7. **Empirical probes** – Probepläne für externe Schwarm- oder
    Trampelpfad-Runs.
+8. **Data topology** – Registries, Datenbanken, Tabellen, Ist-/Soll-Datenflüsse,
+   Cloudanbieter, Mirrors, Transfers und Credential-Referenzen.
+9. **Deployment and purpose** – Serveroberflächen, Schutzdeckung,
+   Kostenvergleich und kriterienbasierte Zweckurteile für einzelne Knoten.
+10. **Federation** – portable, herkunftsgebundene Karten, Systemebenen,
+    Systemgrenzen, Verbindungen und Übergaben.
+11. **Crystallized resources** – installierte Software, Fremdmodule, Repos,
+    Skripte und Skills mit Funktionen, LLM-Steuerwegen, Flexibilität und
+    belegpflichtigem Tokenersparnispotenzial.
 
 ## Steuerdokumentgraph
 
@@ -63,6 +72,20 @@ Boot-/Steuerpointer und Dokumentabhängigkeiten. Pointer tragen Quellzeile,
 Syntax, Auflösungsstatus und Evidenzreferenz. Fehlende Ziele bleiben als
 `artifact_reference` sichtbar, statt still verworfen zu werden.
 
+## Daten- und Cloudgraph
+
+JSON-Dateien mit Registry-/Catalog-/Inventory-Namen oder typischen
+Registry-Collections werden als `registry` mit
+`registry_collection`-Unterknoten geführt. SQLite wird ausschließlich
+read-only auf Tabellen- und Spaltennamen untersucht.
+
+`data_actor --fills/reads--> database|registry` besitzt Soll-/Ist-Modus.
+`entrypoint --accesses--> database`, `directory --mirrors_to--> cloud_provider`
+und `database --connects_to/uses_credential--> ...` zeigen Zugriff,
+Cloudübertragung und Credentialbedarf. Die Symbole `☁`, `⇄☁` und `⌂` bedeuten
+direkt cloudverbunden, indirekt gespiegelt und lokal. Credential-Knoten
+enthalten nur ID, Speicherart und optionalen Ortshinweis; niemals Werte.
+
 ## Wiederverwendungsgrenzen
 
 Explorer konsumiert vorhandene Manifest- und Stack-Schemata, kann
@@ -71,6 +94,51 @@ Hooker-, Swarm- oder Gardener-Evidenz. Es kopiert deren Datenbanken und
 Entscheidungslogik nicht. Die UI ist als eigenständige lokale Ansicht
 implementiert und kann später in einen vorhandenen GUI-Host eingebettet
 werden.
+
+## Föderation und Ebenen
+
+Der Exportvertrag `system-explorer.map.v1` kapselt eine Projektion mit
+Systemidentität und Zeitstempel. Importierte Knoten erhalten gekapselte IDs
+und `origin_system`; lokale und fremde Knoten werden nicht verschmolzen.
+Fachansicht und Systemfilter sind orthogonal: dieselbe Control-, Coverage-,
+Purpose-, Deployment-, Data- oder LLM-Projektion funktioniert pro System und
+über alle vorliegenden Karten. `federation` visualisiert zusätzlich die
+Grenzen sowie SSH-, Tailscale-, `.SYNC`- und Handoff-Wege.
+
+## Deployment und Zweck
+
+`server --exposes--> server_surface` und
+`server --protected_by--> security_control` trennen Erreichbarkeit von
+Schutzdeklarationen. Ein privater Zweck verlangt extern belegte Blockierung;
+ein teiloffener Zweck verlangt positive Kontrolldeckung. Kostenbelege tragen
+Quelle und Datum. `target --has_purpose--> purpose
+--requires_function--> function` verbindet Einzelknotenzwecke mit der
+allgemeinen Soll-/Ist-Deckungslogik.
+
+## Ein-, Austritts- und Übergabepunkte
+
+Manifeste können neben `entrypoints` und `surfaces` auch `outputs`,
+`handoffs`, `alternative_paths` und `encapsulation` deklarieren. Explorer
+projiziert daraus `interface`, `output` und `handoff` sowie die Kanten
+`exposes_interface`, `produces`, `delivers_to`, `hands_off`, `assigned_to`
+und `alternative_to`. Deklarationen bleiben als solche markiert; tatsächliche
+Übergabe benötigt Laufzeitevidenz.
+
+## Kristallisierte Randressourcen
+
+`software_resource --exposes_interface--> interface` trennt die installierte
+Ressource von ihrer LLM-Steuerbarkeit. `actor --controls_via--> interface`
+zeigt, welcher LLM-Akteur den Weg nutzen kann; `software_resource
+--carries--> function` ordnet die Systemfunktion zu. Die Readiness-Symbole
+reichen von `◆ native` über `◇ direct`, `△ indirect` und `○ reference` bis
+`? unproven`.
+
+Software verkörpert standardisierte, kristallisierte Workflows und kann
+Reasoning-Tokens sparen. Diese Ersparnis bleibt aber eine eigene,
+belegpflichtige Aussage; Installation und Schnittstellendeklaration allein
+beweisen weder tatsächliche Nutzung noch Tokenreduktion. Skills sind im
+Default flexibler, fertige Programme stärker kristallisiert. `generated_by`
+kennzeichnet von LLMs gebaute Brückenskripte, ohne sie freizugeben.
 
 ## Änderungsfluss
 

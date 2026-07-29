@@ -9,10 +9,18 @@ from typing import Any
 from .assessment import assess
 from .config import database_path, load_config, write_default_config
 from .coverage import coverage_report
+from .deployment import (
+    deployment_report,
+    import_apiprober_export,
+    purpose_report,
+    refresh_provider_sources,
+)
+from .federation import export_system_map, import_system_map, tag_current_system
 from .manifests import load_manifest, new_module_manifest, validate_manifest
 from .maps import graph_view, render_ascii, render_html, render_mermaid
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
+from .resources import resource_report
 from .scanner import scan
 from .server import serve
 from .specs import desired_template, import_spec
@@ -50,11 +58,56 @@ def build_parser() -> argparse.ArgumentParser:
     mapping.add_argument("--config", type=Path, required=True)
     mapping.add_argument(
         "--view",
-        choices=["actual", "desired", "diff", "coverage", "control", "tree"],
+        choices=[
+            "actual",
+            "desired",
+            "diff",
+            "coverage",
+            "control",
+            "tree",
+            "data",
+            "deployment",
+            "purpose",
+            "federation",
+            "llm-traces",
+            "llm-actions",
+            "function-paths",
+            "resources",
+        ],
         default="coverage",
     )
     mapping.add_argument("--format", choices=["json", "ascii", "mermaid", "html"], default="ascii")
     mapping.add_argument("--output", type=Path)
+    mapping.add_argument("--system", help="Origin system id; omit for all mapped systems.")
+
+    map_export = sub.add_parser("map-export")
+    map_export.add_argument("--config", type=Path, required=True)
+    map_export.add_argument("--view", default="all")
+    map_export.add_argument("--output", type=Path, required=True)
+
+    map_import = sub.add_parser("map-import")
+    map_import.add_argument("path", type=Path)
+    map_import.add_argument("--config", type=Path, required=True)
+
+    server_check = sub.add_parser("server-check")
+    server_check.add_argument("--config", type=Path, required=True)
+
+    resources = sub.add_parser("resources")
+    resources.add_argument("--config", type=Path, required=True)
+
+    purpose_check = sub.add_parser("purpose-check")
+    purpose_check.add_argument("--target")
+    purpose_check.add_argument("--config", type=Path, required=True)
+
+    provider_refresh = sub.add_parser("provider-refresh")
+    provider_refresh.add_argument("--config", type=Path, required=True)
+    provider_refresh.add_argument("--timeout", type=float, default=15)
+    provider_refresh.add_argument("--max-bytes", type=int, default=2_000_000)
+
+    apiprober_import = sub.add_parser("import-apiprober")
+    apiprober_import.add_argument("path", type=Path)
+    apiprober_import.add_argument("--server", required=True)
+    apiprober_import.add_argument("--config", type=Path, required=True)
 
     query = sub.add_parser("query")
     query.add_argument("--config", type=Path, required=True)
@@ -163,10 +216,12 @@ def _run(args: argparse.Namespace) -> int:
             value: Any = scan(config, store)
         elif args.command == "import-spec":
             value = import_spec(args.path, store)
+            tag_current_system(config, store)
         elif args.command == "import-transcripts":
             value = import_transcripts(
                 args.provider, args.source, store, actor_id=args.actor
             )
+            tag_current_system(config, store)
         elif args.command == "coverage":
             value = coverage_report(store)
         elif args.command == "assess":
@@ -192,12 +247,45 @@ def _run(args: argparse.Namespace) -> int:
                 name=args.name,
                 entry=args.entry,
             )
+            tag_current_system(config, store)
         elif args.command == "documents":
             value = find_documents(store, role=args.role, name=args.name)
         elif args.command == "doctor":
             value = _doctor(config, store)
+        elif args.command == "server-check":
+            value = deployment_report(store)
+        elif args.command == "purpose-check":
+            value = purpose_report(store, args.target)
+        elif args.command == "resources":
+            value = resource_report(store)
+        elif args.command == "provider-refresh":
+            value = refresh_provider_sources(
+                config,
+                store,
+                timeout_seconds=args.timeout,
+                max_bytes=args.max_bytes,
+            )
+            tag_current_system(config, store)
+        elif args.command == "import-apiprober":
+            value = import_apiprober_export(args.path, store, server_id=args.server)
+            tag_current_system(config, store)
+        elif args.command == "map-import":
+            value = import_system_map(args.path, store)
+            tag_current_system(config, store)
+        elif args.command == "map-export":
+            tag_current_system(config, store)
+            value = export_system_map(
+                store, system=config.get("system", {"id": "current-system"}), view=args.view
+            )
+            _write_json(args.output, value)
+            value = {
+                "output": str(args.output),
+                "system": value["system"]["id"],
+                "nodes": len(value["nodes"]),
+                "edges": len(value["edges"]),
+            }
         elif args.command == "map":
-            graph = graph_view(store, args.view)
+            graph = graph_view(store, args.view, system_id=args.system)
             rendered = _render(graph, args.format)
             if args.output:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -283,6 +371,7 @@ def _ingest(config: dict[str, Any], store: Store) -> dict[str, Any]:
                 ),
             }
         )
+    tag_current_system(config, store)
     return result
 
 

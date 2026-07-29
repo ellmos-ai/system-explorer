@@ -5,16 +5,37 @@ import json
 from typing import Any
 
 from .coverage import coverage_report
+from .deployment import deployment_report, purpose_report
+from .federation import federation_graph
+from .resources import resource_graph
 from .store import Store
 
 
-def graph_view(store: Store, view: str) -> dict[str, Any]:
+def graph_view(
+    store: Store, view: str, system_id: str | None = None
+) -> dict[str, Any]:
     if view in {"actual", "desired"}:
-        return store.graph(view)
+        return _filter_system(store.graph(view), system_id)
     if view == "coverage":
-        return coverage_graph(store)
+        return _filter_system(coverage_graph(store), system_id)
     if view in {"control", "tree"}:
-        return document_graph(store, view)
+        return _filter_system(document_graph(store, view), system_id)
+    if view == "data":
+        return _filter_system(data_graph(store), system_id)
+    if view == "deployment":
+        return _filter_system(deployment_graph(store), system_id)
+    if view == "purpose":
+        return _filter_system(purpose_graph(store), system_id)
+    if view == "federation":
+        return _filter_system(federation_graph(store), system_id)
+    if view == "llm-traces":
+        return _filter_system(llm_trace_graph(store), system_id)
+    if view == "llm-actions":
+        return _filter_system(llm_action_graph(store), system_id)
+    if view == "function-paths":
+        return _filter_system(function_path_graph(store), system_id)
+    if view == "resources":
+        return _filter_system(resource_graph(store), system_id)
     if view != "diff":
         raise ValueError(f"Unknown view: {view}")
     actual = store.graph("actual")
@@ -40,7 +61,10 @@ def graph_view(store: Store, view: str) -> dict[str, Any]:
         edges.append(edge)
     node_ids = {value for edge in edges for value in (edge["source_id"], edge["target_id"])}
     node_map = {node["id"]: node for node in store.nodes()}
-    return {"nodes": [node_map[item] for item in node_ids if item in node_map], "edges": edges}
+    return _filter_system(
+        {"nodes": [node_map[item] for item in node_ids if item in node_map], "edges": edges},
+        system_id,
+    )
 
 
 def coverage_graph(store: Store) -> dict[str, Any]:
@@ -179,13 +203,318 @@ def document_graph(store: Store, view: str = "control") -> dict[str, Any]:
     return {"nodes": nodes, "edges": edges, "view": view}
 
 
+def data_graph(store: Store) -> dict[str, Any]:
+    all_nodes = {node["id"]: node for node in store.nodes()}
+    types = {
+        "registry",
+        "registry_collection",
+        "database",
+        "database_table",
+        "data_actor",
+        "entrypoint",
+        "cloud_provider",
+        "credential_reference",
+        "mapping_point",
+    }
+    selected = {
+        node_id
+        for node_id, node in all_nodes.items()
+        if node["node_type"] in types
+        or (
+            node["node_type"] == "directory"
+            and node.get("metadata", {}).get("cloud_mode")
+        )
+    }
+    relations = {
+        "contains_collection",
+        "contains_table",
+        "fills",
+        "reads",
+        "accesses",
+        "connects_to",
+        "mirrors_to",
+        "uses_credential",
+    }
+    edges = [
+        edge
+        for edge in store.resolved_edges()
+        if edge["relation"] in relations
+        and edge["source_id"] in selected
+        and edge["target_id"] in selected
+    ]
+    connected = {
+        node_id
+        for edge in edges
+        for node_id in (edge["source_id"], edge["target_id"])
+    }
+    return {
+        "nodes": [
+            all_nodes[node_id]
+            for node_id in selected
+            if node_id in connected
+            or all_nodes[node_id]["node_type"]
+            in {"registry", "database", "directory"}
+        ],
+        "edges": edges,
+        "view": "data",
+    }
+
+
+def deployment_graph(store: Store) -> dict[str, Any]:
+    report = deployment_report(store)
+    nodes: dict[str, dict[str, Any]] = {}
+    edges = []
+    relevant = {
+        "exposes",
+        "protected_by",
+        "probed_by",
+        "hosted_by",
+        "priced_by",
+        "offered_by",
+        "documents",
+    }
+    all_nodes = {node["id"]: node for node in store.nodes()}
+    verdict_by_server = {
+        row["server"]["id"]: row["verdict"] for row in report["servers"]
+    }
+    for edge in store.resolved_edges():
+        if edge["relation"] not in relevant:
+            continue
+        edges.append(edge)
+        for node_id in (edge["source_id"], edge["target_id"]):
+            if node_id in all_nodes:
+                nodes[node_id] = dict(all_nodes[node_id])
+    for server_id, verdict in verdict_by_server.items():
+        if server_id in all_nodes:
+            nodes[server_id] = dict(all_nodes[server_id])
+            nodes[server_id]["metadata"] = {
+                **nodes[server_id].get("metadata", {}),
+                "purpose_verdict": verdict,
+            }
+    return {
+        "nodes": list(nodes.values()),
+        "edges": edges,
+        "view": "deployment",
+        "summary": report["summary"],
+    }
+
+
+def purpose_graph(store: Store) -> dict[str, Any]:
+    report = purpose_report(store)
+    node_map = {node["id"]: node for node in store.nodes()}
+    relations = {"has_purpose", "requires_function", "carries"}
+    selected_ids = {
+        item["id"]
+        for row in report["purposes"]
+        for item in (row["target"], row["purpose"])
+        if item
+    }
+    selected_ids |= {
+        criterion["function"]["id"]
+        for row in report["purposes"]
+        for criterion in row["criteria"]
+        if criterion.get("function")
+    }
+    edges = [
+        edge
+        for edge in store.resolved_edges()
+        if edge["relation"] in relations
+        and edge["source_id"] in selected_ids
+        and edge["target_id"] in selected_ids
+    ]
+    return {
+        "nodes": [node_map[node_id] for node_id in selected_ids if node_id in node_map],
+        "edges": edges,
+        "view": "purpose",
+        "report": report,
+    }
+
+
+def llm_trace_graph(store: Store) -> dict[str, Any]:
+    types = {"actor", "session", "entrypoint", "artifact_reference", "carrier"}
+    relations = {
+        "participates_in",
+        "enters_at",
+        "invoked",
+        "returned_from",
+        "references",
+        "used",
+    }
+    return _subgraph(store, types, relations, "llm-traces")
+
+
+def llm_action_graph(store: Store) -> dict[str, Any]:
+    types = {
+        "actor",
+        "entrypoint",
+        "carrier",
+        "server_surface",
+        "system_connection",
+        "handoff",
+        "system_instance",
+    }
+    relations = {
+        "enters_at",
+        "invoked",
+        "returned_from",
+        "used",
+        "probed_by",
+        "connects_via",
+        "reaches",
+        "hands_off",
+        "assigned_to",
+    }
+    return _subgraph(store, types, relations, "llm-actions")
+
+
+def function_path_graph(store: Store) -> dict[str, Any]:
+    types = {
+        "actor",
+        "entrypoint",
+        "carrier",
+        "function",
+        "handoff",
+        "system_instance",
+        "artifact",
+        "artifact_reference",
+        "output",
+        "interface",
+    }
+    relations = {
+        "enters_at",
+        "carries",
+        "invoked",
+        "used",
+        "produces",
+        "delivers_to",
+        "hands_off",
+        "assigned_to",
+        "points_to",
+        "exposes_interface",
+        "alternative_to",
+    }
+    return _subgraph(store, types, relations, "function-paths")
+
+
+def _subgraph(
+    store: Store, types: set[str], relations: set[str], view: str
+) -> dict[str, Any]:
+    all_nodes = {node["id"]: node for node in store.nodes()}
+    edges = [
+        edge
+        for edge in store.resolved_edges()
+        if edge["relation"] in relations
+        and all_nodes.get(edge["source_id"], {}).get("node_type") in types
+        and all_nodes.get(edge["target_id"], {}).get("node_type") in types
+    ]
+    connected = {
+        node_id
+        for edge in edges
+        for node_id in (edge["source_id"], edge["target_id"])
+    }
+    nodes = [
+        node
+        for node_id, node in all_nodes.items()
+        if node_id in connected
+        or (node["node_type"] == "actor" and node["node_type"] in types)
+    ]
+    return {"nodes": nodes, "edges": edges, "view": view}
+
+
+def _filter_system(
+    graph: dict[str, Any], system_id: str | None
+) -> dict[str, Any]:
+    if not system_id or system_id in {"all", "*"}:
+        return graph
+    selected = {
+        node["id"]
+        for node in graph.get("nodes", [])
+        if node.get("metadata", {}).get("origin_system") == system_id
+        or (
+            node.get("node_type") == "system_instance"
+            and node.get("id") == f"system-instance:{system_id}"
+        )
+    }
+    node_map = {node["id"]: node for node in graph.get("nodes", [])}
+    boundary_ids = {
+        node_id
+        for node_id in selected
+        if node_map.get(node_id, {}).get("metadata", {}).get(
+            "crosses_system_boundary"
+        )
+    }
+    for edge in graph.get("edges", []):
+        if edge["source_id"] in boundary_ids or edge["target_id"] in boundary_ids:
+            for node_id in (edge["source_id"], edge["target_id"]):
+                if node_map.get(node_id, {}).get("node_type") == "system_instance":
+                    selected.add(node_id)
+    filtered = dict(graph)
+    filtered["nodes"] = [
+        node for node in graph.get("nodes", []) if node["id"] in selected
+    ]
+    filtered["edges"] = [
+        edge
+        for edge in graph.get("edges", [])
+        if edge["source_id"] in selected and edge["target_id"] in selected
+    ]
+    if "summary" in graph:
+        summary: dict[str, int] = {}
+        for node in filtered["nodes"]:
+            metadata = node.get("metadata", {})
+            verdict = metadata.get("coverage_verdict") or metadata.get(
+                "purpose_verdict"
+            )
+            if verdict:
+                summary[verdict] = summary.get(verdict, 0) + 1
+            if metadata.get("overlap"):
+                summary["overlap"] = summary.get("overlap", 0) + 1
+        filtered["summary"] = summary
+    if "report" in graph:
+        report = graph["report"]
+        if "resources" in report:
+            rows = [
+                row
+                for row in report.get("resources", [])
+                if row.get("resource", {}).get("id") in selected
+            ]
+            resource_summary: dict[str, int] = {}
+            for row in rows:
+                readiness = row.get("resource", {}).get("metadata", {}).get(
+                    "llm_readiness", "unproven"
+                )
+                resource_summary[readiness] = (
+                    resource_summary.get(readiness, 0) + 1
+                )
+            filtered["report"] = {
+                **report,
+                "resources": rows,
+                "summary": resource_summary,
+            }
+        else:
+            filtered["report"] = {
+                "purposes": [
+                    row
+                    for row in report.get("purposes", [])
+                    if row.get("target", {}).get("id") in selected
+                ]
+            }
+    if "levels" in graph:
+        filtered["levels"] = [
+            level for level in graph.get("levels", []) if level.get("id") == system_id
+        ]
+    filtered["system_filter"] = system_id
+    return filtered
+
+
 def render_ascii(graph: dict[str, Any]) -> str:
     names = {node["id"]: node["name"] for node in graph["nodes"]}
     lines = ["SYSTEM MAP", "=========="]
     for edge in sorted(
         graph["edges"], key=lambda item: (item["source_id"], item["relation"], item["target_id"])
     ):
-        status = edge.get("diff_status") or edge.get("status", "")
+        status = edge.get("diff_status") or (
+            f"{edge.get('mode', 'actual')}/{edge.get('status', '')}"
+        )
         lines.append(
             f"[{names.get(edge['source_id'], edge['source_id'])}]"
             f" --{edge['relation']}:{status}--> "
@@ -211,7 +540,10 @@ def render_mermaid(graph: dict[str, Any]) -> str:
         source = node_alias.get(edge["source_id"])
         target = node_alias.get(edge["target_id"])
         if source and target:
-            label = f"{edge['relation']}:{edge.get('diff_status') or edge.get('status', '')}"
+            status = edge.get("diff_status") or (
+                f"{edge.get('mode', 'actual')}/{edge.get('status', '')}"
+            )
+            label = f"{edge['relation']}:{status}"
             lines.append(f"  {source} -->|{label}| {target}")
     lines.extend(
         [
