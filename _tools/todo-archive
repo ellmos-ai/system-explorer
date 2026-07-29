@@ -1,0 +1,482 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+todo-archive — Verschiebt erledigte Tasks aus TODO.md nach DONE.md
+
+Produktions-Script. Adaptiert von BACHs
+tools/maintenance/archive_done_tasks.py (90 Zeilen, JSON-basiert).
+
+Unterschied zum Original:
+  - BACH arbeitet mit tasks.json ({"status": "done"})
+  - Wir arbeiten mit Markdown (- [x] ...) in TODO.md
+  - Archiv-Ziel: DONE.md mit chronologischen Datums-Headers
+
+Kern-Muster (1:1 aus BACH übernommen):
+  1. Dry-run als Default, --apply für echte Ausführung
+  2. Load → Filter done → Journal → Stage both → Replace with rollback/recovery
+  3. Statistik am Ende (Dateigröße, Anzahl)
+  4. Idempotent: Mehrfach-Aufruf und Crash-Retry duplizieren nichts
+
+Usage:
+  todo-archive                  # Dry-run (zeigt was passieren würde)
+  todo-archive --apply          # Wirklich ausführen
+  todo-archive --todo FILE      # Custom TODO-Pfad (default: TODO.md im cwd)
+  todo-archive --done FILE      # Custom DONE-Pfad (default: DONE.md im cwd)
+  todo-archive --apply --verbose
+
+Exit-Codes:
+  0 = OK (oder nichts zu tun)
+  1 = Fehler (File fehlt, Parser-Error)
+  2 = Invalid usage
+
+Referenz: siehe BACH tools/maintenance/archive_done_tasks.py (Kern-Logik).
+"""
+
+__version__ = "1.0.0"
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import tempfile
+from datetime import date
+from pathlib import Path
+
+# Windows Console Encoding Fix (aus BACH archive_done_tasks.py übernommen)
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+
+# ============================================================================
+# MARKDOWN TASK-PARSER
+# ============================================================================
+
+# Matched:
+#   - [x] Text
+#   -  [X]  Text   (loose whitespace)
+#   * [x] Text     (star statt dash)
+DONE_PATTERN = re.compile(
+    r"^(?P<indent>\s*)(?P<bullet>[-*])\s*\[(?P<mark>[xX])\]\s*(?P<text>.+?)\s*$",
+    re.MULTILINE,
+)
+
+
+def extract_done_tasks(content: str) -> tuple[list[str], str]:
+    """Extrahiert alle [x]-Zeilen, entfernt sie aus dem Content.
+
+    Returns:
+        (done_lines, remaining_content)
+        - done_lines: Liste der erledigten Tasks (als Markdown-Zeilen, ohne Indent)
+        - remaining_content: TODO.md-Content ohne die done-Zeilen
+    """
+    done = []
+    lines = content.split("\n")
+    kept = []
+
+    for line in lines:
+        match = DONE_PATTERN.match(line)
+        if match:
+            # Normalisierte Form: "- [x] text"
+            text = match.group("text").strip()
+            done.append(f"- [x] {text}")
+        else:
+            kept.append(line)
+
+    return done, "\n".join(kept)
+
+
+# ============================================================================
+# DONE.md WRITER
+# ============================================================================
+
+DATE_HEADER_PATTERN = re.compile(r"^## (\d{4}-\d{2}-\d{2})\s*$", re.MULTILINE)
+
+
+def append_to_done(done_content: str, new_tasks: list[str], today: str) -> str:
+    """Fügt neue Tasks unter heutigem Datum in DONE.md ein.
+
+    Logik:
+    1. Wenn DONE.md leer/neu: Erstelle Basis-Struktur mit heutigem Header
+    2. Wenn heute bereits einen Header hat: Tasks darunter anhängen
+    3. Sonst: Neuen Header vor dem ersten existierenden Header einfügen
+       (neueste oben — chronologisch umgekehrt)
+    """
+    if not done_content.strip():
+        # Leer oder nur Whitespace → frisches File
+        return _fresh_done_file(new_tasks, today)
+
+    # Prüfe ob heute-Header schon existiert
+    today_header = f"## {today}"
+    if today_header in done_content:
+        return _append_to_existing_date(done_content, new_tasks, today_header)
+
+    # Neuen Header oberhalb des ersten existierenden Headers einfügen
+    return _insert_new_date_section(done_content, new_tasks, today)
+
+
+def _fresh_done_file(new_tasks: list[str], today: str) -> str:
+    """Erstellt ein frisches DONE.md mit heutigen Tasks."""
+    lines = [
+        "# DONE.md — Erledigte Tasks (Archiv)",
+        "",
+        "> Automatisch gepflegt via `_tools/todo-archive`. Neueste oben.",
+        "",
+        f"## {today}",
+        "",
+    ]
+    lines.extend(new_tasks)
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _append_to_existing_date(content: str, new_tasks: list[str], header: str) -> str:
+    """Fügt Tasks unter existierendem Datums-Header ein."""
+    lines = content.split("\n")
+    result = []
+    in_section = False
+    appended = False
+
+    for i, line in enumerate(lines):
+        result.append(line)
+        if line.strip() == header:
+            in_section = True
+            continue
+        if in_section and not appended:
+            # Finde Ende der Section (nächster Header oder EOF)
+            is_next_header = line.startswith("## ") and line.strip() != header
+            if is_next_header:
+                # Tasks direkt vor dem nächsten Header einfügen
+                result.insert(len(result) - 1, "")
+                for task in new_tasks:
+                    result.insert(len(result) - 1, task)
+                appended = True
+                in_section = False
+
+    if in_section and not appended:
+        # Section reicht bis EOF
+        if result and result[-1].strip():
+            result.append("")
+        result.extend(new_tasks)
+        result.append("")
+
+    return "\n".join(result)
+
+
+def _insert_new_date_section(content: str, new_tasks: list[str], today: str) -> str:
+    """Fügt einen neuen Datums-Header oberhalb des ersten existierenden ein."""
+    match = DATE_HEADER_PATTERN.search(content)
+    if not match:
+        # Kein Header existiert → am Ende anhängen
+        ending = "" if content.endswith("\n") else "\n"
+        section = f"\n## {today}\n\n" + "\n".join(new_tasks) + "\n"
+        return content + ending + section
+
+    # Einfügen vor dem ersten Header
+    insert_pos = match.start()
+    prefix = content[:insert_pos]
+    suffix = content[insert_pos:]
+
+    # Sicherstellen dass prefix mit Zeilenumbruch endet
+    if prefix and not prefix.endswith("\n\n"):
+        prefix = prefix.rstrip("\n") + "\n\n"
+
+    new_section = f"## {today}\n\n" + "\n".join(new_tasks) + "\n\n"
+    return prefix + new_section + suffix
+
+
+# ============================================================================
+# TRANSACTIONAL WRITE
+# ============================================================================
+
+def _stage_text(path: Path, content: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if path.exists():
+            os.chmod(temp_path, path.stat().st_mode)
+        return temp_path
+    except Exception:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+
+def _restore(path: Path, original: str | None) -> None:
+    if original is None:
+        path.unlink(missing_ok=True)
+        return
+    staged = _stage_text(path, original)
+    try:
+        os.replace(staged, path)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
+def _content_hash(content: str) -> str:
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def journal_path(todo_path: Path, done_path: Path) -> Path:
+    identity = hashlib.sha256(
+        f"{todo_path.resolve()}\0{done_path.resolve()}".encode("utf-8")
+    ).hexdigest()[:12]
+    return todo_path.parent / f".{todo_path.name}.todo-archive-{identity}.json"
+
+
+def _write_journal(
+    path: Path,
+    todo_path: Path,
+    original_todo: str,
+    new_todo: str,
+    done_path: Path,
+    original_done: str | None,
+    new_done: str,
+) -> None:
+    payload = {
+        "version": 1,
+        "todo_path": str(todo_path.resolve()),
+        "done_path": str(done_path.resolve()),
+        "original_todo_sha256": _content_hash(original_todo),
+        "new_todo_sha256": _content_hash(new_todo),
+        "original_done_sha256": _content_hash(original_done or ""),
+        "new_done_sha256": _content_hash(new_done),
+        "new_todo": new_todo,
+        "new_done": new_done,
+    }
+    staged = _stage_text(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    try:
+        os.replace(staged, path)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
+def recover_pending(todo_path: Path, done_path: Path) -> bool:
+    """Finish or clear an interrupted pair commit; fail on divergence."""
+    pending = journal_path(todo_path, done_path)
+    if not pending.exists():
+        return False
+    try:
+        payload = json.loads(pending.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Transaktionsjournal ist nicht lesbar: {pending}: {exc}") from exc
+    if (
+        payload.get("version") != 1
+        or payload.get("todo_path") != str(todo_path.resolve())
+        or payload.get("done_path") != str(done_path.resolve())
+    ):
+        raise RuntimeError(f"Transaktionsjournal passt nicht zu den Zielpfaden: {pending}")
+    if not todo_path.exists():
+        raise RuntimeError(f"TODO fehlt während Recovery: {todo_path}")
+
+    todo_content = todo_path.read_text(encoding="utf-8")
+    done_content = done_path.read_text(encoding="utf-8") if done_path.exists() else ""
+    todo_hash = _content_hash(todo_content)
+    done_hash = _content_hash(done_content)
+    old_todo = payload.get("original_todo_sha256")
+    new_todo = payload.get("new_todo_sha256")
+    old_done = payload.get("original_done_sha256")
+    new_done = payload.get("new_done_sha256")
+
+    if todo_hash == old_todo and done_hash == old_done:
+        pending.unlink()
+        return False
+    if todo_hash == old_todo and done_hash == new_done:
+        _restore(todo_path, str(payload["new_todo"]))
+    elif todo_hash == new_todo and done_hash == old_done:
+        _restore(done_path, str(payload["new_done"]))
+    elif not (todo_hash == new_todo and done_hash == new_done):
+        raise RuntimeError(
+            "Dateien weichen von altem und neuem Transaktionsstand ab; "
+            f"Journal bleibt zur manuellen Prüfung erhalten: {pending}"
+        )
+
+    final_todo = _content_hash(todo_path.read_text(encoding="utf-8"))
+    final_done = _content_hash(done_path.read_text(encoding="utf-8") if done_path.exists() else "")
+    if final_todo != new_todo or final_done != new_done:
+        raise RuntimeError(f"Recovery konnte Transaktion nicht verifizieren: {pending}")
+    pending.unlink()
+    return True
+
+
+def commit_pair(
+    todo_path: Path,
+    original_todo: str,
+    new_todo: str,
+    done_path: Path,
+    original_done: str | None,
+    new_done: str,
+) -> None:
+    """Commit DONE then TODO; restore both originals after any failure."""
+    pending = journal_path(todo_path, done_path)
+    _write_journal(
+        pending,
+        todo_path,
+        original_todo,
+        new_todo,
+        done_path,
+        original_done,
+        new_done,
+    )
+    todo_temp: Path | None = None
+    done_temp: Path | None = None
+    try:
+        todo_temp = _stage_text(todo_path, new_todo)
+        done_temp = _stage_text(done_path, new_done)
+        os.replace(done_temp, done_path)
+        os.replace(todo_temp, todo_path)
+    except Exception as write_error:
+        rollback_errors = []
+        for path, original in (
+            (done_path, original_done),
+            (todo_path, original_todo),
+        ):
+            try:
+                _restore(path, original)
+            except Exception as rollback_error:  # pragma: no cover - catastrophic FS case
+                rollback_errors.append(f"{path}: {rollback_error}")
+        detail = ""
+        if rollback_errors:
+            detail = "; Rollback-Fehler: " + "; ".join(rollback_errors)
+        else:
+            pending.unlink(missing_ok=True)
+        raise RuntimeError(f"Archiv-Commit fehlgeschlagen: {write_error}{detail}") from write_error
+    else:
+        pending.unlink(missing_ok=True)
+    finally:
+        if todo_temp:
+            todo_temp.unlink(missing_ok=True)
+        if done_temp:
+            done_temp.unlink(missing_ok=True)
+
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Archive [x] tasks from TODO.md to DONE.md",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Schreibt tatsächlich (ohne: dry-run)",
+    )
+    parser.add_argument(
+        "--todo",
+        type=Path,
+        default=Path("TODO.md"),
+        help="Pfad zur TODO.md (default: TODO.md im cwd)",
+    )
+    parser.add_argument(
+        "--done",
+        type=Path,
+        default=Path("DONE.md"),
+        help="Pfad zur DONE.md (default: DONE.md im cwd)",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Zeigt alle verschobenen Tasks (nicht nur die ersten 10)",
+    )
+    args = parser.parse_args()
+
+    todo_path = args.todo.resolve()
+    done_path = args.done.resolve()
+    today = date.today().isoformat()
+
+    print(f"==> TODO:  {todo_path}")
+    print(f"==> DONE:  {done_path}")
+    print(f"==> Today: {today}")
+    print(f"==> Mode:  {'APPLY' if args.apply else 'DRY-RUN (nutze --apply zum Schreiben)'}")
+    print()
+
+    if todo_path == done_path:
+        print("ERROR: TODO- und DONE-Pfad müssen verschieden sein", file=sys.stderr)
+        sys.exit(2)
+
+    try:
+        if recover_pending(todo_path, done_path):
+            print("==> Unterbrochene Archiv-Transaktion sicher abgeschlossen.")
+            sys.exit(0)
+    except (OSError, RuntimeError, KeyError, TypeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # TODO.md laden
+    if not todo_path.exists():
+        print(f"ERROR: TODO.md existiert nicht: {todo_path}", file=sys.stderr)
+        sys.exit(1)
+
+    todo_content = todo_path.read_text(encoding="utf-8")
+    done_tasks, remaining_todo = extract_done_tasks(todo_content)
+
+    print(f"==> Gefunden: {len(done_tasks)} erledigte Tasks")
+
+    if not done_tasks:
+        print("    Nichts zu tun — keine [x]-Einträge.")
+        sys.exit(0)
+
+    # Preview
+    display_limit = None if args.verbose else 10
+    preview = done_tasks[:display_limit] if display_limit else done_tasks
+    print()
+    for task in preview:
+        print(f"    {task}")
+    if display_limit and len(done_tasks) > display_limit:
+        print(f"    ... und {len(done_tasks) - display_limit} weitere (--verbose für alle)")
+
+    if not args.apply:
+        print()
+        print("==> DRY-RUN: nichts geschrieben. Nutze --apply.")
+        sys.exit(0)
+
+    # DONE.md laden (oder leer starten)
+    original_done = done_path.read_text(encoding="utf-8") if done_path.exists() else None
+    done_content = original_done or ""
+
+    # Neue DONE.md bauen
+    new_done = append_to_done(done_content, done_tasks, today)
+
+    # Schreiben
+    print()
+    print("==> Schreibe...")
+
+    todo_size_before = todo_path.stat().st_size
+    done_size_before = done_path.stat().st_size if done_path.exists() else 0
+    try:
+        commit_pair(
+            todo_path,
+            todo_content,
+            remaining_todo,
+            done_path,
+            original_done,
+            new_done,
+        )
+    except (OSError, RuntimeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    todo_size_after = todo_path.stat().st_size
+    done_size_after = done_path.stat().st_size
+
+    # Statistik
+    print(f"    OK  TODO.md: {todo_size_before} → {todo_size_after} bytes "
+          f"({todo_size_after - todo_size_before:+d})")
+    print(f"    OK  DONE.md: {done_size_before} → {done_size_after} bytes "
+          f"({done_size_after - done_size_before:+d})")
+    print()
+    print(f"==> {len(done_tasks)} Tasks archiviert unter # {today}")
+
+
+if __name__ == "__main__":
+    main()
