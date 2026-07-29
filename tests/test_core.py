@@ -5,6 +5,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from system_explorer.assessment import assess
 from system_explorer.config import database_path, load_config
@@ -256,6 +257,45 @@ class ExplorerTest(unittest.TestCase):
         self.assertIn("carries", relations)
         self.assertIn("generated_by", relations)
         self.assertEqual(graph["report"]["summary"]["native"], 1)
+
+    def test_unhashable_resolved_program_does_not_abort_resource_scan(
+        self,
+    ) -> None:
+        program = self.root / "program.exe"
+        program.write_bytes(b"shim")
+        config_path = self.root / "unhashable-resource.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.config.v1",
+                    "database": str(self.db),
+                    "roots": [],
+                    "software_resources": [
+                        {
+                            "id": "unhashable",
+                            "path": str(program),
+                            "interfaces": ["cli"],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = load_config(config_path)
+        with Store(self.db) as store:
+            with patch(
+                "system_explorer.resources.sha256_file",
+                side_effect=OSError(22, "Invalid argument"),
+            ):
+                stats = scan(config, store)
+            evidence = store.evidence()
+        self.assertEqual(stats["software_resources"], 1)
+        resource_evidence = next(
+            item for item in evidence if item["source_kind"] == "path-resolution"
+        )
+        self.assertEqual(
+            resource_evidence["metadata"]["hash_status"], "unavailable"
+        )
 
     def test_registry_database_dataflow_cloud_and_credentials_graph(self) -> None:
         data = self.root / "data"

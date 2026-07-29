@@ -291,7 +291,14 @@ def _installation_evidence(
     installed = resolved is not None
     if not installed:
         return False, None, None
-    digest = sha256_file(resolved) if resolved.is_file() else None
+    digest = None
+    hash_status = "not-a-file"
+    try:
+        if resolved.is_file():
+            digest = sha256_file(resolved)
+            hash_status = "observed"
+    except OSError:
+        hash_status = "unavailable"
     evidence_id = store.add_evidence(
         uri=resolved.as_uri(),
         source_kind=source_kind,
@@ -301,6 +308,7 @@ def _installation_evidence(
             "software_id": item["id"],
             "installed_observed": True,
             "content_retained": False,
+            "hash_status": hash_status,
         },
     )
     return True, str(resolved), evidence_id
