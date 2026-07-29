@@ -149,3 +149,24 @@ Vertrag und Sicherheitsgates stehen in
 Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), die Datenregeln in
 [`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und die Adaptergrenzen in
 [`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).
+
+## Bundles und Partner
+
+`system-explorer` bleibt einzeln nutzbar. In einer V4-Komposition ist es der
+erforderliche Discovery-, Karten- und Deckungsprüfer des
+`ellmos-core-discovery-bundle`. Direkte Partner sind `ellmos-core` als
+Orchestrierungsaufrufer sowie der empfohlene Komponenten-Resolver und
+semantische Routing-Partner.
+
+Das Modul kann außerdem zwei Grenzen lesend unterstützen:
+
+- `ellmos-governance-assurance-bundle`: optionale Kartierung von
+  Entscheidungsdokumenten, Policies und Referenzen. Entscheidungen und
+  Policies bleiben bei ihren Fachautoritäten.
+- `ellmos-sync-federation-bundle`: empfohlene, cloud-sichere Kartenprojektion.
+  Föderation und Transfer bleiben bei ihren dafür vorgesehenen Trägern.
+
+MCP-Server wie ControlCenter sind Zugangsflächen, keine Funktionsowner dieses
+Moduls. Die verbindliche Mitgliedschaft, Versionen, Profile und privaten
+Zusammensetzungsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest;
+diese öffentliche Übersicht ist nur eine sichere Discovery-Hilfe.
