@@ -62,6 +62,9 @@ Beziehungen besitzen:
 11. **Crystallized resources** – installierte Software, Fremdmodule, Repos,
     Skripte und Skills mit Funktionen, LLM-Steuerwegen, Flexibilität und
     belegpflichtigem Tokenersparnispotenzial.
+12. **Composition contracts** – gepinnte Bundles, Kataloge, logische Systeme,
+    gewünschte Instanzen, Testoverlays und Flotten mit deterministischer
+    Read-only-Auflösung.
 
 ## Steuerdokumentgraph
 
@@ -149,3 +152,17 @@ Prompt → ChangeProposal → Schema-/Ontologieprüfung → Kardinalitätsprüfu
 ```
 
 Im MVP endet der Fluss bei `ChangeProposal`.
+
+## V4-Kompositionsauflösung
+
+Die additive Kompositionsschicht validiert kanonische Content-Hashes,
+Version-/Commit-Pins, Root-Containment, Profilselektion, Statusgrenzen,
+Fallback-/Abhängigkeitszyklen und Test-Suppressions. Sie materialisiert nur
+eine deterministische Projektion; `runtime_actions`, `target_mutations` und
+Test-Writeback bleiben leer beziehungsweise `false`.
+
+Output-Bindings trennen einmalige Berichte, Entscheidungen,
+Automationssynthesen, native Runtime-Logs und Governance-Receipts. Rohlogs
+bleiben hostlokal beim Producer. Explorer darf ihre Metadaten und Health
+indexieren, aber keine zentrale Rohlogkopie erzeugen. Details:
+[`docs/V4-COMPOSITION-CONTRACTS.md`](docs/V4-COMPOSITION-CONTRACTS.md).

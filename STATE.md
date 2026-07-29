@@ -18,4 +18,6 @@ description: |
 - Datenspeicherung: lokale SQLite-Referenzen, keine rohen Transcripttexte
 - Randressourcen: installierte Software mit Funktionen, LLM-Steuerwegen,
   Readiness-Symbolen und getrenntem Tokenersparnisstatus
+- V4-Komposition: additive Bundle-/System-/Instanz-/Test-/Fleet-Verträge und
+  deterministische Read-only-Auflösung auf Feature-Branch
 - Nächster Freigabepunkt: Test-, UI- und Mirror-Readback

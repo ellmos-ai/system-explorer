@@ -36,6 +36,10 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
 - kristallisierte Randressourcen für installierte Software, Fremdmodule,
   Repositories, Skripte und Skills mit LLM-Steuerweg, Flexibilität und
   belegpflichtigem Tokenersparnispotenzial
+- additive V4-Kompositionsverträge für Bundles, Kataloge, Systeme,
+  gewünschte Instanzen, Resolutionstests und Flotten
+- deterministische, gepinnte Read-only-Auflösung mit Profilen,
+  Suppressions, Root-Containment und kanonischen Content-Hashes
 - optionale ApiProber-Evidenzaufnahme für autorisierte passive REST-Prüfungen
 - lokale grafische Oberfläche mit belegbezogenen Details
 - schreibgeschützte, promptgestützte Änderungsentwürfe mit Pflichtgates
@@ -64,6 +68,9 @@ system-explorer provider-refresh --config deployment.json
 system-explorer purpose-check --target carrier:system-explorer --config deployment.json
 system-explorer resources --config software-resources.json
 system-explorer map --config software-resources.json --view resources
+system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
+system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
+system-explorer test-resolve system-test.v1.json --catalog bundles.catalog.v1.json
 system-explorer serve --config explorer.json
 ```
 
@@ -106,6 +113,12 @@ Wahrheitsgrenzen stehen in
 [`docs/CRYSTALLIZED-RESOURCES.md`](docs/CRYSTALLIZED-RESOURCES.md); eine
 neutrale Konfiguration in
 [`examples/software-resources.json`](examples/software-resources.json).
+
+Die V4-Verträge, Hashregeln, Output-/Log-Bindings und CLI-Grenzen stehen in
+[`docs/V4-COMPOSITION-CONTRACTS.md`](docs/V4-COMPOSITION-CONTRACTS.md).
+`manifest-validate` prüft wahlweise eine Datei oder einen ganzen Repo-Baum.
+Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
+Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
 ## Sicherheits- und Wahrheitsgrenzen
 

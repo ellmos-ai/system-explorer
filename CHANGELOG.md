@@ -2,10 +2,24 @@
 
 ## [Unreleased]
 
+### Hinzugefügt
+
+- JSON-Schemas für `ellmos.bundle.v1`, `ellmos.bundles.catalog.v1`,
+  `ellmos.system.v1`, `ellmos.system-instance.v1`,
+  `ellmos.system-test.v1` und `ellmos.fleet.v1`
+- deterministische Manifest- und Repo-Baumvalidierung mit kanonischem
+  Content-Hash, Secret-Grenze, Pins und Root-Containment
+- Read-only-System-/Testauflösung mit Profilen, Statuswerten,
+  Fallback-/Abhängigkeitszyklen, Suppressions und atomarem explizitem Output
+- typisierte Output-/Log-Bindings mit hostlokaler Rohloggrenze,
+  Entscheidungs-, Automations-, Governance- und Berichts-Ownership
+
 ### Geplant
 
 - optionale Live-Hook- und GUI-Host-Adapter
 - Import standardisierter Schwarm-Probe-Receipts
+- vollständige Integration des autoritativen externen `ellmos.stack.v2`-
+  Schemas; W1 konsumiert kompatibel nur `bundle_refs`
 
 ## [0.1.0] — 2026-07-29
 

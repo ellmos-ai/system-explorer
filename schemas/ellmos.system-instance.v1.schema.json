@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ellmos.ai/schemas/ellmos.system-instance.v1.schema.json",
+  "title": "ellmos desired system instance contract",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "status",
+    "lifecycle",
+    "authority",
+    "provenance",
+    "content_hash",
+    "instance_id",
+    "system_ref",
+    "host_id",
+    "desired_profile",
+    "component_states",
+    "desired_sources",
+    "evidence_refs",
+    "output_bindings"
+  ],
+  "properties": {
+    "schema": {"const": "ellmos.system-instance.v1"},
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "status": {"$ref": "#/$defs/status"},
+    "lifecycle": {"enum": ["draft", "active", "deprecated"]},
+    "authority": {"type": "object"},
+    "provenance": {"type": "object"},
+    "content_hash": {"$ref": "#/$defs/hash"},
+    "instance_id": {"type": "string", "minLength": 1},
+    "system_ref": {"$ref": "#/$defs/pinned_ref"},
+    "host_id": {"type": "string", "minLength": 1},
+    "desired_profile": {"type": "string", "minLength": 1},
+    "component_states": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {"status": {"$ref": "#/$defs/status"}},
+        "additionalProperties": true
+      }
+    },
+    "desired_sources": {"type": "array", "items": {"$ref": "#/$defs/ref"}},
+    "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/ref"}},
+    "output_bindings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/output_binding"}
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {
+      "enum": [
+        "registered",
+        "available",
+        "installed",
+        "configured",
+        "enabled",
+        "active",
+        "healthy",
+        "suppressed",
+        "experimental",
+        "unavailable"
+      ]
+    },
+    "ref": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {
+          "type": "object",
+          "anyOf": [
+            {"required": ["ref"]},
+            {"required": ["id"]},
+            {"required": ["path"]}
+          ],
+          "properties": {
+            "ref": {"type": "string", "minLength": 1},
+            "id": {"type": "string", "minLength": 1},
+            "path": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "minLength": 1},
+            "commit": {"type": "string", "minLength": 1},
+            "content_hash": {"$ref": "#/$defs/hash"}
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "pinned_ref": {
+      "allOf": [
+        {"$ref": "#/$defs/ref"},
+        {
+          "type": "object",
+          "anyOf": [
+            {"required": ["version"]},
+            {"required": ["commit"]},
+            {"required": ["content_hash"]}
+          ]
+        }
+      ]
+    },
+    "output_binding": {
+      "type": "object",
+      "required": [
+        "kind",
+        "owner_ref",
+        "storage_uri",
+        "visibility",
+        "raw_content_allowed"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "one_off_report",
+            "decision_request",
+            "decision_synthesis",
+            "automation_summary",
+            "runtime_log",
+            "audit_receipt"
+          ]
+        },
+        "owner_ref": {"type": "string", "minLength": 1},
+        "storage_uri": {"type": "string", "minLength": 1},
+        "visibility": {"enum": ["public", "private", "commercial"]},
+        "retention": {"type": "string", "minLength": 1},
+        "backup_uri": {"type": "string", "minLength": 1},
+        "desktop_shortcut": {"type": "string", "minLength": 1},
+        "raw_content_allowed": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
