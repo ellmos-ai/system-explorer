@@ -268,7 +268,7 @@ def scan(
         root = expand_path(root_config["path"], base)
         root_id_value = str(root_config.get("id", root.name))
         before_root = dict(stats)
-        commits_before_root = store.commit_count
+        commit_attempts_before_root = store.commit_attempt_count
         runtime.checkpoint(
             "root_started",
             phase="root",
@@ -356,10 +356,12 @@ def scan(
                 root_index=root_index,
             )
         except BaseException:
-            committed_during_root = store.commit_count > commits_before_root
+            commit_attempted_during_root = (
+                store.commit_attempt_count > commit_attempts_before_root
+            )
             if store.in_transaction:
                 store.rollback()
-            if committed_during_root:
+            if commit_attempted_during_root:
                 event = "root_commit_state_uncertain"
             else:
                 stats.clear()
@@ -376,13 +378,14 @@ def scan(
                 check_budget=False,
             )
             raise
+        root_commit_started = False
         try:
+            root_commit_started = True
             store.commit()
         except BaseException:
-            committed_during_root = store.commit_count > commits_before_root
             if store.in_transaction:
                 store.rollback()
-            if committed_during_root:
+            if root_commit_started:
                 runtime.checkpoint(
                     "root_commit_state_uncertain",
                     phase="root-commit",
@@ -500,17 +503,22 @@ def _run_post_scan_phase(
         force=True,
     )
     before_phase = dict(stats)
-    commits_before_phase = store.commit_count
+    commit_attempts_before_phase = store.commit_attempt_count
+    phase_commit_started = False
     try:
         result = operation()
         for target, source in stat_fields:
             stats[target] += result[source]
+        phase_commit_started = True
         store.commit()
     except BaseException:
-        committed_during_phase = store.commit_count > commits_before_phase
+        commit_attempted_during_phase = (
+            phase_commit_started
+            or store.commit_attempt_count > commit_attempts_before_phase
+        )
         if store.in_transaction:
             store.rollback()
-        if committed_during_phase:
+        if commit_attempted_during_phase:
             event = "phase_commit_state_uncertain"
         else:
             stats.clear()

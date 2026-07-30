@@ -161,20 +161,29 @@ class ScanRuntimeTest(unittest.TestCase):
         (root / "one.md").write_text("# One\n", encoding="utf-8")
         events: list[dict[str, object]] = []
 
-        with self.assertRaises(KeyboardInterrupt), Store(self.db) as store:
-            real_commit = store.commit
+        with Store(self.db) as store:
+            real_commit_database = store._commit_database
 
-            def commit_then_interrupt() -> None:
-                real_commit()
+            def persist_then_interrupt_before_success_counter() -> None:
+                real_commit_database()
                 raise KeyboardInterrupt
 
-            with patch.object(store, "commit", side_effect=commit_then_interrupt):
+            with (
+                self.assertRaises(KeyboardInterrupt),
+                patch.object(
+                    store,
+                    "_commit_database",
+                    side_effect=persist_then_interrupt_before_success_counter,
+                ),
+            ):
                 scan(
                     self._config([root]),
                     store,
                     progress=events.append,
                     progress_interval_seconds=0,
                 )
+            self.assertEqual(store.commit_attempt_count, 1)
+            self.assertEqual(store.commit_count, 0)
 
         db = sqlite3.connect(self.db)
         try:
@@ -185,6 +194,62 @@ class ScanRuntimeTest(unittest.TestCase):
         event_names = [event["event"] for event in events]
         self.assertIn("root_commit_state_uncertain", event_names)
         self.assertNotIn("root_rolled_back", event_names)
+
+    def test_post_root_outer_commit_interrupt_before_success_counter_is_uncertain(
+        self,
+    ) -> None:
+        events: list[dict[str, object]] = []
+        config = self._config([])
+        config["_config_path"] = str(self.root / "config.json")
+
+        def uncommitted_infrastructure(
+            config: dict[str, object], store: Store
+        ) -> dict[str, int]:
+            store.add_node("registry", "persisted")
+            return {"registries": 1, "databases": 0, "tables": 0}
+
+        with Store(self.db) as store:
+            real_commit_database = store._commit_database
+
+            def persist_then_interrupt_before_success_counter() -> None:
+                real_commit_database()
+                raise KeyboardInterrupt
+
+            with (
+                self.assertRaises(KeyboardInterrupt),
+                patch(
+                    "system_explorer.scanner.register_declared_infrastructure",
+                    side_effect=uncommitted_infrastructure,
+                ),
+                patch.object(
+                    store,
+                    "_commit_database",
+                    side_effect=persist_then_interrupt_before_success_counter,
+                ),
+            ):
+                scan(
+                    config,
+                    store,
+                    progress=events.append,
+                    progress_interval_seconds=0,
+                )
+            self.assertEqual(store.commit_attempt_count, 1)
+            self.assertEqual(store.commit_count, 0)
+
+        db = sqlite3.connect(self.db)
+        try:
+            self.assertEqual(db.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+            self.assertEqual(
+                db.execute(
+                    "SELECT COUNT(*) FROM nodes WHERE node_type='registry'"
+                ).fetchone()[0],
+                1,
+            )
+        finally:
+            db.close()
+        event_names = [event["event"] for event in events]
+        self.assertIn("phase_commit_state_uncertain", event_names)
+        self.assertNotIn("phase_rolled_back", event_names)
 
     def test_committed_post_root_phase_is_not_reported_as_rolled_back(self) -> None:
         now = [0.0]

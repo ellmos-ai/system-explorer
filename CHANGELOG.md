@@ -9,6 +9,8 @@
 - atomare Root- und Nachlaufphasen-Checkpoints mit explizitem Rollback
   offener Transaktionen bei Deadline und `Ctrl+C`
 - strukturierte Commit-Grenzmeldungen ohne falsche Rollback-Behauptung
+- Commit-Versuchsmarker vor dem SQLite-Aufruf für die schmale
+  Persistiert-aber-noch-nicht-bestätigt-Grenze
 - SQLite-Integritätsprüfung im Store und Abbruchtests ohne Hot Journal
 - `ai-media-editor`-Connector mit Vertragsprüfung, optionalem UC6-Probeaufruf
   und Erklärvideo-Handoff aus mehreren analysierten Kartenansichten

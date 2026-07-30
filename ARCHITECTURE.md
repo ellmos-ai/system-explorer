@@ -92,7 +92,10 @@ Bereits committete Roots bleiben erhalten. Die nachgelagerten
 Infrastruktur-/Deployment-/Ressourcen-/Föderationsphasen sind ebenfalls
 einzelne Checkpoints und werden vor und nach ihrer Ausführung gegen das
 Budget geprüft. Eine bereits committete Phase wird bei einem späteren
-Timeout nicht als zurückgerollt gemeldet. Es gibt bewusst keinen
+Timeout nicht als zurückgerollt gemeldet. Jeder Commit-Versuch wird vor dem
+SQLite-Aufruf registriert; ein Abbruch zwischen erfolgreicher Persistenz und
+Erfolgsbestätigung wird deshalb konservativ als `commit_state_uncertain`
+gemeldet. Es gibt bewusst keinen
 Resume-Cursor: Ohne persistente, quellgebundene Cursor- und
 Frischevalidierung wäre „Resume“ keine belegbare Fortsetzung. Wiederholte
 Scans verwenden stattdessen die vorhandenen deterministischen IDs und

@@ -7,7 +7,6 @@ from typing import Any
 
 from .util import json_dumps, stable_id, utc_now
 
-
 SCHEMA = """
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS evidence (
@@ -66,6 +65,7 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
+        self._commit_attempt_count = 0
         self._commit_count = 0
         self.db.executescript(SCHEMA)
 
@@ -191,8 +191,12 @@ class Store:
         return edge_id
 
     def commit(self) -> None:
-        self.db.commit()
+        self._commit_attempt_count += 1
+        self._commit_database()
         self._commit_count += 1
+
+    def _commit_database(self) -> None:
+        self.db.commit()
 
     def rollback(self) -> None:
         self.db.rollback()
@@ -204,6 +208,10 @@ class Store:
     @property
     def commit_count(self) -> int:
         return self._commit_count
+
+    @property
+    def commit_attempt_count(self) -> int:
+        return self._commit_attempt_count
 
     def integrity_check(self) -> str:
         row = self.db.execute("PRAGMA integrity_check").fetchone()
