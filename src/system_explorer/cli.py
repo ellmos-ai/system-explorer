@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 import tempfile
@@ -29,7 +30,7 @@ from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
 from .resolver import resolve_system, resolve_test, validate_manifest_target
 from .resources import resource_report
-from .scanner import scan
+from .scanner import ProgressCallback, scan
 from .server import serve
 from .specs import desired_template, import_spec
 from .store import Store
@@ -51,6 +52,28 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ("scan", "ingest", "coverage", "assess", "doctor"):
         item = sub.add_parser(name)
         item.add_argument("--config", type=Path, required=True)
+        if name in {"scan", "ingest"}:
+            item.add_argument(
+                "--time-budget-seconds",
+                type=float,
+                default=300.0,
+                help=(
+                    "Fail closed after this scan budget; 0 explicitly disables "
+                    "the deadline (default: 300)."
+                ),
+            )
+            item.add_argument(
+                "--progress",
+                choices=["jsonl", "off"],
+                default="jsonl",
+                help="Write scan progress to stderr as JSONL or disable it.",
+            )
+            item.add_argument(
+                "--progress-interval-seconds",
+                type=float,
+                default=5.0,
+                help="Minimum interval for repeated per-root progress events.",
+            )
 
     spec = sub.add_parser("import-spec")
     spec.add_argument("path", type=Path)
@@ -278,8 +301,15 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return _run(args)
+    except KeyboardInterrupt:
+        _print_cli_error(
+            args,
+            "scan_interrupted",
+            "interrupted; scan stopped without a success payload",
+        )
+        return 130
     except (OSError, ValueError, json.JSONDecodeError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        _print_cli_error(args, "scan_failed", str(exc))
         return 2
 
 
@@ -352,7 +382,7 @@ def _run(args: argparse.Namespace) -> int:
 
     with Store(database_path(config)) as store:
         if args.command == "scan":
-            value: Any = scan(config, store)
+            value: Any = scan(config, store, **_scan_runtime_options(args))
         elif args.command == "import-spec":
             value = import_spec(args.path, store)
             tag_current_system(config, store)
@@ -366,7 +396,7 @@ def _run(args: argparse.Namespace) -> int:
         elif args.command == "assess":
             value = assess(store)
         elif args.command == "ingest":
-            value = _ingest(config, store)
+            value = _ingest(config, store, **_scan_runtime_options(args))
         elif args.command == "query":
             value = (
                 store.nodes()
@@ -510,9 +540,68 @@ def _doctor(config: dict[str, Any], store: Store) -> dict[str, Any]:
     }
 
 
-def _ingest(config: dict[str, Any], store: Store) -> dict[str, Any]:
+def _scan_runtime_options(args: argparse.Namespace) -> dict[str, Any]:
+    budget = float(args.time_budget_seconds)
+    if not math.isfinite(budget) or budget < 0:
+        raise ValueError("time budget must be finite and not negative")
+    interval = float(args.progress_interval_seconds)
+    if not math.isfinite(interval) or interval < 0:
+        raise ValueError("progress interval must be finite and not negative")
+    return {
+        "time_budget_seconds": None if budget == 0 else budget,
+        "progress": _emit_scan_progress if args.progress == "jsonl" else None,
+        "progress_interval_seconds": interval,
+    }
+
+
+def _emit_scan_progress(event: dict[str, Any]) -> None:
+    print(
+        json.dumps(event, ensure_ascii=False, separators=(",", ":")),
+        file=sys.stderr,
+        flush=True,
+    )
+
+
+def _print_cli_error(
+    args: argparse.Namespace,
+    event: str,
+    message: str,
+) -> None:
+    if (
+        getattr(args, "command", None) in {"scan", "ingest"}
+        and getattr(args, "progress", None) == "jsonl"
+    ):
+        _emit_scan_progress(
+            {
+                "schema": "system-explorer.scan-progress.v1",
+                "event": event,
+                "message": message,
+            }
+        )
+        return
+    print(f"error: {message}", file=sys.stderr)
+
+
+def _ingest(
+    config: dict[str, Any],
+    store: Store,
+    *,
+    time_budget_seconds: float | None = None,
+    progress: ProgressCallback | None = None,
+    progress_interval_seconds: float = 5.0,
+) -> dict[str, Any]:
     base = Path(config["_base"])
-    result: dict[str, Any] = {"scan": scan(config, store), "desired": [], "transcripts": []}
+    result: dict[str, Any] = {
+        "scan": scan(
+            config,
+            store,
+            time_budget_seconds=time_budget_seconds,
+            progress=progress,
+            progress_interval_seconds=progress_interval_seconds,
+        ),
+        "desired": [],
+        "transcripts": [],
+    }
     for item in config.get("desired_sources", []):
         source = item["path"] if isinstance(item, dict) else item
         result["desired"].append(

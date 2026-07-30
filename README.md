@@ -55,7 +55,7 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e .
 system-explorer init --config explorer.json
-system-explorer ingest --config explorer.json
+system-explorer ingest --config explorer.json --time-budget-seconds 300
 system-explorer coverage --config explorer.json
 system-explorer assess --config explorer.json
 system-explorer map --config explorer.json --view control --format mermaid
@@ -82,6 +82,46 @@ system-explorer serve --config explorer.json
 ```
 
 Die Oberfläche bindet standardmäßig nur an `127.0.0.1:8765`.
+
+### Begrenzte Scans und Fortschritt
+
+`scan` und der Scan-Anteil von `ingest` besitzen über die CLI standardmäßig
+ein Zeitbudget von 300 Sekunden. Jeder Root wird als eigener
+Transaktions-Checkpoint verarbeitet. Liegt der Fehler vor dem Commit, wird
+die offene Root-Transaktion zurückgerollt; bereits abgeschlossene Roots
+bleiben konsistent gespeichert. Tritt ein Fehler genau an einer nicht mehr
+offenen Commit-Grenze auf, meldet die Telemetrie
+`root_commit_state_uncertain`, statt fälschlich einen Rollback zu behaupten.
+Bei aktivem JSONL-Modus erscheinen Fortschritt und CLI-Fehler ausschließlich
+als JSONL auf `stderr`, das abschließende Ergebnis ausschließlich auf
+`stdout`.
+
+```powershell
+python -m system_explorer.cli scan `
+  --config C:\path\to\system-explorer.json `
+  --time-budget-seconds 900 `
+  --progress jsonl `
+  --progress-interval-seconds 5
+```
+
+`--progress off` deaktiviert die Telemetrie. `--time-budget-seconds 0`
+deaktiviert die Deadline ausdrücklich; das ist bei unbeaufsichtigten Läufen
+nicht empfohlen. `Ctrl+C` beendet mit Exitcode 130 und rollt eine noch offene
+Transaktion zurück. Ein Resume-Cursor existiert noch nicht: Der nächste Lauf
+scannt die Roots erneut und nutzt die idempotenten Upserts. Ein hartes Beenden
+des Prozesses kann weiterhin SQLite-Recovery-Artefakte erzeugen und ist kein
+kontrollierter Abbruch.
+
+In einem zusätzlichen Git-Worktree kann ein globales Editable-Install noch
+auf einen anderen Clone zeigen. Für einen belegbar richtigen Testlauf daher
+entweder eine isolierte virtuelle Umgebung im Worktree verwenden oder die
+Source explizit voranstellen:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path .\src).Path
+python -m unittest discover -s tests -v
+python -m ruff check src tests
+```
 
 Eigene Steuerdateien werden über `control_documents` (Glob, Rolle,
 Entry-Flag), Eintrittsordner über `entry_directories` konfiguriert. Die

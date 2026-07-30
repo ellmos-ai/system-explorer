@@ -25,5 +25,10 @@ python -m unittest discover -s tests -v
 system-explorer doctor --config examples/explorer.json
 ```
 
+In einem zusätzlichen Git-Worktree muss das Editable-Install in einer
+isolierten virtuellen Umgebung erfolgen. Alternativ ist für Prüfungen
+`$env:PYTHONPATH = (Resolve-Path .\src).Path` explizit zu setzen, damit nicht
+versehentlich ein anderer lokaler Clone importiert wird.
+
 Der lokale Arbeitsstand ist Git-Source-of-Truth. Eine OneDrive-Kopie ist nur
 ein kontrollierter Mirror ohne `.git`.

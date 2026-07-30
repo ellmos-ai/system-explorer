@@ -3,6 +3,33 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-07-30: Scans checkpointen pro Root und behaupten kein Resume
+
+### Kontext
+
+Ein großer Scan konnte mehrere Minuten ohne Ausgabe in einer einzigen
+SQLite-Schreibtransaktion laufen. Ein externer Stop war dadurch schwer von
+einem Hänger zu unterscheiden und konnte ein Recovery-Journal hinterlassen.
+
+### Entscheidung
+
+Die CLI veröffentlicht JSONL-Fortschritt auf `stderr`, setzt ein
+konfigurierbares Standardzeitbudget und verarbeitet jeden Root als eigenen
+Commit-Checkpoint. Deadline und kontrollierter Interrupt rollen nur eine noch
+offene Root-Transaktion explizit zurück und erzeugen dafür kein
+Erfolgsereignis. Ist die Commit-Grenze nicht mehr offen, wird der Zustand als
+unklar ausgewiesen, statt einen Rollback zu behaupten. Abgeschlossene Roots
+bleiben konsistent erhalten. Nachgelagerte Scanphasen besitzen dieselbe
+Checkpoint- und Ereignissemantik.
+
+### Grenze
+
+Die Deadline ist kooperativ zwischen Dateisystemoperationen; sie kann einen
+einzelnen blockierenden Betriebssystemaufruf nicht präemptiv abbrechen. Ein
+hartes Prozess-Kill bleibt außerhalb des kontrollierten Vertrags. Resume wird
+erst eingeführt, wenn persistente Cursor, Quellfrische und
+Checkpoint-Provenienz gemeinsam validiert werden können.
+
 ## 2026-07-29: Connectoren materialisieren nur eng begrenzte Ableitungen
 
 ### Kontext
