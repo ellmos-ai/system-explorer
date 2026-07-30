@@ -216,6 +216,7 @@ class ResolutionBridgeTest(unittest.TestCase):
             import_resolution(second_path, store)
             edges = store.resolved_edges("desired")
             nodes = {node["id"]: node for node in store.nodes("carrier")}
+            functions = store.nodes("function")
             report = coverage_report(store)
 
         self.assertEqual(len(edges), 10)
@@ -227,6 +228,7 @@ class ResolutionBridgeTest(unittest.TestCase):
             "carrier:fixture-development-system@HOST-B:module:required-provider",
             nodes,
         )
+        self.assertTrue(all(function["scope"] is None for function in functions))
         required = next(
             row
             for row in report["functions"]
@@ -338,6 +340,11 @@ class ResolutionBridgeTest(unittest.TestCase):
             candidate[field] = [{"action": "forbidden"}]
             candidate["content_hash"] = canonical_content_hash(candidate)
             candidates.append(candidate)
+
+        mismatch = json.loads(json.dumps(original))
+        mismatch["functions"].append("function.not-provided")
+        mismatch["content_hash"] = canonical_content_hash(mismatch)
+        candidates.append(mismatch)
 
         for index, candidate in enumerate(candidates):
             with self.subTest(index=index):

@@ -24,26 +24,6 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
     scope = instance.get("instance_id") if instance else system["id"]
     host_id = instance.get("host_id") if instance else None
     projection_key = f"resolution:{scope}"
-    evidence_id = store.add_evidence(
-        uri=path.resolve().as_uri(),
-        source_kind="system-resolution",
-        sha256=source_digest,
-        effective_at=effective_at,
-        modified_at=str(path.stat().st_mtime),
-        confidence=1.0,
-        sensitivity="user-local",
-        metadata={
-            "source_schema": value["schema"],
-            "resolution_content_hash": resolution_hash,
-            "system_id": system["id"],
-            "system_content_hash": system.get("content_hash"),
-            "instance_id": instance.get("instance_id") if instance else None,
-            "instance_content_hash": instance.get("content_hash") if instance else None,
-            "desired_profile": value.get("desired_profile"),
-            "resolution_scope": scope,
-            "resolution_projection": projection_key,
-        },
-    )
 
     carriers: dict[str, dict[str, Any]] = {}
     provider_sources: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -96,6 +76,33 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
                     }
                 )
 
+    declared_functions = set(value["functions"])
+    active_provides = set(function_requirements)
+    if active_provides != declared_functions:
+        raise ValueError(
+            "resolution functions do not match active component provides"
+        )
+
+    evidence_id = store.add_evidence(
+        uri=path.resolve().as_uri(),
+        source_kind="system-resolution",
+        sha256=source_digest,
+        effective_at=effective_at,
+        modified_at=str(path.stat().st_mtime),
+        confidence=1.0,
+        sensitivity="user-local",
+        metadata={
+            "source_schema": value["schema"],
+            "resolution_content_hash": resolution_hash,
+            "system_id": system["id"],
+            "system_content_hash": system.get("content_hash"),
+            "instance_id": instance.get("instance_id") if instance else None,
+            "instance_content_hash": instance.get("content_hash") if instance else None,
+            "desired_profile": value.get("desired_profile"),
+            "resolution_scope": scope,
+            "resolution_projection": projection_key,
+        },
+    )
     superseded = store.clear_resolution_projection(projection_key)
     for ref, carrier in sorted(carriers.items()):
         store.add_node(
@@ -124,14 +131,18 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             },
         )
 
+    existing_function_ids = {node["id"] for node in store.nodes("function")}
     for function in sorted(function_requirements):
-        store.add_node(
-            "function",
-            function,
-            node_id=_function_id(function),
-            scope=scope,
-            metadata={},
-        )
+        function_id = _function_id(function)
+        if function_id not in existing_function_ids:
+            store.add_node(
+                "function",
+                function,
+                node_id=function_id,
+                scope=None,
+                metadata={},
+            )
+            existing_function_ids.add(function_id)
 
     for (ref, function), sources in sorted(provider_sources.items()):
         requirements = {source["requirement"] for source in sources}
@@ -210,6 +221,10 @@ def _validate_resolution(value: Any) -> None:
         raise ValueError("resolution system.id is required")
     if not isinstance(value.get("bundles"), list):
         raise ValueError("resolution bundles must be an array")
+    if not isinstance(value.get("functions"), list) or not all(
+        isinstance(function, str) and function for function in value["functions"]
+    ):
+        raise ValueError("resolution functions must be an array of non-empty strings")
     for bundle_index, bundle in enumerate(value["bundles"]):
         if not isinstance(bundle, dict) or not isinstance(bundle.get("id"), str):
             raise ValueError(f"resolution bundle {bundle_index} requires an id")
