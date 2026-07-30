@@ -34,6 +34,7 @@ class ContractTest(unittest.TestCase):
         names = {
             "ellmos.bundle.v1.schema.json",
             "ellmos.bundles.catalog.v1.schema.json",
+            "ellmos.component-registry-bindings.v1.schema.json",
             "ellmos.system.v1.schema.json",
             "ellmos.system-instance.v1.schema.json",
             "ellmos.system-test.v1.schema.json",

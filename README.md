@@ -80,7 +80,8 @@ system-explorer explain-video --config explorer.json --output explainer-package 
 system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
 system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
-system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
+system-explorer component-registry-check component.registry.bindings.v1.json --bundle-root bundles
+system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json --registry-bindings component.registry.bindings.v1.json
 system-explorer coverage --config explorer.json --resolution resolved-system.json
 system-explorer coverage --config explorer.json --equivalence function-equivalence.json
 system-explorer import-resolution resolved-system.json --config explorer.json
@@ -172,6 +173,12 @@ neutrale Konfiguration in
 Die V4-Verträge, Hashregeln, Output-/Log-Bindings und CLI-Grenzen stehen in
 [`docs/V4-COMPOSITION-CONTRACTS.md`](docs/V4-COMPOSITION-CONTRACTS.md).
 `manifest-validate` prüft wahlweise eine Datei oder einen ganzen Repo-Baum.
+`component-registry-check` validiert typisierte Bundle-Refs gegen exakt
+gehashte native Quellen und berechnet `declared_only`-Gates
+vorkommensbezogen. `system-resolve --registry-bindings` konsumiert genau
+diese kanonische Logik; ein zweiter Resolver im Manifest-Repository ist nicht
+erforderlich. Hostbezug und Beobachtungszeit gehören nur in explizit erzeugte
+Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 

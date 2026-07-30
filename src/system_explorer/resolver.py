@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterable
 
+from .component_registry import apply_component_registry_gate
 from .contracts import (
     CONTRACT_SCHEMAS,
     OPERATIONAL_STATUSES,
@@ -99,10 +100,24 @@ def validate_manifest_target(path: Path) -> dict[str, Any]:
     }
 
 
-def resolve_system(instance_path: Path, catalog_paths: Iterable[Path]) -> dict[str, Any]:
+def resolve_system(
+    instance_path: Path,
+    catalog_paths: Iterable[Path],
+    *,
+    registry_bindings_path: Path | None = None,
+    registry_source_paths: dict[str, Path] | None = None,
+) -> dict[str, Any]:
     instance_path = instance_path.resolve()
     catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
-    resolution_root = _resolution_root((instance_path, *catalog_paths))
+    registry_bindings_path = (
+        Path(registry_bindings_path).resolve()
+        if registry_bindings_path is not None
+        else None
+    )
+    resolution_inputs = (instance_path, *catalog_paths)
+    if registry_bindings_path is not None:
+        resolution_inputs = (*resolution_inputs, registry_bindings_path)
+    resolution_root = _resolution_root(resolution_inputs)
     instance = _load_contract(instance_path, "ellmos.system-instance.v1")
     if instance["status"] not in RESOLVABLE_STATUSES:
         raise ValueError(
@@ -117,7 +132,7 @@ def resolve_system(instance_path: Path, catalog_paths: Iterable[Path]) -> dict[s
     system = _load_contract(system_path, "ellmos.system.v1")
     _verify_pin(instance["system_ref"], system, "$.system_ref")
     catalogs = _load_catalogs(catalog_paths, resolution_root)
-    return _resolve_system_document(
+    resolution = _resolve_system_document(
         system,
         system_path,
         catalogs,
@@ -126,6 +141,14 @@ def resolve_system(instance_path: Path, catalog_paths: Iterable[Path]) -> dict[s
         instance=instance,
         resolution_root=resolution_root,
     )
+    if registry_bindings_path is not None:
+        resolution = apply_component_registry_gate(
+            resolution,
+            registry_bindings_path,
+            resolution_root=resolution_root,
+            source_paths=registry_source_paths,
+        )
+    return resolution
 
 
 def resolve_test(test_path: Path, catalog_paths: Iterable[Path]) -> dict[str, Any]:

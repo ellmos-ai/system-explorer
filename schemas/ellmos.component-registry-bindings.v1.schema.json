@@ -1,0 +1,291 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ellmos.ai/schemas/ellmos.component-registry-bindings.v1.schema.json",
+  "title": "ellmos component registry bindings v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "status",
+    "lifecycle",
+    "authority",
+    "provenance",
+    "contract",
+    "sources",
+    "bindings",
+    "declared_only",
+    "declared_only_policy",
+    "content_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ellmos.component-registry-bindings.v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string"
+    },
+    "lifecycle": {
+      "type": "string"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "runtime_authority"
+      ],
+      "properties": {
+        "kind": {
+          "const": "external-registry-reference"
+        },
+        "runtime_authority": {
+          "const": false
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_plan",
+        "repository"
+      ],
+      "properties": {
+        "source_plan": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "path",
+        "content_hash"
+      ],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "pattern": "^contract:"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/$defs/binding"
+        }
+      }
+    },
+    "declared_only": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "component_type",
+          "reason"
+        ],
+        "properties": {
+          "component_type": {
+            "$ref": "#/$defs/component_type"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "declared_only_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resolution_class",
+        "runtime_authority",
+        "activation_status",
+        "may_satisfy_actual_coverage"
+      ],
+      "properties": {
+        "resolution_class": {
+          "const": "declared-only"
+        },
+        "runtime_authority": {
+          "const": false
+        },
+        "activation_status": {
+          "const": "blocked-until-native-registry-record"
+        },
+        "may_satisfy_actual_coverage": {
+          "const": false
+        }
+      }
+    },
+    "content_hash": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "component_type": {
+      "enum": [
+        "contract",
+        "module",
+        "skill",
+        "software_app",
+        "interface",
+        "data_endpoint",
+        "access_surface",
+        "policy_document",
+        "decision_record",
+        "prompt_asset",
+        "human_context_profile"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "uri",
+        "sha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "access-surface-manifest",
+            "contract-registry",
+            "module-registry",
+            "skill-crosswalk",
+            "skill-registry",
+            "software-catalog"
+          ]
+        },
+        "uri": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9+.-]*://"
+        },
+        "record_collection": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_id_field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "record_collection",
+            "record_id_field"
+          ],
+          "not": {
+            "required": [
+              "record_id"
+            ]
+          }
+        },
+        {
+          "required": [
+            "record_id"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "record_collection"
+                ]
+              },
+              {
+                "required": [
+                  "record_id_field"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "record_id"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "crosswalk_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "crosswalk_record_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "dependentRequired": {
+        "crosswalk_source": [
+          "crosswalk_record_id"
+        ],
+        "crosswalk_record_id": [
+          "crosswalk_source"
+        ]
+      }
+    }
+  }
+}

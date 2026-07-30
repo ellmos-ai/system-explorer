@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlsplit
 CONTRACT_SCHEMAS = {
     "ellmos.bundle.v1",
     "ellmos.bundles.catalog.v1",
+    "ellmos.component-registry-bindings.v1",
     "ellmos.system.v1",
     "ellmos.system-instance.v1",
     "ellmos.system-test.v1",
@@ -32,6 +33,7 @@ OPERATIONAL_STATUSES = {
 LIFECYCLE_STATUSES = {"draft", "active", "deprecated"}
 VISIBILITIES = {"public", "private", "commercial"}
 COMPONENT_TYPES = {
+    "contract",
     "module",
     "skill",
     "software_app",
@@ -42,6 +44,34 @@ COMPONENT_TYPES = {
     "decision_record",
     "prompt_asset",
     "human_context_profile",
+}
+COMPONENT_REF_PREFIXES = {
+    "contract": "contract:",
+    "module": "module:",
+    "skill": "skill:",
+    "software_app": "software:",
+    "interface": "interface:",
+    "data_endpoint": "data_endpoint:",
+    "access_surface": "access_surface:",
+    "policy_document": "policy:",
+    "decision_record": "decision:",
+    "prompt_asset": "prompt:",
+    "human_context_profile": "human_context:",
+}
+REGISTRY_SOURCE_KINDS = {
+    "access-surface-manifest",
+    "contract-registry",
+    "module-registry",
+    "skill-crosswalk",
+    "skill-registry",
+    "software-catalog",
+}
+REGISTRY_SOURCE_KINDS_BY_COMPONENT_TYPE = {
+    "access_surface": {"access-surface-manifest"},
+    "contract": {"contract-registry"},
+    "module": {"module-registry"},
+    "skill": {"skill-registry"},
+    "software_app": {"software-catalog"},
 }
 REQUIREMENTS = {"required", "recommended", "optional"}
 TEST_MODES = {"resolution-only", "isolated-runtime"}
@@ -176,6 +206,7 @@ def validate_contract(value: dict[str, Any]) -> list[str]:
     validator = {
         "ellmos.bundle.v1": _validate_bundle,
         "ellmos.bundles.catalog.v1": _validate_catalog,
+        "ellmos.component-registry-bindings.v1": _validate_component_registry,
         "ellmos.system.v1": _validate_system,
         "ellmos.system-instance.v1": _validate_instance,
         "ellmos.system-test.v1": _validate_system_test,
@@ -262,6 +293,16 @@ def _validate_bundle(value: dict[str, Any], errors: list[str]) -> None:
                 errors.append(f"{path}.ref must identify a component")
             else:
                 refs.append(ref)
+                expected_prefix = COMPONENT_REF_PREFIXES.get(component.get("type"))
+                if (
+                    component.get("type") == "contract"
+                    and expected_prefix
+                    and not ref.startswith(expected_prefix)
+                ):
+                    errors.append(
+                        f"{path}.ref must use {expected_prefix!r} for "
+                        f"type {component.get('type')!r}"
+                    )
             _nonempty_string(component.get("role"), f"{path}.role", errors)
             _enum(
                 component.get("requirement"),
@@ -282,6 +323,294 @@ def _validate_bundle(value: dict[str, Any], errors: list[str]) -> None:
         if len(refs) != len(set(refs)):
             errors.append("$.components contains duplicate refs")
     _validate_profiles(value.get("profiles"), "$.profiles", errors)
+
+
+def _validate_component_registry(
+    value: dict[str, Any], errors: list[str]
+) -> None:
+    allowed = {
+        "schema",
+        "id",
+        "version",
+        "status",
+        "lifecycle",
+        "authority",
+        "provenance",
+        "contract",
+        "sources",
+        "bindings",
+        "declared_only",
+        "declared_only_policy",
+        "content_hash",
+    }
+    _require(
+        value,
+        {
+            "contract",
+            "sources",
+            "bindings",
+            "declared_only",
+            "declared_only_policy",
+        },
+        "$",
+        errors,
+    )
+    for field in sorted(set(value) - allowed):
+        errors.append(f"$.{field} is unsupported")
+    if isinstance(value.get("authority"), dict):
+        _require(
+            value["authority"],
+            {"kind", "runtime_authority"},
+            "$.authority",
+            errors,
+        )
+        for field in sorted(
+            set(value["authority"]) - {"kind", "runtime_authority"}
+        ):
+            errors.append(f"$.authority.{field} is unsupported")
+        if value["authority"].get("kind") != "external-registry-reference":
+            errors.append(
+                "$.authority.kind must be 'external-registry-reference'"
+            )
+        if value["authority"].get("runtime_authority") is not False:
+            errors.append("$.authority.runtime_authority must be false")
+    if isinstance(value.get("provenance"), dict):
+        _require(
+            value["provenance"],
+            {"source_plan", "repository"},
+            "$.provenance",
+            errors,
+        )
+        for field in sorted(
+            set(value["provenance"]) - {"source_plan", "repository"}
+        ):
+            errors.append(
+                f"$.provenance.{field} is unsupported; component registry "
+                "bindings are host-neutral"
+            )
+        _nonempty_string(
+            value["provenance"].get("source_plan"),
+            "$.provenance.source_plan",
+            errors,
+        )
+        _nonempty_string(
+            value["provenance"].get("repository"),
+            "$.provenance.repository",
+            errors,
+        )
+
+    contract = value.get("contract")
+    if not isinstance(contract, dict):
+        errors.append("$.contract must be an object")
+    else:
+        _require(contract, {"ref", "path", "content_hash"}, "$.contract", errors)
+        for field in sorted(set(contract) - {"ref", "path", "content_hash"}):
+            errors.append(f"$.contract.{field} is unsupported")
+        _nonempty_string(contract.get("ref"), "$.contract.ref", errors)
+        if isinstance(contract.get("ref"), str) and not contract["ref"].startswith(
+            "contract:"
+        ):
+            errors.append("$.contract.ref must use the 'contract:' prefix")
+        _relative_path(contract.get("path"), "$.contract.path", errors)
+        _sha256(contract.get("content_hash"), "$.contract.content_hash", errors)
+
+    sources = value.get("sources")
+    source_kinds: dict[str, str] = {}
+    if not isinstance(sources, dict) or not sources:
+        errors.append("$.sources must be a non-empty object")
+    else:
+        for source_id, source in sources.items():
+            path = f"$.sources[{source_id!r}]"
+            if not isinstance(source_id, str) or not source_id:
+                errors.append("$.sources keys must be non-empty source IDs")
+            if not isinstance(source, dict):
+                errors.append(f"{path} must be an object")
+                continue
+            allowed_source = {
+                "kind",
+                "uri",
+                "record_collection",
+                "record_id",
+                "record_id_field",
+                "sha256",
+            }
+            _require(source, {"kind", "uri", "sha256"}, path, errors)
+            for field in sorted(set(source) - allowed_source):
+                errors.append(f"{path}.{field} is unsupported")
+            _enum(
+                source.get("kind"),
+                REGISTRY_SOURCE_KINDS,
+                f"{path}.kind",
+                errors,
+            )
+            if isinstance(source.get("kind"), str):
+                source_kinds[source_id] = source["kind"]
+            _nonempty_string(source.get("uri"), f"{path}.uri", errors)
+            if isinstance(source.get("uri"), str) and not URI_RE.match(source["uri"]):
+                errors.append(f"{path}.uri must be a typed URI")
+            _sha256(source.get("sha256"), f"{path}.sha256", errors)
+            has_collection = any(
+                field in source for field in ("record_collection", "record_id_field")
+            )
+            if has_collection:
+                _require(
+                    source,
+                    {"record_collection", "record_id_field"},
+                    path,
+                    errors,
+                )
+                _nonempty_string(
+                    source.get("record_collection"),
+                    f"{path}.record_collection",
+                    errors,
+                )
+                _nonempty_string(
+                    source.get("record_id_field"),
+                    f"{path}.record_id_field",
+                    errors,
+                )
+                if "record_id" in source:
+                    errors.append(
+                        f"{path}.record_id may not accompany a record collection"
+                    )
+            else:
+                _nonempty_string(source.get("record_id"), f"{path}.record_id", errors)
+
+    bindings = value.get("bindings")
+    bound_refs: set[str] = set()
+    if not isinstance(bindings, dict):
+        errors.append("$.bindings must be an object")
+    else:
+        for component_type, entries in bindings.items():
+            type_path = f"$.bindings[{component_type!r}]"
+            _enum(component_type, COMPONENT_TYPES, type_path, errors)
+            if not isinstance(entries, dict):
+                errors.append(f"{type_path} must be an object")
+                continue
+            for ref, binding in entries.items():
+                path = f"{type_path}[{ref!r}]"
+                if ref in bound_refs:
+                    errors.append(f"{path} duplicates a binding for {ref!r}")
+                bound_refs.add(ref)
+                expected_prefix = COMPONENT_REF_PREFIXES.get(component_type)
+                if (
+                    not isinstance(ref, str)
+                    or not expected_prefix
+                    or not ref.startswith(expected_prefix)
+                ):
+                    errors.append(
+                        f"{path} must use the component type's canonical prefix"
+                    )
+                if not isinstance(binding, dict):
+                    errors.append(f"{path} must be an object")
+                    continue
+                allowed_binding = {
+                    "source",
+                    "record_id",
+                    "profile",
+                    "crosswalk_source",
+                    "crosswalk_record_id",
+                }
+                _require(binding, {"source", "record_id"}, path, errors)
+                for field in sorted(set(binding) - allowed_binding):
+                    errors.append(f"{path}.{field} is unsupported")
+                _nonempty_string(binding.get("source"), f"{path}.source", errors)
+                _nonempty_string(binding.get("record_id"), f"{path}.record_id", errors)
+                if "profile" in binding:
+                    _nonempty_string(binding["profile"], f"{path}.profile", errors)
+                source_id = binding.get("source")
+                if isinstance(source_id, str) and source_id not in source_kinds:
+                    errors.append(f"{path}.source references an unknown source")
+                elif isinstance(source_id, str):
+                    compatible = REGISTRY_SOURCE_KINDS_BY_COMPONENT_TYPE.get(
+                        component_type
+                    )
+                    if compatible is None:
+                        errors.append(
+                            f"{path} has no approved native source kind for "
+                            f"{component_type!r}; use declared_only"
+                        )
+                    elif source_kinds[source_id] not in compatible:
+                        errors.append(
+                            f"{path}.source kind {source_kinds[source_id]!r} "
+                            f"cannot bind {component_type!r}"
+                        )
+                crosswalk_fields = {
+                    "crosswalk_source",
+                    "crosswalk_record_id",
+                } & set(binding)
+                if crosswalk_fields and crosswalk_fields != {
+                    "crosswalk_source",
+                    "crosswalk_record_id",
+                }:
+                    errors.append(
+                        f"{path} must declare crosswalk_source and "
+                        "crosswalk_record_id together"
+                    )
+                if crosswalk_fields:
+                    if component_type != "skill":
+                        errors.append(
+                            f"{path} may use a crosswalk only for skill bindings"
+                        )
+                    crosswalk_source = binding.get("crosswalk_source")
+                    if (
+                        not isinstance(crosswalk_source, str)
+                        or source_kinds.get(crosswalk_source) != "skill-crosswalk"
+                    ):
+                        errors.append(
+                            f"{path}.crosswalk_source must reference a "
+                            "skill-crosswalk source"
+                        )
+                    _nonempty_string(
+                        binding.get("crosswalk_record_id"),
+                        f"{path}.crosswalk_record_id",
+                        errors,
+                    )
+
+    declared_only = value.get("declared_only")
+    if not isinstance(declared_only, dict):
+        errors.append("$.declared_only must be an object")
+    else:
+        for ref, declaration in declared_only.items():
+            path = f"$.declared_only[{ref!r}]"
+            if ref in bound_refs:
+                errors.append(f"{path} is also present in $.bindings")
+            if not isinstance(declaration, dict):
+                errors.append(f"{path} must be an object")
+                continue
+            _require(declaration, {"component_type", "reason"}, path, errors)
+            for field in sorted(set(declaration) - {"component_type", "reason"}):
+                errors.append(f"{path}.{field} is unsupported")
+            component_type = declaration.get("component_type")
+            _enum(component_type, COMPONENT_TYPES, f"{path}.component_type", errors)
+            expected_prefix = COMPONENT_REF_PREFIXES.get(component_type)
+            if expected_prefix and (
+                not isinstance(ref, str) or not ref.startswith(expected_prefix)
+            ):
+                errors.append(
+                    f"{path} must use {expected_prefix!r} for "
+                    f"type {component_type!r}"
+                )
+            _nonempty_string(declaration.get("reason"), f"{path}.reason", errors)
+
+    policy = value.get("declared_only_policy")
+    if not isinstance(policy, dict):
+        errors.append("$.declared_only_policy must be an object")
+    else:
+        required_policy = {
+            "resolution_class": "declared-only",
+            "runtime_authority": False,
+            "activation_status": "blocked-until-native-registry-record",
+            "may_satisfy_actual_coverage": False,
+        }
+        _require(policy, set(required_policy), "$.declared_only_policy", errors)
+        for field in sorted(set(policy) - set(required_policy)):
+            errors.append(f"$.declared_only_policy.{field} is unsupported")
+        for field, expected in required_policy.items():
+            if policy.get(field) != expected:
+                errors.append(
+                    f"$.declared_only_policy.{field} must be {expected!r}"
+                )
 
 
 def _validate_catalog(value: dict[str, Any], errors: list[str]) -> None:
@@ -807,6 +1136,22 @@ def _object(value: Any, path: str, errors: list[str]) -> None:
 def _nonempty_string(value: Any, path: str, errors: list[str]) -> None:
     if not isinstance(value, str) or not value.strip():
         errors.append(f"{path} must be a non-empty string")
+
+
+def _relative_path(value: Any, path: str, errors: list[str]) -> None:
+    _nonempty_string(value, path, errors)
+    if not isinstance(value, str) or not value:
+        return
+    normalized = value.replace("\\", "/")
+    if normalized.startswith("/") or re.match(r"^[a-zA-Z]:", normalized):
+        errors.append(f"{path} must be repository-relative")
+    if any(part == ".." for part in normalized.split("/")):
+        errors.append(f"{path} may not escape its repository")
+
+
+def _sha256(value: Any, path: str, errors: list[str]) -> None:
+    if not isinstance(value, str) or not HASH_RE.fullmatch(value):
+        errors.append(f"{path} must be a lowercase SHA-256 digest")
 
 
 def _string_list(

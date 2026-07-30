@@ -48,6 +48,7 @@ MANIFEST_NAMES = {
 MANIFEST_SCHEMAS = {
     "ellmos.bundle.v1",
     "ellmos.bundles.catalog.v1",
+    "ellmos.component-registry-bindings.v1",
     "ellmos.fleet.v1",
     "ellmos.module.v2",
     "ellmos.stack.v2",

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "system-explorer"
-version = "0.3.0"
+version = "0.4.0"
 description = "Evidence-backed system maps for functions, carriers, entry points, and architecture drift."
 readme = "README.md"
 requires-python = ">=3.10"
