@@ -2,10 +2,10 @@
 name: "system-explorer"
 type: project-docs
 profile: "FULL"
-version: 0.3.0
+version: 0.4.0
 created: "2026-07-29"
 updated: "2026-07-30"
-reason_last_change: "Fail-closed Function-Equivalence-Vertrag ergänzt"
+reason_last_change: "Kanonischen Komponentenregistry- und Activation-Gate-Vertrag ergänzt"
 last_verified: "2026-07-30"
 author: "Lukas Geiger"
 anthropic_compatible: true

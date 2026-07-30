@@ -204,6 +204,14 @@ Fallback-/Abhängigkeitszyklen und Test-Suppressions. Sie materialisiert nur
 eine deterministische Projektion; `runtime_actions`, `target_mutations` und
 Test-Writeback bleiben leer beziehungsweise `false`.
 
+Die Komponentenregistry-Bindung gehört zu derselben Resolvergrenze. Sie
+bindet ein typisiertes Bundle-Ref ausschließlich an eine deklarierte,
+gehashte native Quelle und deren exakte Record-ID. `declared_only` bleibt
+ohne Runtime-Autorität und wird pro Bundle-Vorkommen bewertet; required
+blockiert die Aktivierung. Skill-Crosswalks sind eigene gehashte Quellen.
+Host und Beobachtungszeit erscheinen nur in expliziten Receipts, nie im
+hostneutralen Binding-Manifest.
+
 ### Resolution-zu-Desired-Brücke
 
 `system-explorer.resolution.v1` ist eine deterministische Sollprojektion, aber

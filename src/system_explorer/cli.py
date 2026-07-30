@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from .assessment import assess
+from .component_registry import (
+    inspect_component_registry,
+    parse_source_path_arguments,
+)
 from .config import database_path, load_config, write_default_config
 from .coverage import coverage_report
 from .deployment import (
@@ -306,6 +310,44 @@ def build_parser() -> argparse.ArgumentParser:
     )
     manifest_validate.add_argument("path", type=Path)
 
+    component_registry = sub.add_parser(
+        "component-registry-check",
+        help=(
+            "Validate canonical component bindings, pinned sources, and "
+            "declared-only activation gates."
+        ),
+    )
+    component_registry.add_argument("bindings", type=Path)
+    component_registry.add_argument(
+        "--bundle",
+        type=Path,
+        action="append",
+        default=[],
+        dest="bundles",
+    )
+    component_registry.add_argument(
+        "--bundle-root",
+        type=Path,
+        action="append",
+        default=[],
+        dest="bundle_roots",
+    )
+    component_registry.add_argument(
+        "--source-path",
+        action="append",
+        default=[],
+        metavar="SOURCE_ID=PATH",
+    )
+    component_registry.add_argument(
+        "--activation-check",
+        action="append",
+        default=[],
+        metavar="BUNDLE_ID",
+    )
+    component_registry.add_argument("--observed-on")
+    component_registry.add_argument("--observed-at")
+    component_registry.add_argument("--output", type=Path)
+
     system_resolve = sub.add_parser(
         "system-resolve",
         help="Resolve a pinned desired system instance without runtime actions.",
@@ -317,6 +359,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         required=True,
         dest="catalogs",
+    )
+    system_resolve.add_argument("--registry-bindings", type=Path)
+    system_resolve.add_argument(
+        "--registry-source-path",
+        action="append",
+        default=[],
+        metavar="SOURCE_ID=PATH",
     )
     system_resolve.add_argument("--output", type=Path)
 
@@ -395,9 +444,49 @@ def _run(args: argparse.Namespace) -> int:
         value = validate_manifest_target(args.path)
         print(json.dumps(value, ensure_ascii=False, indent=2))
         return 0 if value["valid"] else 1
+    if args.command == "component-registry-check":
+        bundle_paths = list(args.bundles)
+        for root in args.bundle_roots:
+            bundle_paths.extend(sorted(root.glob("*/bundle.v1.json")))
+        if not bundle_paths:
+            raise ValueError(
+                "component-registry-check requires --bundle or --bundle-root"
+            )
+        value, exit_code = inspect_component_registry(
+            args.bindings,
+            bundle_paths,
+            source_paths=parse_source_path_arguments(args.source_path),
+            activation_bundle_ids=args.activation_check,
+            observed_on=args.observed_on,
+            observed_at=args.observed_at,
+        )
+        if args.output:
+            _write_json_atomic(args.output, value)
+            print(
+                json.dumps(
+                    {
+                        "output": str(args.output),
+                        "schema": value["schema"],
+                        "content_hash": value["content_hash"],
+                        "status": value["status"],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        else:
+            print(json.dumps(value, ensure_ascii=False, indent=2))
+        return exit_code
     if args.command in {"system-resolve", "test-resolve"}:
         value = (
-            resolve_system(args.instance, args.catalogs)
+            resolve_system(
+                args.instance,
+                args.catalogs,
+                registry_bindings_path=args.registry_bindings,
+                registry_source_paths=parse_source_path_arguments(
+                    args.registry_source_path
+                ),
+            )
             if args.command == "system-resolve"
             else resolve_test(args.test, args.catalogs)
         )

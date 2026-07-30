@@ -2,7 +2,7 @@
   "schema": "ellmos.module.v2",
   "id": "system-explorer",
   "display_name": "System Explorer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "category": "control",
   "kind": "tool",
   "status": "development",
@@ -16,6 +16,9 @@
   "provides": [
     "system.discovery",
     "system.mapping",
+    "system.component-registry.validate",
+    "system.component-registry.resolve",
+    "system.component-registry.activation-gate",
     "system.coverage",
     "system.function-equivalence.import",
     "system.function-equivalence.coverage",

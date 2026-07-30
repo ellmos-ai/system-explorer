@@ -7,10 +7,11 @@ Systeminstanzen, Resolutionstests und Flotten. System Explorer validiert und
 löst diese Dokumente deterministisch und read-only auf. Er startet keine
 Runtime, liest keine Secrets und verändert kein Zielsystem.
 
-Die sechs JSON-Schemas liegen unter `schemas/`:
+Die sieben JSON-Schemas liegen unter `schemas/`:
 
 - `ellmos.bundle.v1`
 - `ellmos.bundles.catalog.v1`
+- `ellmos.component-registry-bindings.v1`
 - `ellmos.system.v1`
 - `ellmos.system-instance.v1`
 - `ellmos.system-test.v1`
@@ -49,6 +50,37 @@ operativen Status. IDs und Pins müssen mit dem geladenen Manifest
 `overrides` deterministisch an. Unbekannte Profileinträge, doppelte IDs,
 Fallback-/Abhängigkeitszyklen sowie nicht auflösbare erforderliche
 Komponenten sind Fehler.
+
+## Komponentenregistry und Activation-Gate
+
+`ellmos.component-registry-bindings.v1` ist eine hostneutrale Bindungsschicht
+zwischen typisierten Bundle-Refs und ihren nativen Identitätsquellen. Sie ist
+keine zweite Registry und keine Runtime-Autorität. Jede native Bindung nennt
+eine im selben Manifest definierte, SHA-256-gepinnte Quelle und deren exakte
+`record_id`. Quellenart und Komponententyp müssen zusammenpassen.
+
+Skills dürfen zusätzlich über eine eigene, ebenfalls gehashte
+`skill-crosswalk`-Quelle gebunden werden. Dabei müssen Bundle-Ref,
+Crosswalk-Record und `registry_component_id` exakt übereinstimmen. Ein bloßer
+Crosswalk-Pfad ohne eigenen Quellenhash ist ungültig.
+
+`declared_only` bleibt als Entwurfslücke sichtbar, darf aber keine
+Runtime-Autorität oder Actual-Coverage behaupten. Das Activation-Gate wird pro
+Bundle-Vorkommen und dessen eigener Requirement-Schwere berechnet:
+
+- `required` → `blocked`
+- `recommended` → `degraded`
+- nur `optional` → `resolved-with-optional-gaps`
+- keine Lücke → `identity-resolved`
+
+Damit macht ein Required-Vorkommen in Bundle A dasselbe Ref in Bundle B nicht
+fälschlich ebenfalls required. `system-resolve --registry-bindings` konsumiert
+denselben kanonischen Resolver: native Bindungen werden in die Resolution
+projiziert, recommended/optional `declared_only` werden `unavailable`, und
+required `declared_only` bricht fail-closed ab.
+
+Das Binding-Manifest darf kein `observed_on` oder `observed_at` enthalten.
+Diese Hostevidenz entsteht nur in einem expliziten nativen Receipt.
 
 `ellmos.stack.v2` bleibt kompatibel, wird aber nur tolerant über sein
 `bundle_refs`-Feld konsumiert. Das autoritative Stack-Schema liegt außerhalb
@@ -109,7 +141,7 @@ system-explorer manifest-validate .\manifest.json
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 ```
 
-Die Baumprüfung läuft rekursiv und pfadsortiert. Sie validiert die sechs
+Die Baumprüfung läuft rekursiv und pfadsortiert. Sie validiert die sieben
 V4-Verträge sowie kompatible `ellmos.module.v2`- und `ellmos.stack.v2`-
 Manifeste. Andere `ellmos.*`-Schemas werden als `skipped` ausgewiesen, nicht
 stillschweigend als validiert behauptet.
@@ -118,7 +150,13 @@ System- und Testauflösung:
 
 ```powershell
 system-explorer system-resolve systems\instances\WORKSTATION-LG.json `
-  --catalog manifests\bundles.catalog.v1.json
+  --catalog manifests\bundles.catalog.v1.json `
+  --registry-bindings manifests\component.registry.bindings.v1.json
+
+system-explorer component-registry-check `
+  manifests\component.registry.bindings.v1.json `
+  --bundle-root manifests\bundles `
+  --activation-check ellmos-core-discovery-bundle
 
 system-explorer test-resolve tests\profiles\no-federation.json `
   --catalog manifests\bundles.catalog.v1.json

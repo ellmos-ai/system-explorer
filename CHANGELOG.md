@@ -4,6 +4,16 @@
 
 ### Hinzugefügt
 
+- kanonischer `ellmos.component-registry-bindings.v1`-Vertrag mit
+  typisierten, SHA-256-gepinnten Quellen und exakten Record-IDs
+- separat gehashte Skill-Crosswalk-Quellen sowie fail-closed Prüfung von
+  Source-ID, Quellenart, Record-ID und Crosswalk-Identität
+- vorkommenslokales `declared_only`-Activation-Gate für Bundles; required
+  blockiert, recommended degradiert und optional bleibt als Lücke sichtbar
+- gemeinsamer `component-registry-check`- und
+  `system-resolve --registry-bindings`-Pfad ohne zweiten Resolver
+- hostneutrale Registry-Bindings mit Host-/Zeitbezug ausschließlich in
+  expliziten nativen Receipts
 - fail-closed `system-explorer.function-equivalence.v1`-Vertrag mit
   typisierten Komponenten, Hostscope, Schema-/Versions-/Hash-Pins sowie
   konkret gebundener Decision-/Policy-Evidenz
