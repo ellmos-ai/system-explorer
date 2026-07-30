@@ -4,6 +4,14 @@
 
 ### Hinzugefügt
 
+- fail-closed `system-explorer.function-equivalence.v1`-Vertrag mit
+  typisierten Komponenten, Hostscope, Schema-/Versions-/Hash-Pins sowie
+  konkret gebundener Decision-/Policy-Evidenz
+- native, gehashte Probe-/Readback-Pflicht für positive Actual-Abbildungen;
+  `declared`, `inferred`, Namensheuristiken und konkurrierende Autoritäten
+  erzeugen keine Coverage
+- CLI-/Konfigurationsimport, stale-/konfliktsichere Projektionen,
+  Reconciliation und synthetische adversariale Tests ohne reale Mapping-Paare
 - read-only Resolution-v1-Importer für stabile Desired-Carrier- und
   Funktionskanten samt Requirement-, Status-, Hash- und Bundleprovenienz
 - instanzisolierte, ersetzbare Resolution-Snapshots ohne stale Desired-Kanten

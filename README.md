@@ -42,6 +42,8 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
   Suppressions, Root-Containment und kanonischen Content-Hashes
 - typisierte Read-only-Brücke von `system-explorer.resolution.v1` in
   Desired-/Coverage-Evidenz mit Requirement-Schwere und Provider-Overlap
+- explizite, gehashte Function-Equivalence-Verträge zwischen abweichenden
+  Desired- und Actual-Funktions-IDs; ohne Namens- oder Ergebnisheuristik
 - optionale ApiProber-Evidenzaufnahme für autorisierte passive REST-Prüfungen
 - `ai-media-editor`-Connector für erklärvideo-taugliche Storyboards,
   Sprechertexte und Mermaid-Schaltpläne aus analysierten Systemkarten
@@ -80,7 +82,9 @@ system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commi
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
 system-explorer coverage --config explorer.json --resolution resolved-system.json
+system-explorer coverage --config explorer.json --equivalence function-equivalence.json
 system-explorer import-resolution resolved-system.json --config explorer.json
+system-explorer import-function-equivalence function-equivalence.json --config explorer.json
 system-explorer test-resolve system-test.v1.json --catalog bundles.catalog.v1.json
 system-explorer serve --config explorer.json
 ```
@@ -251,6 +255,37 @@ Konfigurationsdeklaration als gehashte Evidenz vorliegt.
 Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
 Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden
 abgewiesen; Quelle und Zielsystem werden nicht verändert.
+
+## Explizite Funktionsäquivalenz
+
+Abweichende Desired- und Actual-Funktions-IDs werden niemals aus Namen,
+Groß-/Kleinschreibung, Pfaden, Tags oder einem ähnlich beschriebenen Ergebnis
+gleichgesetzt. Eine positive Abbildung benötigt stattdessen einen
+`system-explorer.function-equivalence.v1`-Vertrag mit:
+
+- typisiertem `component_ref`;
+- exakten Schema-, Versions- und Content-Hash-Pins für Desired- und
+  Actual-Vertrag;
+- einer typisierten Decision- oder Policy-Autorität;
+- bereits im Evidence Store vorhandener, URI- und SHA-256-identischer
+  Decision-/Policy-Evidenz, die dieselbe konkrete `authority_ref` trägt;
+- einem verifizierten Actual-Carrier auf exakt demselben Host;
+- positiver nativer Actual-Evidenz mit zugelassener Readback-/Probe-Quellart
+  und SHA-256. `declared` und `inferred` reichen nicht.
+
+Template-Verträge gelten hostneutral; echte Hostabweichungen benötigen einen
+expliziten `host-override` mit Host-ID und Begründung. Mehrere anwendbare
+Autoritäten für dasselbe Ziel sind ein Konflikt und materialisieren keine
+Coverage. Contract- oder Scanner-Hashdrift entzieht die Deckung, bis eine
+erneuerte Zuordnung vorliegt. Die synthetische Kante übernimmt den nativen
+Actual-Status und kann ihn nicht aufwerten; `observed` bleibt daher
+Teilabdeckung.
+
+Die V4-Bestandsprüfung fand 68 eindeutige Desired-Funktions-IDs und 886
+Actual-Funktions-IDs ohne exakte Schnittmenge. Dieses Release liefert deshalb
+bewusst nur Registry, Importer und synthetische Tests, aber keine reale
+Äquivalenzzuordnung. Reale Paare werden erst nach explizitem
+Capability-Vertrag und Decision-/Policy-Provenienz aufgenommen.
 
 ## Bundles und Partner
 

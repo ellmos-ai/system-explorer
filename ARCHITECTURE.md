@@ -258,6 +258,56 @@ deckungsfähigen `component_ref`. Coverage verlangt zusätzlich eine exakte
 Funktions-ID und eine explizite Hostbindung; ein ungetaggter Actual-Carrier
 darf eine hostgebundene Resolution nicht erfüllen.
 
+### Function-Equivalence-Vertrag
+
+Komponentenidentität beweist nicht, dass unterschiedlich benannte Desired-
+und Actual-Funktionen fachlich gleich sind. `system-explorer.function-
+equivalence.v1` schließt diese Lücke ausschließlich über explizite,
+versionierte und gehashte Claims:
+
+```text
+Desired bundle contract (schema + id + version + hash)
+        │
+        ├── typed component_ref + desired function
+        │
+Decision/Policy authority + hashed evidence
+        │
+        └── exact-equivalence, actual-satisfies-desired
+                         │
+Actual identity contract (schema + version + hash)
+                         │
+verified carrier + native positive edge + exact host
+                         ▼
+synthetic Actual edge with unchanged native status
+```
+
+System Explorer besitzt Evidenz, Import und Materialisierung, aber keine
+fachliche Normautorität. Der Modulowner bestätigt den Capability-Vertrag;
+Policy Registry beziehungsweise Decision Ledger liefern die
+Autoritätsprovenienz. Der Explorer prüft, ob die referenzierte Evidenz bereits
+mit identischer URI, Quellart und SHA-256 im lokalen Store liegt und bindet
+jeden Beleg an dieselbe konkrete `authority_ref` des Claims.
+
+Verträge sind standardmäßig templateweit. Host-Overrides sind nur mit
+expliziter Host-ID und Begründung zulässig. Mehrere anwendbare Verträge für
+dasselbe Host-/Komponenten-/Desired-Ziel sind ein Konflikt; eine automatische
+Priorisierung findet nicht statt. Abweichende Contract-Hashes,
+Scanner-/Identitätsversionen, Hostherkunft oder Evidenzhashes schlagen
+fail-closed fehl. `declared` und `inferred` materialisieren keine positive
+Actual-Kante. Auch eine positiv beschriftete Kante benötigt eine gehashte
+native Probe-/Readback-Evidenz aus einer explizit zugelassenen Quellart. Ein
+`observed`-Träger bleibt `observed` und erzeugt damit nur Teildeckung; der
+Äquivalenzvertrag wertet Evidenz nie auf.
+
+Roh-URIs der Authority-Evidenz werden nicht in die synthetische Kartenkante
+kopiert. Dort stehen nur lokale Evidence-IDs und stabile typisierte
+Referenzen. `runtime_actions` und `target_mutations` müssen leer sein.
+
+Empirischer V4-Stand beim Entwurf: 68 eindeutige Desired-Funktions-IDs und
+886 Actual-Funktions-IDs, ohne exakte Schnittmenge. Deshalb enthält der
+Importer keine realen Mapping-Paare. Solche Paare dürfen erst nach
+Capability-Vertrag und Decision-/Policy-Provenienz registriert werden.
+
 Output-Bindings trennen einmalige Berichte, Entscheidungen,
 Automationssynthesen, native Runtime-Logs und Governance-Receipts. Rohlogs
 bleiben hostlokal beim Producer. Explorer darf ihre Metadaten und Health

@@ -2,11 +2,11 @@
 name: "system-explorer"
 type: project-docs
 profile: "FULL"
-version: 0.2.0
+version: 0.3.0
 created: "2026-07-29"
-updated: "2026-07-29"
-reason_last_change: "Connector-Adapter und Repo-Schaltplanpflege ergänzt"
-last_verified: "2026-07-29"
+updated: "2026-07-30"
+reason_last_change: "Fail-closed Function-Equivalence-Vertrag ergänzt"
+last_verified: "2026-07-30"
 author: "Lukas Geiger"
 anthropic_compatible: true
 description: |

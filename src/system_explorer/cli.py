@@ -19,6 +19,10 @@ from .deployment import (
     refresh_provider_sources,
 )
 from .federation import export_system_map, import_system_map, tag_current_system
+from .function_equivalence import (
+    import_function_equivalence,
+    reconcile_function_equivalence_projections,
+)
 from .manifests import load_manifest, new_module_manifest, validate_manifest
 from .maps import graph_view, render_ascii, render_html, render_mermaid
 from .media_connector import (
@@ -86,6 +90,16 @@ def build_parser() -> argparse.ArgumentParser:
                     "coverage evidence before reporting; repeatable."
                 ),
             )
+            item.add_argument(
+                "--equivalence",
+                type=Path,
+                action="append",
+                dest="equivalences",
+                help=(
+                    "Import an explicit function-equivalence.v1 contract "
+                    "before reporting; repeatable."
+                ),
+            )
 
     spec = sub.add_parser("import-spec")
     spec.add_argument("path", type=Path)
@@ -97,6 +111,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     resolution.add_argument("path", type=Path)
     resolution.add_argument("--config", type=Path, required=True)
+
+    equivalence = sub.add_parser(
+        "import-function-equivalence",
+        help=(
+            "Import a read-only, Decision/Policy-authorized function "
+            "equivalence contract."
+        ),
+    )
+    equivalence.add_argument("path", type=Path)
+    equivalence.add_argument("--config", type=Path, required=True)
 
     transcripts = sub.add_parser("import-transcripts")
     transcripts.add_argument("source", type=Path)
@@ -407,6 +431,9 @@ def _run(args: argparse.Namespace) -> int:
             tag_current_system(config, store)
         elif args.command == "import-resolution":
             value = import_resolution(args.path, store)
+        elif args.command == "import-function-equivalence":
+            tag_current_system(config, store)
+            value = import_function_equivalence(args.path, store)
         elif args.command == "import-transcripts":
             value = import_transcripts(
                 args.provider, args.source, store, actor_id=args.actor
@@ -418,9 +445,15 @@ def _run(args: argparse.Namespace) -> int:
                 store,
                 explicit=args.resolutions or (),
             )
+            equivalence_imports = _import_function_equivalence_sources(
+                config,
+                store,
+                explicit=args.equivalences or (),
+            )
             value = {
                 **coverage_report(store),
                 "resolution_imports": resolution_imports,
+                "function_equivalence_imports": equivalence_imports,
             }
         elif args.command == "assess":
             value = assess(store)
@@ -630,6 +663,7 @@ def _ingest(
         ),
         "desired": [],
         "resolutions": [],
+        "function_equivalences": [],
         "transcripts": [],
     }
     for item in config.get("desired_sources", []):
@@ -638,6 +672,10 @@ def _ingest(
             {"path": source, "stats": import_spec(expand_path(source, base), store)}
         )
     result["resolutions"] = _import_resolution_sources(config, store)
+    tag_current_system(config, store)
+    result["function_equivalences"] = (
+        _import_function_equivalence_sources(config, store)
+    )
     for item in config.get("transcripts", []):
         source = expand_path(item["source"], base)
         result["transcripts"].append(
@@ -675,6 +713,34 @@ def _import_resolution_sources(
             continue
         seen.add(path)
         imports.append({"path": str(path), "stats": import_resolution(path, store)})
+    return imports
+
+
+def _import_function_equivalence_sources(
+    config: dict[str, Any],
+    store: Store,
+    *,
+    explicit: tuple[Path, ...] | list[Path] = (),
+) -> list[dict[str, Any]]:
+    base = Path(config["_base"])
+    paths: list[Path] = [path.resolve() for path in explicit]
+    for item in config.get("function_equivalence_sources", []):
+        source = item["path"] if isinstance(item, dict) else item
+        paths.append(expand_path(source, base).resolve())
+    imports = []
+    seen: set[Path] = set()
+    allowed_projection_keys: set[str] = set()
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        stats = import_function_equivalence(path, store)
+        imports.append({"path": str(path), "stats": stats})
+        allowed_projection_keys.add(stats["projection_key"])
+    reconciliation = reconcile_function_equivalence_projections(
+        store, allowed_projection_keys
+    )
+    imports.append({"reconciliation": reconciliation})
     return imports
 
 

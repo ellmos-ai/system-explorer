@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/system-explorer.function-equivalence.v1.schema.json",
+  "title": "System Explorer Function Equivalence Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "status",
+    "scope",
+    "mappings",
+    "runtime_actions",
+    "target_mutations",
+    "content_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "system-explorer.function-equivalence.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^function-equivalence:"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "active"
+    },
+    "scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "const": "template"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "host_id", "reason"],
+          "properties": {
+            "kind": {
+              "const": "host-override"
+            },
+            "host_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relation",
+          "direction",
+          "component_ref",
+          "desired_function",
+          "actual_function",
+          "desired_contract",
+          "actual_contract",
+          "authority_ref",
+          "evidence"
+        ],
+        "properties": {
+          "relation": {
+            "const": "exact-equivalence"
+          },
+          "direction": {
+            "const": "actual-satisfies-desired"
+          },
+          "component_ref": {
+            "type": "string",
+            "pattern": "^(module|skill|software):"
+          },
+          "desired_function": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actual_function": {
+            "type": "string",
+            "minLength": 1
+          },
+          "desired_contract": {
+            "$ref": "#/$defs/desiredContract"
+          },
+          "actual_contract": {
+            "$ref": "#/$defs/actualContract"
+          },
+          "authority_ref": {
+            "type": "string",
+            "pattern": "^(decision|policy):"
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/evidence"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "authority_ref": {
+                  "pattern": "^decision:"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "evidence": {
+                  "contains": {
+                    "properties": {
+                      "source_kind": {
+                        "const": "document:decision"
+                      }
+                    },
+                    "required": ["source_kind"]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "authority_ref": {
+                  "pattern": "^policy:"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "evidence": {
+                  "contains": {
+                    "properties": {
+                      "source_kind": {
+                        "const": "document:policy"
+                      }
+                    },
+                    "required": ["source_kind"]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "runtime_actions": {
+      "const": []
+    },
+    "target_mutations": {
+      "const": []
+    },
+    "content_hash": {
+      "$ref": "#/$defs/hash"
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "desiredContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "id", "version", "content_hash"],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "actualContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "version", "content_hash"],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "sha256", "source_kind", "authority_ref"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "source_kind": {
+          "enum": ["document:decision", "document:policy"]
+        },
+        "authority_ref": {
+          "type": "string",
+          "pattern": "^(decision|policy):"
+        }
+      }
+    }
+  }
+}
