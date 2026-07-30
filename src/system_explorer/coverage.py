@@ -214,7 +214,7 @@ def _desired_scope_rows(
             if edge.get("metadata", {}).get("resolution_host_id")
         }
         if host_values:
-            match_values = host_values | {scope}
+            match_values = host_values
         else:
             match_values = {
                 str(value)
@@ -233,12 +233,12 @@ def _desired_scope_rows(
             .get("origin_system")
             in match_values
         ]
-        if len(grouped) == 1 and not actual_has_origin:
-            observed_in_scope = actual
         resolution_managed = any(
             edge.get("metadata", {}).get("resolution_projection")
             for edge in edges
         )
+        if len(grouped) == 1 and not actual_has_origin and not resolution_managed:
+            observed_in_scope = actual
         desired_component_refs = {
             ref
             for edge in edges
@@ -305,6 +305,17 @@ def _desired_scope_rows(
 
 def _carrier_refs(node: dict[str, Any]) -> set[str]:
     metadata = node.get("metadata", {})
+    if metadata.get("identity_status") == "conflict":
+        return set()
+    if (
+        node.get("node_type") == "software_resource"
+        and (
+            metadata.get("identity_status") != "verified"
+            or not metadata.get("identity_evidence_id")
+            or not metadata.get("identity_source_sha256")
+        )
+    ):
+        return set()
     refs = set()
     for field in ("component_ref", "stable_ref"):
         value = metadata.get(field)

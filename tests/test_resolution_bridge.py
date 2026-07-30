@@ -337,6 +337,68 @@ class ResolutionBridgeTest(unittest.TestCase):
             )
         )
 
+    def test_untagged_actual_cannot_satisfy_host_bound_resolution(self) -> None:
+        with Store(self.db) as store:
+            import_resolution(FIXTURE, store)
+            actual = store.add_node(
+                "carrier",
+                "Untagged provider",
+                node_id="carrier:untagged",
+                metadata={"component_ref": "module:required-provider"},
+            )
+            store.add_edge(
+                actual,
+                "carries",
+                "function:function.required",
+                mode="actual",
+                status="full",
+            )
+            store.commit()
+            report = coverage_report(store)
+
+        required = next(
+            row
+            for row in report["functions"]
+            if row["function"]["name"] == "function.required"
+        )
+        scope = required["desired_by_scope"][0]
+        self.assertEqual(scope["verdict"], "uncovered")
+        self.assertEqual(scope["observed_provider_edges"], 0)
+        self.assertEqual(scope["actual_provider_edges"], 0)
+
+    def test_instance_scope_alias_cannot_replace_resolution_host_id(self) -> None:
+        fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        instance_scope = fixture["instance"]["instance_id"]
+        with Store(self.db) as store:
+            import_resolution(FIXTURE, store)
+            actual = store.add_node(
+                "carrier",
+                "Scope alias provider",
+                node_id="carrier:scope-alias",
+                metadata={
+                    "origin_system": instance_scope,
+                    "component_ref": "module:required-provider",
+                },
+            )
+            store.add_edge(
+                actual,
+                "carries",
+                "function:function.required",
+                mode="actual",
+                status="full",
+            )
+            store.commit()
+            report = coverage_report(store)
+
+        required = next(
+            row
+            for row in report["functions"]
+            if row["function"]["name"] == "function.required"
+        )
+        scope = required["desired_by_scope"][0]
+        self.assertEqual(scope["verdict"], "uncovered")
+        self.assertEqual(scope["observed_provider_edges"], 0)
+
     def test_new_resolution_revision_supersedes_removed_desired_edges(self) -> None:
         path = self.root / "current-resolution.json"
         first = json.loads(FIXTURE.read_text(encoding="utf-8"))

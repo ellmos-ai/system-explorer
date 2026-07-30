@@ -49,6 +49,20 @@ CREATE TABLE IF NOT EXISTS edges (
     FOREIGN KEY(evidence_id) REFERENCES evidence(id)
 );
 CREATE INDEX IF NOT EXISTS idx_edges_key ON edges(source_id, relation, target_id, mode);
+CREATE TABLE IF NOT EXISTS component_identity_claims (
+    source_uri TEXT PRIMARY KEY,
+    component_ref TEXT NOT NULL,
+    carrier_id TEXT NOT NULL,
+    source_sha256 TEXT NOT NULL,
+    evidence_id TEXT NOT NULL,
+    source_kind TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(carrier_id) REFERENCES nodes(id),
+    FOREIGN KEY(evidence_id) REFERENCES evidence(id)
+);
+CREATE INDEX IF NOT EXISTS idx_component_identity_ref
+ON component_identity_claims(component_ref);
 CREATE TABLE IF NOT EXISTS scans (
     id TEXT PRIMARY KEY,
     started_at TEXT NOT NULL,
@@ -68,6 +82,8 @@ class Store:
         self._commit_attempt_count = 0
         self._commit_count = 0
         self.db.executescript(SCHEMA)
+        self._sanitize_unclaimed_software_identities()
+        self.db.commit()
 
     def close(self) -> None:
         if self.db.in_transaction:
@@ -189,6 +205,237 @@ class Store:
             ),
         )
         return edge_id
+
+    def clear_component_identity_metadata(self, carrier_id: str) -> None:
+        """Remove identity fields that are not backed by an identity claim."""
+        claimed = self.db.execute(
+            """
+            SELECT 1
+            FROM component_identity_claims
+            WHERE carrier_id = ?
+            LIMIT 1
+            """,
+            (carrier_id,),
+        ).fetchone()
+        if claimed is not None:
+            return
+        self._replace_node_identity_metadata(carrier_id, {})
+
+    def clear_component_identity_claims(self, source_uri_prefix: str) -> int:
+        """Remove scanner-owned identity claims below one transactional root."""
+        rows = self.db.execute(
+            """
+            SELECT source_uri, component_ref, carrier_id
+            FROM component_identity_claims
+            WHERE substr(source_uri, 1, ?) = ?
+            """,
+            (len(source_uri_prefix), source_uri_prefix),
+        ).fetchall()
+        if not rows:
+            return 0
+        previous: dict[str, set[str]] = {}
+        for row in rows:
+            previous.setdefault(row["component_ref"], set()).add(row["carrier_id"])
+        self.db.executemany(
+            "DELETE FROM component_identity_claims WHERE source_uri = ?",
+            ((row["source_uri"],) for row in rows),
+        )
+        for component_ref, carriers in previous.items():
+            self._refresh_component_identity(component_ref, previous_carriers=carriers)
+        return len(rows)
+
+    def register_component_identity_claim(
+        self,
+        *,
+        carrier_id: str,
+        component_ref: str,
+        evidence_id: str,
+        source_kind: str,
+        source_id: str,
+    ) -> str:
+        """Bind a declared stable component ID to hashed scanner evidence.
+
+        One source URI may replace its previous claim on rescan. Multiple source
+        URIs claiming the same component ref are retained as a conflict and no
+        carrier receives a usable ``component_ref``.
+        """
+        evidence = self.db.execute(
+            "SELECT uri, sha256 FROM evidence WHERE id = ?", (evidence_id,)
+        ).fetchone()
+        if evidence is None or not evidence["sha256"]:
+            raise ValueError("component identity requires hashed evidence")
+        previous = self.db.execute(
+            """
+            SELECT component_ref, carrier_id
+            FROM component_identity_claims
+            WHERE source_uri = ?
+            """,
+            (evidence["uri"],),
+        ).fetchone()
+        self.db.execute(
+            """
+            INSERT OR REPLACE INTO component_identity_claims
+            (source_uri, component_ref, carrier_id, source_sha256, evidence_id,
+             source_kind, source_id, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                evidence["uri"],
+                component_ref,
+                carrier_id,
+                evidence["sha256"],
+                evidence_id,
+                source_kind,
+                source_id,
+                utc_now(),
+            ),
+        )
+        affected: dict[str, set[str]] = {component_ref: {carrier_id}}
+        if previous is not None:
+            affected.setdefault(previous["component_ref"], set()).add(
+                previous["carrier_id"]
+            )
+        for ref, carriers in affected.items():
+            self._refresh_component_identity(ref, previous_carriers=carriers)
+        row = self.db.execute(
+            "SELECT metadata_json FROM nodes WHERE id = ?", (carrier_id,)
+        ).fetchone()
+        metadata = json.loads(row["metadata_json"]) if row else {}
+        return str(metadata.get("identity_status", "unbound"))
+
+    def _refresh_component_identity(
+        self,
+        component_ref: str,
+        *,
+        previous_carriers: set[str] | None = None,
+    ) -> None:
+        claims = self.db.execute(
+            """
+            SELECT carrier_id, source_sha256, evidence_id, source_kind, source_id
+            FROM component_identity_claims
+            WHERE component_ref = ?
+            ORDER BY evidence_id
+            """,
+            (component_ref,),
+        ).fetchall()
+        carriers = set(previous_carriers or ())
+        carriers.update(row["carrier_id"] for row in claims)
+        if len(claims) == 1:
+            claim = claims[0]
+            verified = {
+                "component_ref": component_ref,
+                "identity_status": "verified",
+                "identity_source_kind": claim["source_kind"],
+                "identity_source_id": claim["source_id"],
+                "identity_source_sha256": claim["source_sha256"],
+                "identity_evidence_id": claim["evidence_id"],
+            }
+            self._replace_node_identity_metadata(claim["carrier_id"], verified)
+            for carrier_id in carriers - {claim["carrier_id"]}:
+                self._clear_node_identity_metadata(
+                    carrier_id, component_ref, status="superseded"
+                )
+            return
+        if len(claims) > 1:
+            conflict_claims = [
+                {
+                    "evidence_id": row["evidence_id"],
+                    "source_kind": row["source_kind"],
+                    "source_id": row["source_id"],
+                    "source_sha256": row["source_sha256"],
+                }
+                for row in claims
+            ]
+            for carrier_id in carriers:
+                self._replace_node_identity_metadata(
+                    carrier_id,
+                    {
+                        "identity_status": "conflict",
+                        "identity_conflict_ref": component_ref,
+                        "identity_claims": conflict_claims,
+                    },
+                )
+            return
+        for carrier_id in carriers:
+            self._clear_node_identity_metadata(
+                carrier_id, component_ref, status="unbound"
+            )
+
+    def _replace_node_identity_metadata(
+        self, carrier_id: str, values: dict[str, Any]
+    ) -> None:
+        row = self.db.execute(
+            "SELECT metadata_json FROM nodes WHERE id = ?", (carrier_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"unknown carrier for identity claim: {carrier_id}")
+        metadata = json.loads(row["metadata_json"])
+        for key in (
+            "component_ref",
+            "identity_status",
+            "identity_source_kind",
+            "identity_source_id",
+            "identity_source_sha256",
+            "identity_evidence_id",
+            "identity_conflict_ref",
+            "identity_claims",
+        ):
+            metadata.pop(key, None)
+        metadata.update(values)
+        self.db.execute(
+            "UPDATE nodes SET metadata_json = ? WHERE id = ?",
+            (json_dumps(metadata), carrier_id),
+        )
+
+    def _clear_node_identity_metadata(
+        self, carrier_id: str, component_ref: str, *, status: str
+    ) -> None:
+        row = self.db.execute(
+            "SELECT metadata_json FROM nodes WHERE id = ?", (carrier_id,)
+        ).fetchone()
+        if row is None:
+            return
+        metadata = json.loads(row["metadata_json"])
+        if (
+            metadata.get("component_ref") != component_ref
+            and metadata.get("identity_conflict_ref") != component_ref
+        ):
+            return
+        self._replace_node_identity_metadata(
+            carrier_id, {"identity_status": status}
+        )
+
+    def _sanitize_unclaimed_software_identities(self) -> None:
+        claimed = {
+            row["carrier_id"]
+            for row in self.db.execute(
+                "SELECT DISTINCT carrier_id FROM component_identity_claims"
+            ).fetchall()
+        }
+        rows = self.db.execute(
+            """
+            SELECT id, metadata_json
+            FROM nodes
+            WHERE node_type = 'software_resource'
+            """
+        ).fetchall()
+        identity_fields = {
+            "component_ref",
+            "stable_ref",
+            "identity_status",
+            "identity_source_kind",
+            "identity_source_id",
+            "identity_source_sha256",
+            "identity_evidence_id",
+            "identity_conflict_ref",
+            "identity_claims",
+        }
+        for row in rows:
+            if row["id"] in claimed:
+                continue
+            metadata = json.loads(row["metadata_json"])
+            if identity_fields & set(metadata):
+                self._replace_node_identity_metadata(row["id"], {})
 
     def commit(self) -> None:
         self._commit_attempt_count += 1

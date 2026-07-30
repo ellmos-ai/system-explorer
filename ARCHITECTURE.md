@@ -237,10 +237,26 @@ Provideridentität fail-closed: Nur ein beobachteter Carrier mit passendem
 `component_ref` oder `stable_ref` deckt die Desired-Kante. Ein anderer Carrier
 im selben Hostscope erzeugt `wrong-provider`/`carrier-mismatch`; ausdrücklich
 deklarierte Mehrfachprovider und Fallbacks bleiben zulässig und sichtbar. Für
-eine Instanzresolution wird der Actual-Host ausschließlich gegen Host-ID oder
-Instanzscope geprüft, nie gegen die von mehreren Hosts geteilte System-ID.
+eine Instanzresolution wird der Actual-Host bei vorhandener Host-ID
+ausschließlich gegen diese Host-ID geprüft, nie gegen Instanzscope oder die
+von mehreren Hosts geteilte System-ID.
 Nichtleere Runtime-Aktionen oder Target-Mutationen verletzen den
 Importer-Vertrag und werden fail-closed abgewiesen.
+
+### Scanner-zu-Coverage-Identität
+
+Scannerknoten erhalten `component_ref` ausschließlich aus einer gehashten,
+deklarativen Quelle: Ein valides `ellmos.module.v2` bindet seine exakte
+`id` als `module:<id>`; ein Skill bindet nur einen ausdrücklich im
+Frontmatter gesetzten, typisierten `component_ref`. Name, Pfad, Groß-/
+Kleinschreibung, Tags, Package und Command werden nie als Alias verwendet.
+Software-Resources bleiben ungebunden, solange ihre deklarierte ID nicht mit
+einer gehashten Konfigurationsquelle belegt werden kann. Pro Scan-Root werden
+die Claims transaktional neu aufgebaut. Beanspruchen zwei Quell-URIs dieselbe
+ID, erhalten alle betroffenen Carrier `identity_status: conflict` und keinen
+deckungsfähigen `component_ref`. Coverage verlangt zusätzlich eine exakte
+Funktions-ID und eine explizite Hostbindung; ein ungetaggter Actual-Carrier
+darf eine hostgebundene Resolution nicht erfüllen.
 
 Output-Bindings trennen einmalige Berichte, Entscheidungen,
 Automationssynthesen, native Runtime-Logs und Governance-Receipts. Rohlogs

@@ -237,8 +237,16 @@ beobachteter Provider desselben Hosts wird als `wrong-provider` und
 `carrier-mismatch` ausgewiesen, nicht als erfüllte Sollfunktion. Ein in der
 Resolution ausdrücklich als zweiter Provider deklarierter Fallback bleibt
 dagegen deckungsfähig. Bei hostgebundenen Instanzen zählt ausschließlich die
-explizite Host-/Instanzbindung; die gemeinsame logische System-ID darf nicht
-mehrere Hosts gleichzeitig erfüllen.
+explizite Host-ID; weder Instanzscope noch gemeinsame logische System-ID
+dürfen mehrere Hosts gleichzeitig erfüllen.
+
+Der Scanner propagiert reale Komponentenidentität ohne Namensheuristik:
+Valide `ellmos.module.v2`-Manifeste liefern exakt `module:<id>`, Skills nur
+einen ausdrücklich deklarierten `component_ref`. Doppelte Quellclaims sind
+ein fail-closed Konflikt; ungetaggte Carrier sowie bloße Name-, Case-, Pfad-,
+Tag-, Package- oder Command-Ähnlichkeit bleiben nicht deckungsfähig.
+Software-Resources werden erst gebunden, wenn auch ihre kanonische
+Konfigurationsdeklaration als gehashte Evidenz vorliegt.
 
 Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
 Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden
