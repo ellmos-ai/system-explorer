@@ -70,6 +70,34 @@ Beziehungen besitzen:
 14. **Generated repository diagrams** – explizite, markierte und atomare
     Dokumentmaterialisierung in benannten Git-Repositories.
 
+## Scan-Laufzeit und Checkpoints
+
+Die Library-API bleibt standardmäßig unbegrenzt und still. Die CLI setzt für
+`scan` und `ingest` dagegen ein fail-closed Zeitbudget und schreibt
+maschinenlesbare Fortschrittsereignisse auf `stderr`. Im JSONL-Modus werden
+auch CLI-Fehler auf diesem Kanal als strukturierte Ereignisse ausgegeben.
+Ergebnis-JSON bleibt dadurch auf `stdout` separat parsebar.
+
+Jeder konfigurierte Root bildet einen eigenen SQLite-Checkpoint:
+
+```text
+root_started → directories/files → commit → root_completed
+          │                         │
+          └─ Fehler → rollback      └─ unklare Commit-Grenze
+             → root_rolled_back        → root_commit_state_uncertain
+```
+
+Ein kontrollierter Abbruch rollt nur eine noch offene Transaktion zurück.
+Bereits committete Roots bleiben erhalten. Die nachgelagerten
+Infrastruktur-/Deployment-/Ressourcen-/Föderationsphasen sind ebenfalls
+einzelne Checkpoints und werden vor und nach ihrer Ausführung gegen das
+Budget geprüft. Eine bereits committete Phase wird bei einem späteren
+Timeout nicht als zurückgerollt gemeldet. Es gibt bewusst keinen
+Resume-Cursor: Ohne persistente, quellgebundene Cursor- und
+Frischevalidierung wäre „Resume“ keine belegbare Fortsetzung. Wiederholte
+Scans verwenden stattdessen die vorhandenen deterministischen IDs und
+idempotenten Upserts.
+
 ## Steuerdokumentgraph
 
 Textdateien bilden ein zusätzliches Steuerungssystem. Konventionelle und

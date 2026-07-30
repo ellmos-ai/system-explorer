@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import math
 import os
 import re
+import time
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
+from .deployment import register_deployment
+from .federation import register_federation
 from .infrastructure import (
     DATABASE_SUFFIXES,
     register_database_file,
     register_declared_infrastructure,
     register_registry_file,
 )
-from .deployment import register_deployment
-from .federation import register_federation
 from .manifests import load_manifest
 from .resources import register_software_resources
 from .store import Store
@@ -24,7 +28,6 @@ from .util import (
     sha256_file,
     stable_id,
 )
-
 
 ENTRY_NAMES = {
     "AGENTS.md",
@@ -71,7 +74,158 @@ QUOTED_DIRECTORY_RE = re.compile(
 )
 
 
-def scan(config: dict[str, Any], store: Store) -> dict[str, int]:
+ProgressCallback = Callable[[dict[str, Any]], None]
+
+
+class ScanTimeBudgetExceeded(ValueError):
+    def __init__(
+        self,
+        *,
+        elapsed_seconds: float,
+        budget_seconds: float,
+        phase: str,
+        root_id: str | None,
+        completed_roots: int,
+        total_roots: int,
+    ):
+        self.elapsed_seconds = elapsed_seconds
+        self.budget_seconds = budget_seconds
+        self.phase = phase
+        self.root_id = root_id
+        self.completed_roots = completed_roots
+        self.total_roots = total_roots
+        root_text = f" for root {root_id!r}" if root_id else ""
+        super().__init__(
+            "scan time budget exceeded "
+            f"after {elapsed_seconds:.3f}s (budget {budget_seconds:.3f}s) "
+            f"during {phase}{root_text}; "
+            f"{completed_roots}/{total_roots} roots checkpointed"
+        )
+
+
+@dataclass
+class _ScanRuntime:
+    budget_seconds: float | None
+    progress: ProgressCallback | None
+    progress_interval_seconds: float
+    total_roots: int
+    clock: Callable[[], float]
+    started_at: float = field(init=False)
+    last_progress_at: float = field(init=False)
+    completed_roots: int = 0
+
+    def __post_init__(self) -> None:
+        if self.budget_seconds is not None and (
+            not math.isfinite(self.budget_seconds) or self.budget_seconds <= 0
+        ):
+            raise ValueError("time_budget_seconds must be finite and greater than zero")
+        if (
+            not math.isfinite(self.progress_interval_seconds)
+            or self.progress_interval_seconds < 0
+        ):
+            raise ValueError(
+                "progress_interval_seconds must be finite and not negative"
+            )
+        self.started_at = self.clock()
+        self.last_progress_at = self.started_at
+
+    def _payload(
+        self,
+        event: str,
+        *,
+        phase: str,
+        elapsed: float,
+        stats: dict[str, int],
+        root: Path | None,
+        root_id: str | None,
+        root_index: int | None,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "schema": "system-explorer.scan-progress.v1",
+            "event": event,
+            "phase": phase,
+            "elapsed_seconds": round(elapsed, 3),
+            "completed_roots": self.completed_roots,
+            "total_roots": self.total_roots,
+            "stats": dict(stats),
+        }
+        if root is not None:
+            payload["root"] = {
+                "id": root_id,
+                "path": str(root),
+                "index": root_index,
+                "total": self.total_roots,
+            }
+        return payload
+
+    def checkpoint(
+        self,
+        event: str,
+        *,
+        phase: str,
+        stats: dict[str, int],
+        root: Path | None = None,
+        root_id: str | None = None,
+        root_index: int | None = None,
+        force: bool = False,
+        check_budget: bool = True,
+    ) -> None:
+        now = self.clock()
+        elapsed = max(0.0, now - self.started_at)
+        if (
+            check_budget
+            and self.budget_seconds is not None
+            and elapsed >= self.budget_seconds
+        ):
+            error = ScanTimeBudgetExceeded(
+                elapsed_seconds=elapsed,
+                budget_seconds=self.budget_seconds,
+                phase=phase,
+                root_id=root_id,
+                completed_roots=self.completed_roots,
+                total_roots=self.total_roots,
+            )
+            if self.progress is not None:
+                self.progress(
+                    self._payload(
+                        "scan_timed_out",
+                        phase=phase,
+                        elapsed=elapsed,
+                        stats=stats,
+                        root=root,
+                        root_id=root_id,
+                        root_index=root_index,
+                    )
+                )
+                self.last_progress_at = now
+            raise error
+        if self.progress is None:
+            return
+        if not force and now - self.last_progress_at < self.progress_interval_seconds:
+            return
+        self.progress(
+            self._payload(
+                event,
+                phase=phase,
+                elapsed=elapsed,
+                stats=stats,
+                root=root,
+                root_id=root_id,
+                root_index=root_index,
+            )
+        )
+        self.last_progress_at = now
+
+
+def scan(
+    config: dict[str, Any],
+    store: Store,
+    *,
+    time_budget_seconds: float | None = None,
+    progress: ProgressCallback | None = None,
+    progress_interval_seconds: float = 5.0,
+    _clock: Callable[[], float] = time.monotonic,
+) -> dict[str, int]:
     stats = {
         "files": 0,
         "directories": 0,
@@ -96,66 +250,292 @@ def scan(config: dict[str, Any], store: Store) -> dict[str, int]:
         "software_functions": 0,
     }
     base = Path(config["_base"])
-    for root_config in config.get("roots", []):
+    roots = list(config.get("roots", []))
+    runtime = _ScanRuntime(
+        budget_seconds=None if time_budget_seconds == 0 else time_budget_seconds,
+        progress=progress,
+        progress_interval_seconds=progress_interval_seconds,
+        total_roots=len(roots),
+        clock=_clock,
+    )
+    runtime.checkpoint(
+        "scan_started",
+        phase="initialization",
+        stats=stats,
+        force=True,
+    )
+    for root_index, root_config in enumerate(roots, start=1):
         root = expand_path(root_config["path"], base)
+        root_id_value = str(root_config.get("id", root.name))
+        before_root = dict(stats)
+        commits_before_root = store.commit_count
+        runtime.checkpoint(
+            "root_started",
+            phase="root",
+            stats=stats,
+            root=root,
+            root_id=root_id_value,
+            root_index=root_index,
+            force=True,
+        )
         if not root.exists():
             stats["errors"] += 1
-            continue
-        root_id = store.add_node(
-            "system",
-            root_config.get("id", root.name),
-            scope=str(root),
-            metadata={"path": str(root), "carrier_kind": "system"},
-        )
-        directory_ids = _scan_directories(
-            root, root_id, root_config, config, store, stats
-        )
-        if (root / ".git").exists():
-            repository_id = store.add_node(
-                "carrier",
-                root.name,
-                node_id=f"carrier:repository:{stable_id(str(root.resolve()))}",
-                scope=str(root),
-                metadata={"path": str(root), "carrier_kind": "repository"},
+            runtime.completed_roots += 1
+            runtime.checkpoint(
+                "root_missing",
+                phase="root",
+                stats=stats,
+                root=root,
+                root_id=root_id_value,
+                root_index=root_index,
+                force=True,
+                check_budget=False,
             )
-            store.add_edge(root_id, "contains", repository_id, status="observed")
-            stats["nodes"] += 1
-            stats["edges"] += 1
-        for path in _walk(root, root_config):
-            try:
-                _scan_file(
-                    path,
-                    root,
-                    root_id,
-                    directory_ids,
-                    config,
-                    store,
-                    stats,
+            continue
+        try:
+            root_id = store.add_node(
+                "system",
+                root_id_value,
+                scope=str(root),
+                metadata={"path": str(root), "carrier_kind": "system"},
+            )
+            directory_ids = _scan_directories(
+                root,
+                root_id,
+                root_config,
+                config,
+                store,
+                stats,
+                runtime=lambda phase, root=root, root_id=root_id_value, index=root_index: runtime.checkpoint(
+                    "root_progress",
+                    phase=phase,
+                    stats=stats,
+                    root=root,
+                    root_id=root_id,
+                    root_index=index,
+                ),
+            )
+            if (root / ".git").exists():
+                repository_id = store.add_node(
+                    "carrier",
+                    root.name,
+                    node_id=f"carrier:repository:{stable_id(str(root.resolve()))}",
+                    scope=str(root),
+                    metadata={"path": str(root), "carrier_kind": "repository"},
                 )
-            except (OSError, UnicodeError, json.JSONDecodeError):
-                stats["errors"] += 1
+                store.add_edge(root_id, "contains", repository_id, status="observed")
+                stats["nodes"] += 1
+                stats["edges"] += 1
+            for path in _walk(root, root_config):
+                runtime.checkpoint(
+                    "root_progress",
+                    phase="files",
+                    stats=stats,
+                    root=root,
+                    root_id=root_id_value,
+                    root_index=root_index,
+                )
+                try:
+                    _scan_file(
+                        path,
+                        root,
+                        root_id,
+                        directory_ids,
+                        config,
+                        store,
+                        stats,
+                    )
+                except (OSError, UnicodeError, json.JSONDecodeError):
+                    stats["errors"] += 1
+            runtime.checkpoint(
+                "root_progress",
+                phase="root-finalize",
+                stats=stats,
+                root=root,
+                root_id=root_id_value,
+                root_index=root_index,
+            )
+        except BaseException:
+            committed_during_root = store.commit_count > commits_before_root
+            if store.in_transaction:
+                store.rollback()
+            if committed_during_root:
+                event = "root_commit_state_uncertain"
+            else:
+                stats.clear()
+                stats.update(before_root)
+                event = "root_rolled_back"
+            runtime.checkpoint(
+                event,
+                phase="root-rollback",
+                stats=stats,
+                root=root,
+                root_id=root_id_value,
+                root_index=root_index,
+                force=True,
+                check_budget=False,
+            )
+            raise
+        try:
+            store.commit()
+        except BaseException:
+            committed_during_root = store.commit_count > commits_before_root
+            if store.in_transaction:
+                store.rollback()
+            if committed_during_root:
+                runtime.checkpoint(
+                    "root_commit_state_uncertain",
+                    phase="root-commit",
+                    stats=stats,
+                    root=root,
+                    root_id=root_id_value,
+                    root_index=root_index,
+                    force=True,
+                    check_budget=False,
+                )
+            else:
+                stats.clear()
+                stats.update(before_root)
+                runtime.checkpoint(
+                    "root_rolled_back",
+                    phase="root-commit",
+                    stats=stats,
+                    root=root,
+                    root_id=root_id_value,
+                    root_index=root_index,
+                    force=True,
+                    check_budget=False,
+                )
+            raise
+        runtime.completed_roots += 1
+        runtime.checkpoint(
+            "root_completed",
+            phase="root",
+            stats=stats,
+            root=root,
+            root_id=root_id_value,
+            root_index=root_index,
+            force=True,
+            check_budget=False,
+        )
     if config.get("_config_path"):
-        infrastructure = register_declared_infrastructure(config, store)
-        stats["registries"] += infrastructure["registries"]
-        stats["databases"] += infrastructure["databases"]
-        stats["database_tables"] += infrastructure["tables"]
-        deployment = register_deployment(config, store)
-        stats["servers"] += deployment["servers"]
-        stats["server_surfaces"] += deployment["surfaces"]
-        stats["purposes"] += deployment["purposes"]
-        stats["provider_documents"] += deployment["provider_documents"]
-        stats["cost_offers"] += deployment["cost_offers"]
-        resources = register_software_resources(config, store)
-        stats["software_resources"] += resources["software_resources"]
-        stats["software_interfaces"] += resources["software_interfaces"]
-        stats["software_functions"] += resources["software_functions"]
-        federation = register_federation(config, store)
-        stats["federated_systems"] += federation["systems"]
-        stats["map_imports"] += federation["map_imports"]
-        stats["map_import_errors"] += federation["map_import_errors"]
-        stats["errors"] += federation["map_import_errors"]
-    store.commit()
+        _run_post_scan_phase(
+            "declared-infrastructure",
+            lambda: register_declared_infrastructure(config, store),
+            (
+                ("registries", "registries"),
+                ("databases", "databases"),
+                ("database_tables", "tables"),
+            ),
+            runtime,
+            store,
+            stats,
+        )
+        _run_post_scan_phase(
+            "deployment",
+            lambda: register_deployment(config, store),
+            (
+                ("servers", "servers"),
+                ("server_surfaces", "surfaces"),
+                ("purposes", "purposes"),
+                ("provider_documents", "provider_documents"),
+                ("cost_offers", "cost_offers"),
+            ),
+            runtime,
+            store,
+            stats,
+        )
+        _run_post_scan_phase(
+            "software-resources",
+            lambda: register_software_resources(config, store),
+            (
+                ("software_resources", "software_resources"),
+                ("software_interfaces", "software_interfaces"),
+                ("software_functions", "software_functions"),
+            ),
+            runtime,
+            store,
+            stats,
+        )
+        _run_post_scan_phase(
+            "federation",
+            lambda: register_federation(config, store),
+            (
+                ("federated_systems", "systems"),
+                ("map_imports", "map_imports"),
+                ("map_import_errors", "map_import_errors"),
+                ("errors", "map_import_errors"),
+            ),
+            runtime,
+            store,
+            stats,
+        )
+    runtime.checkpoint(
+        "scan_finalizing",
+        phase="complete",
+        stats=stats,
+    )
+    runtime.checkpoint(
+        "scan_completed",
+        phase="complete",
+        stats=stats,
+        force=True,
+        check_budget=False,
+    )
     return stats
+
+
+def _run_post_scan_phase(
+    phase: str,
+    operation: Callable[[], dict[str, int]],
+    stat_fields: tuple[tuple[str, str], ...],
+    runtime: _ScanRuntime,
+    store: Store,
+    stats: dict[str, int],
+) -> None:
+    runtime.checkpoint(
+        "phase_started",
+        phase=phase,
+        stats=stats,
+        force=True,
+    )
+    before_phase = dict(stats)
+    commits_before_phase = store.commit_count
+    try:
+        result = operation()
+        for target, source in stat_fields:
+            stats[target] += result[source]
+        store.commit()
+    except BaseException:
+        committed_during_phase = store.commit_count > commits_before_phase
+        if store.in_transaction:
+            store.rollback()
+        if committed_during_phase:
+            event = "phase_commit_state_uncertain"
+        else:
+            stats.clear()
+            stats.update(before_phase)
+            event = "phase_rolled_back"
+        runtime.checkpoint(
+            event,
+            phase=phase,
+            stats=stats,
+            force=True,
+            check_budget=False,
+        )
+        raise
+    runtime.checkpoint(
+        "phase_completed",
+        phase=phase,
+        stats=stats,
+        force=True,
+        check_budget=False,
+    )
+    runtime.checkpoint(
+        "phase_checkpoint",
+        phase=phase,
+        stats=stats,
+    )
 
 
 def _walk(root: Path, root_config: dict[str, Any]) -> Iterable[Path]:
@@ -180,6 +560,7 @@ def _scan_directories(
     config: dict[str, Any],
     store: Store,
     stats: dict[str, int],
+    runtime: Callable[[str], None] | None = None,
 ) -> dict[Path, str]:
     max_depth = int(root_config.get("max_depth", 5))
     excludes = set(root_config.get("exclude_dirs", []))
@@ -189,6 +570,8 @@ def _scan_directories(
     ids: dict[Path, str] = {}
     resolved_root = root.resolve()
     for current, dirs, _ in os.walk(root):
+        if runtime:
+            runtime("directories")
         path = Path(current).resolve()
         depth = len(path.relative_to(resolved_root).parts)
         dirs[:] = [

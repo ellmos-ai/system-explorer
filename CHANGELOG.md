@@ -4,6 +4,12 @@
 
 ### Hinzugefügt
 
+- JSONL-Fortschrittstelemetrie für `scan`/`ingest` auf `stderr`
+- konfigurierbares CLI-Zeitbudget mit fail-closed Standard von 300 Sekunden
+- atomare Root- und Nachlaufphasen-Checkpoints mit explizitem Rollback
+  offener Transaktionen bei Deadline und `Ctrl+C`
+- strukturierte Commit-Grenzmeldungen ohne falsche Rollback-Behauptung
+- SQLite-Integritätsprüfung im Store und Abbruchtests ohne Hot Journal
 - `ai-media-editor`-Connector mit Vertragsprüfung, optionalem UC6-Probeaufruf
   und Erklärvideo-Handoff aus mehreren analysierten Kartenansichten
 - deutsches Storyboard für Einstieg, Fähigkeiten, Funktionsweise,

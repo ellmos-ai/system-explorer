@@ -66,9 +66,12 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
+        self._commit_count = 0
         self.db.executescript(SCHEMA)
 
     def close(self) -> None:
+        if self.db.in_transaction:
+            self.db.rollback()
         self.db.close()
 
     def __enter__(self) -> "Store":
@@ -189,6 +192,22 @@ class Store:
 
     def commit(self) -> None:
         self.db.commit()
+        self._commit_count += 1
+
+    def rollback(self) -> None:
+        self.db.rollback()
+
+    @property
+    def in_transaction(self) -> bool:
+        return self.db.in_transaction
+
+    @property
+    def commit_count(self) -> int:
+        return self._commit_count
+
+    def integrity_check(self) -> str:
+        row = self.db.execute("PRAGMA integrity_check").fetchone()
+        return str(row[0]) if row else "missing-result"
 
     def nodes(self, node_type: str | None = None) -> list[dict[str, Any]]:
         query = "SELECT * FROM nodes"
