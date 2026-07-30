@@ -182,6 +182,40 @@ Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
+### Actual-self Search Routing
+
+`import-actual-self` nimmt eine gehashte
+`ellmos.actual-self-component-receipt.v1` aus einer nativen
+Laufzeitabfrage auf. Stable Ref, Registry-Hash, Source-/Record-ID,
+Hostscope, Ablaufzeit und exakte Funktions-IDs müssen mit einer bereits
+source-verifizierten Resolution übereinstimmen. Der Producer – zum Beispiel
+`access_surface:controlcenter` – bleibt Evidenzursprung und wird nicht zum
+Funktionsprovider umgedeutet. `declared`, `inferred`, fremde Hosts,
+abgelaufene Receipts und Namensähnlichkeit erzeugen keine Verfügbarkeit.
+
+```powershell
+system-explorer search-route search-query.json `
+  --config explorer.json `
+  --resolution resolved-system.json `
+  --actual-self controlcenter-native-readback.json `
+  --output search-receipt.json
+```
+
+`search-route` akzeptiert keine Freitextsuche. Exakte Kandidaten,
+semantisches Ranking und ControlCenter-Lexikalsuche dürfen ausschließlich
+typisierte Stable Refs liefern. System Explorer filtert diese anschließend
+gegen Registry-Identität, actual-self-Evidenz und scopeweise Coverage.
+Scorewerte werden nur innerhalb ihres ausdrücklich benannten
+`score_domain` verglichen. Mehrdeutigkeit bleibt fail-closed.
+
+Die erzeugte `ellmos.search-routing-receipt.v1` ist standardmäßig read-only
+und führt kein Tool aus. Eine ausdrücklich angeforderte ausführbare Auswahl
+braucht zusätzlich passende Authority-Gates. Eine
+`delegated-avatar-decision` ist nur innerhalb ihrer Komponenten-,
+Capability-, Query- und Systemscopes gültig und benötigt
+Delegationsreferenz, Evidenzreferenzen, Mindest-Confidence, Frische und
+Konfliktfreiheit. Eine rohe TOM_lm-Prognose allein ist keine Authority.
+
 Der `ai-media-editor`-Connector materialisiert aus ausgewählten Karten ein
 UC6-Handoff mit Storyboard, deutschem Sprechertext und Mermaid-Visuals. Er
 rendert nicht still selbst und kopiert keine Rohevidenz. Der getrennte
