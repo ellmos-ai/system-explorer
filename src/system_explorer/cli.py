@@ -28,6 +28,7 @@ from .media_connector import (
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
+from .resolution_bridge import import_resolution
 from .resolver import resolve_system, resolve_test, validate_manifest_target
 from .resources import resource_report
 from .scanner import ProgressCallback, scan
@@ -74,10 +75,28 @@ def build_parser() -> argparse.ArgumentParser:
                 default=5.0,
                 help="Minimum interval for repeated per-root progress events.",
             )
+        if name == "coverage":
+            item.add_argument(
+                "--resolution",
+                type=Path,
+                action="append",
+                dest="resolutions",
+                help=(
+                    "Import a system-explorer.resolution.v1 file as desired "
+                    "coverage evidence before reporting; repeatable."
+                ),
+            )
 
     spec = sub.add_parser("import-spec")
     spec.add_argument("path", type=Path)
     spec.add_argument("--config", type=Path, required=True)
+
+    resolution = sub.add_parser(
+        "import-resolution",
+        help="Import a read-only resolution.v1 projection as desired evidence.",
+    )
+    resolution.add_argument("path", type=Path)
+    resolution.add_argument("--config", type=Path, required=True)
 
     transcripts = sub.add_parser("import-transcripts")
     transcripts.add_argument("source", type=Path)
@@ -386,13 +405,23 @@ def _run(args: argparse.Namespace) -> int:
         elif args.command == "import-spec":
             value = import_spec(args.path, store)
             tag_current_system(config, store)
+        elif args.command == "import-resolution":
+            value = import_resolution(args.path, store)
         elif args.command == "import-transcripts":
             value = import_transcripts(
                 args.provider, args.source, store, actor_id=args.actor
             )
             tag_current_system(config, store)
         elif args.command == "coverage":
-            value = coverage_report(store)
+            resolution_imports = _import_resolution_sources(
+                config,
+                store,
+                explicit=args.resolutions or (),
+            )
+            value = {
+                **coverage_report(store),
+                "resolution_imports": resolution_imports,
+            }
         elif args.command == "assess":
             value = assess(store)
         elif args.command == "ingest":
@@ -600,6 +629,7 @@ def _ingest(
             progress_interval_seconds=progress_interval_seconds,
         ),
         "desired": [],
+        "resolutions": [],
         "transcripts": [],
     }
     for item in config.get("desired_sources", []):
@@ -607,6 +637,7 @@ def _ingest(
         result["desired"].append(
             {"path": source, "stats": import_spec(expand_path(source, base), store)}
         )
+    result["resolutions"] = _import_resolution_sources(config, store)
     for item in config.get("transcripts", []):
         source = expand_path(item["source"], base)
         result["transcripts"].append(
@@ -624,6 +655,27 @@ def _ingest(
         )
     tag_current_system(config, store)
     return result
+
+
+def _import_resolution_sources(
+    config: dict[str, Any],
+    store: Store,
+    *,
+    explicit: tuple[Path, ...] | list[Path] = (),
+) -> list[dict[str, Any]]:
+    base = Path(config["_base"])
+    paths: list[Path] = [path.resolve() for path in explicit]
+    for item in config.get("desired_resolution_sources", []):
+        source = item["path"] if isinstance(item, dict) else item
+        paths.append(expand_path(source, base).resolve())
+    imports = []
+    seen: set[Path] = set()
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        imports.append({"path": str(path), "stats": import_resolution(path, store)})
+    return imports
 
 
 def _write_json(path: Path, value: Any) -> None:

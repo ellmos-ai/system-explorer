@@ -40,6 +40,8 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
   gewünschte Instanzen, Resolutionstests und Flotten
 - deterministische, gepinnte Read-only-Auflösung mit Profilen,
   Suppressions, Root-Containment und kanonischen Content-Hashes
+- typisierte Read-only-Brücke von `system-explorer.resolution.v1` in
+  Desired-/Coverage-Evidenz mit Requirement-Schwere und Provider-Overlap
 - optionale ApiProber-Evidenzaufnahme für autorisierte passive REST-Prüfungen
 - `ai-media-editor`-Connector für erklärvideo-taugliche Storyboards,
   Sprechertexte und Mermaid-Schaltpläne aus analysierten Systemkarten
@@ -77,6 +79,8 @@ system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
 system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
+system-explorer coverage --config explorer.json --resolution resolved-system.json
+system-explorer import-resolution resolved-system.json --config explorer.json
 system-explorer test-resolve system-test.v1.json --catalog bundles.catalog.v1.json
 system-explorer serve --config explorer.json
 ```
@@ -189,6 +193,31 @@ Vertrag und Sicherheitsgates stehen in
 Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), die Datenregeln in
 [`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und die Adaptergrenzen in
 [`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).
+
+## Resolution als Desired-Evidenz
+
+Ein gespeicherter `system-explorer.resolution.v1`-Output lässt sich direkt als
+Desired-Evidenz importieren:
+
+```powershell
+system-explorer coverage `
+  --config explorer.json `
+  --resolution resolved-system.json
+```
+
+Alternativ nimmt `desired_resolution_sources` in der Explorer-Konfiguration
+einen oder mehrere Resolution-Pfade auf; `coverage` und `ingest` importieren
+sie relativ zum Konfigurationsordner. `component.ref` bestimmt die stabile
+Carrier-ID. Nur `provides` erzeugt Desired-Funktionskanten; `consumes` bleibt
+beschreibende Carrier-Metadaten. `required`, `recommended`, `optional` und
+`desired_status` bleiben an den Kanten erhalten. Die Coverage-Ausgabe trennt
+`discovery_summary` von `desired_summary`: Nur `required` wird als harter Gap
+gezählt, während empfohlene und optionale Lücken separat sichtbar bleiben.
+Mehrere gewünschte Provider erscheinen als `desired_overlap`.
+
+Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
+Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden
+abgewiesen; Quelle und Zielsystem werden nicht verändert.
 
 ## Bundles und Partner
 

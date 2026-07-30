@@ -36,6 +36,7 @@ def propose(prompt: str, store: Store) -> dict[str, Any]:
         row["function"]["id"]
         for row in coverage["functions"]
         if row["verdict"] in {"uncovered", "negative", "partial"}
+        and row["gap_class"] != "optional"
     ]
     return {
         "schema": "system-explorer.change-proposal.v1",

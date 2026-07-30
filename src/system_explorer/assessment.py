@@ -22,13 +22,25 @@ def assess(store: Store) -> dict[str, Any]:
     for row in coverage["functions"]:
         verdict = row["verdict"]
         if verdict == "uncovered":
+            gap_class = row["gap_class"]
+            severity, kind = {
+                "hard": ("high", "function-gap"),
+                "advisory": ("medium", "recommended-function-gap"),
+                "optional": ("review", "optional-function-gap"),
+                "unclassified": ("high", "function-gap"),
+                "none": ("review", "unclassified-function-gap"),
+            }[gap_class]
+            if (
+                gap_class in {"hard", "unclassified"}
+                and row["function"]["metadata"].get("priority") == "critical"
+            ):
+                severity = "critical"
             findings.append(
                 {
-                    "severity": "critical"
-                    if row["function"]["metadata"].get("priority") == "critical"
-                    else "high",
-                    "kind": "function-gap",
+                    "severity": severity,
+                    "kind": kind,
                     "function": row["function"]["id"],
+                    "requirement": row["effective_requirement"],
                     "recommendation": "Assign a carrier, then verify it with an observed execution receipt.",
                 }
             )
@@ -42,11 +54,17 @@ def assess(store: Store) -> dict[str, Any]:
                 }
             )
         elif verdict == "partial":
+            gap_class = row["gap_class"]
             findings.append(
                 {
-                    "severity": "medium",
-                    "kind": "undercoverage",
+                    "severity": "review" if gap_class == "optional" else "medium",
+                    "kind": (
+                        "optional-undercoverage"
+                        if gap_class == "optional"
+                        else "undercoverage"
+                    ),
                     "function": row["function"]["id"],
+                    "requirement": row["effective_requirement"],
                     "recommendation": "Identify the missing subfunction and test one narrow intervention.",
                 }
             )
@@ -57,6 +75,15 @@ def assess(store: Store) -> dict[str, Any]:
                     "kind": "overlap",
                     "function": row["function"]["id"],
                     "recommendation": "Check cardinality, ownership, routing, and whether overlap is intentional.",
+                }
+            )
+        if row["desired_overlap"]:
+            findings.append(
+                {
+                    "severity": "review",
+                    "kind": "desired-provider-overlap",
+                    "function": row["function"]["id"],
+                    "recommendation": "Confirm whether multiple desired providers are intentional and routed.",
                 }
             )
     if unused_entrypoints:

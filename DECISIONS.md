@@ -3,6 +3,31 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-07-30: Resolutionen werden als typisierte Desired-Evidenz projiziert
+
+### Kontext
+
+Die V4-Auflösung kennt die vollständige Bundle-/Komponentenzusammensetzung,
+während ältere manuelle Desired-Spezifikationen nur einen kleinen
+Funktionsausschnitt enthalten können. Die Auflösung selbst war bislang nicht
+mit der Coverage-Engine verdrahtet.
+
+### Entscheidung
+
+Eine read-only Brücke importiert `system-explorer.resolution.v1` in den
+lokalen Evidence Store. Stabile Carrier-IDs stammen aus `component.ref`;
+ausschließlich `provides` erzeugt Desired-Kanten. Requirement,
+`desired_status`, Bundle-Provenienz, Quellschema und Content-Hash bleiben
+erhalten. Coverage weist Required-, Recommended- und Optional-Gaps getrennt
+aus und zeigt gewünschte Mehrfachprovider als Overlap.
+
+### Grenze
+
+Die Brücke entdeckt oder aktiviert keine Runtime. `consumes` ist keine
+Leistungsbehauptung. Nichtleere `runtime_actions` oder `target_mutations`
+werden abgewiesen. Ein erfolgreicher Import belegt nur den Sollvertrag, nicht
+die tatsächliche Deckung einer Workstation oder eines anderen Hosts.
+
 ## 2026-07-30: Scans checkpointen pro Root und behaupten kein Resume
 
 ### Kontext

@@ -4,6 +4,12 @@
 
 ### Hinzugefügt
 
+- read-only Resolution-v1-Importer für stabile Desired-Carrier- und
+  Funktionskanten samt Requirement-, Status-, Hash- und Bundleprovenienz
+- getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und
+  optionalen Gaps sowie Desired-Provider-Overlap
+- CLI- und Konfigurationsweg für Coverage gegen gespeicherte
+  `system-explorer.resolution.v1`-Outputs
 - JSONL-Fortschrittstelemetrie für `scan`/`ingest` auf `stderr`
 - konfigurierbares CLI-Zeitbudget mit fail-closed Standard von 300 Sekunden
 - atomare Root- und Nachlaufphasen-Checkpoints mit explizitem Rollback
