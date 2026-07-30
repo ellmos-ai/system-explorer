@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import tempfile
+import threading
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
@@ -418,6 +419,89 @@ class ResolutionBridgeTest(unittest.TestCase):
             )
         )
         self.assertEqual(report["desired_summary"]["functions"], 3)
+
+    def test_equal_generation_concurrent_imports_are_serialized(self) -> None:
+        first = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        second = json.loads(json.dumps(first))
+        second["desired_profile"] = "conflicting-generation"
+        first_path = self.root / "concurrent-a.json"
+        second_path = self.root / "concurrent-b.json"
+        self._write_resolution(first_path, first)
+        self._write_resolution(second_path, second)
+        generation_ns = 1_800_000_100_000_000_000
+        os.utime(first_path, ns=(generation_ns, generation_ns))
+        os.utime(second_path, ns=(generation_ns, generation_ns))
+        with Store(self.db):
+            pass
+
+        barrier = threading.Barrier(2)
+        outcomes: list[tuple[str, str]] = []
+
+        def import_in_thread(source: Path) -> None:
+            with Store(self.db) as store:
+                barrier.wait()
+                try:
+                    stats = import_resolution(source, store)
+                    outcomes.append(("result", stats["status"]))
+                except ValueError as error:
+                    outcomes.append(("error", str(error)))
+
+        threads = [
+            threading.Thread(target=import_in_thread, args=(first_path,)),
+            threading.Thread(target=import_in_thread, args=(second_path,)),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+
+        self.assertTrue(all(not thread.is_alive() for thread in threads))
+        self.assertEqual(
+            [outcome for outcome in outcomes if outcome == ("result", "imported")],
+            [("result", "imported")],
+        )
+        conflicts = [
+            message
+            for kind, message in outcomes
+            if kind == "error" and "generation conflicts" in message
+        ]
+        self.assertEqual(len(conflicts), 1)
+        with Store(self.db) as store:
+            evidence = store.evidence()
+            state = store.resolution_projection_state(
+                "resolution:fixture-development-system@TEST-HOST"
+            )
+            edges = store.resolved_edges("desired")
+        self.assertEqual(len(evidence), 1)
+        self.assertIsNotNone(state)
+        self.assertEqual(
+            {edge["metadata"]["resolution_content_hash"] for edge in edges},
+            {state["content_hash"]},
+        )
+
+    def test_projection_state_rejects_existing_equal_generation_conflict(
+        self,
+    ) -> None:
+        projection = "resolution:fixture-development-system@TEST-HOST"
+        generation = [1_800_000_000_000_000_000] * 2
+        with Store(self.db) as store:
+            for index, content_hash in enumerate(("a" * 64, "b" * 64)):
+                store.add_evidence(
+                    uri=f"file:///conflict-{index}.json",
+                    source_kind="system-resolution",
+                    sha256=str(index) * 64,
+                    metadata={
+                        "resolution_projection": projection,
+                        "resolution_generation": generation,
+                        "resolution_content_hash": content_hash,
+                    },
+                )
+            store.commit()
+            with self.assertRaisesRegex(
+                ValueError,
+                "conflicting hashes at its latest generation",
+            ):
+                store.resolution_projection_state(projection)
 
     def test_assessment_and_proposal_keep_host_gaps_isolated(self) -> None:
         first = json.loads(FIXTURE.read_text(encoding="utf-8"))

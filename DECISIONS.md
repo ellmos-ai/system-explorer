@@ -22,7 +22,9 @@ Desired-Kanten. Eine neuere Resolution ersetzt die aktive Projektion
 desselben Scopes, ohne andere Instanzen zu verdrängen. Die Generation wird
 monoton aus effektiver Zeit und mtime des einmalig geöffneten Quellsnapshots
 geordnet; stale Importe sind No-ops, gleiche Generationen mit anderem Hash
-Konflikte. Requirement,
+Konflikte. Prüfung und Austausch erfolgen gemeinsam in einer
+`BEGIN IMMEDIATE`-Transaktion; bereits vorhandene Mehrfachhashes derselben
+Maximalgeneration werden fail-closed erkannt. Requirement,
 `desired_status`, Bundle-Provenienz, Quellschema und Content-Hash bleiben
 erhalten. Coverage weist Required-, Recommended- und Optional-Gaps
 scopeweise getrennt aus und zeigt gewünschte Mehrfachprovider als Overlap.

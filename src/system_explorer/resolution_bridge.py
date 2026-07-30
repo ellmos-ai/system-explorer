@@ -20,7 +20,6 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
     source_bytes, source_stat = _read_resolution_snapshot(path)
     value = json.loads(source_bytes.decode("utf-8"))
     _validate_resolution(value)
-    resolution_hash = value["content_hash"]
     source_digest = hashlib.sha256(source_bytes).hexdigest()
     effective_at = file_effective_date(
         path,
@@ -91,6 +90,57 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             "resolution functions do not match active component provides"
         )
 
+    store.begin_immediate()
+    try:
+        result = _import_resolution_locked(
+            path=path,
+            store=store,
+            value=value,
+            source_digest=source_digest,
+            source_stat=source_stat,
+            effective_at=effective_at,
+            generation=generation,
+            system=system,
+            instance=instance,
+            scope=scope,
+            host_id=host_id,
+            projection_key=projection_key,
+            carriers=carriers,
+            provider_sources=provider_sources,
+            function_requirements=function_requirements,
+            empty_provides=empty_provides,
+            inactive_provides=inactive_provides,
+        )
+        if store.in_transaction:
+            store.rollback()
+        return result
+    except BaseException:
+        if store.in_transaction:
+            store.rollback()
+        raise
+
+
+def _import_resolution_locked(
+    *,
+    path: Path,
+    store: Store,
+    value: dict[str, Any],
+    source_digest: str,
+    source_stat: os.stat_result,
+    effective_at: str,
+    generation: tuple[int, int],
+    system: dict[str, Any],
+    instance: dict[str, Any] | None,
+    scope: str,
+    host_id: str | None,
+    projection_key: str,
+    carriers: dict[str, dict[str, Any]],
+    provider_sources: dict[tuple[str, str], list[dict[str, Any]]],
+    function_requirements: dict[str, set[str]],
+    empty_provides: int,
+    inactive_provides: int,
+) -> dict[str, Any]:
+    resolution_hash = value["content_hash"]
     active_projection = store.resolution_projection_state(projection_key)
     if active_projection:
         active_generation = tuple(active_projection["generation"])

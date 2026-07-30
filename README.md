@@ -219,7 +219,10 @@ derselben Instanz ersetzt deren ältere aktive Desired-Projektion. Ältere
 Generationen werden bei späterem Import als `stale-ignored` protokolliert und
 dürfen den aktiven Stand nicht zurückdrehen; gleiche Generationen mit
 abweichendem Content-Hash werden als Konflikt abgewiesen. Parse, Quellhash und
-Dateimetadaten stammen aus demselben geöffneten Byte-Snapshot.
+Dateimetadaten stammen aus demselben geöffneten Byte-Snapshot. Zustandsprüfung
+und Projektionstausch laufen gemeinsam unter einer SQLite-
+`BEGIN IMMEDIATE`-Grenze, sodass parallele Importe desselben Scopes seriell
+entschieden werden.
 
 Die Coverage-Ausgabe trennt `discovery_summary` von `desired_summary` und
 weist mehrere Resolution-Scopes einzeln aus: Nur `required` wird als harter

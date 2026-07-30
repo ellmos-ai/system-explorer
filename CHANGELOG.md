@@ -17,6 +17,8 @@
   von Instanzform sowie `desired_status`
 - monotone Resolution-Generationen mit stale No-op, Konfliktprüfung und
   bytegebundener Parse-/Hash-/mtime-Provenienz
+- atomar serialisierte Projection-Updates gegen gleichzeitige
+  Gleichgenerationsimporte und widersprüchliche Maximalzustände
 - strikt instanzbezogenes Host-Matching ohne Nivellierung über eine gemeinsame
   logische System-ID
 - getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und

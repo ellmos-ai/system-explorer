@@ -195,6 +195,13 @@ class Store:
         self._commit_database()
         self._commit_count += 1
 
+    def begin_immediate(self) -> None:
+        if self.db.in_transaction:
+            raise RuntimeError(
+                "BEGIN IMMEDIATE requires a clean Store transaction boundary"
+            )
+        self.db.execute("BEGIN IMMEDIATE")
+
     def _commit_database(self) -> None:
         self.db.commit()
 
@@ -250,7 +257,20 @@ class Store:
             )
         if not states:
             return None
-        return max(states, key=lambda state: tuple(state["generation"]))
+        latest_generation = max(
+            tuple(state["generation"]) for state in states
+        )
+        latest = [
+            state
+            for state in states
+            if tuple(state["generation"]) == latest_generation
+        ]
+        hashes = {state["content_hash"] for state in latest}
+        if len(hashes) != 1:
+            raise ValueError(
+                "resolution projection has conflicting hashes at its latest generation"
+            )
+        return latest[0]
 
     def clear_resolution_projection(self, projection_key: str) -> dict[str, int]:
         edge_rows = self.db.execute(

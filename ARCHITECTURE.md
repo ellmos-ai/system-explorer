@@ -223,7 +223,10 @@ sichtbar. Eine neue Resolution desselben Scopes ersetzt dessen aktive ältere
 Projektion; eine stale Generation wird nicht erneut aktiviert, und
 gleichzeitige Generationen mit verschiedenen Hashes sind ein Konflikt. Parse,
 SHA-256 und mtime werden aus einem einzigen geöffneten Quellsnapshot
-abgeleitet. Andere Instanzen bleiben parallel erhalten. `unavailable`
+abgeleitet. Vergleich, Evidenzeintrag und Projektionstausch sind pro
+SQLite-Write-Transaktion atomar serialisiert; ein bereits widersprüchlicher
+Maximalstand wird fail-closed abgewiesen. Andere Instanzen bleiben parallel
+erhalten. `unavailable`
 materialisiert keine Leistungszusage. Coverage aggregiert Requirements
 scopeweise: `required` erzeugt harte, `recommended` beratende und `optional`
 optionale Gaps. Discovery-Gesamtzahlen und Desired-only-Zahlen werden
