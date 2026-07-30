@@ -48,7 +48,12 @@ def expand_path(value: str, base: Path | None = None) -> Path:
     return path.resolve()
 
 
-def file_effective_date(path: Path, text_hint: str | None = None) -> str:
+def file_effective_date(
+    path: Path,
+    text_hint: str | None = None,
+    *,
+    fallback_timestamp: float | None = None,
+) -> str:
     candidates: list[tuple[int, int, int]] = []
     for value in (path.name, text_hint or ""):
         for match in DATE_RE.finditer(value):
@@ -56,7 +61,12 @@ def file_effective_date(path: Path, text_hint: str | None = None) -> str:
     if candidates:
         year, month, day = max(candidates)
         return datetime(year, month, day, tzinfo=timezone.utc).isoformat()
-    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+    timestamp = (
+        fallback_timestamp
+        if fallback_timestamp is not None
+        else path.stat().st_mtime
+    )
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
 
 
 def extract_paths(text: str) -> list[str]:

@@ -215,7 +215,11 @@ Desired-Funktionskanten; `unavailable` bleibt als Carrierstatus sichtbar,
 trägt aber keine Funktion. `consumes` bleibt beschreibende
 Carrier-Metadaten. `required`, `recommended`, `optional` und
 `desired_status` bleiben an den Kanten erhalten. Eine neuere Resolution
-derselben Instanz ersetzt deren ältere aktive Desired-Projektion.
+derselben Instanz ersetzt deren ältere aktive Desired-Projektion. Ältere
+Generationen werden bei späterem Import als `stale-ignored` protokolliert und
+dürfen den aktiven Stand nicht zurückdrehen; gleiche Generationen mit
+abweichendem Content-Hash werden als Konflikt abgewiesen. Parse, Quellhash und
+Dateimetadaten stammen aus demselben geöffneten Byte-Snapshot.
 
 Die Coverage-Ausgabe trennt `discovery_summary` von `desired_summary` und
 weist mehrere Resolution-Scopes einzeln aus: Nur `required` wird als harter
@@ -229,7 +233,9 @@ typisierte Übereinstimmung von `component_ref` oder `stable_ref`. Ein anderer
 beobachteter Provider desselben Hosts wird als `wrong-provider` und
 `carrier-mismatch` ausgewiesen, nicht als erfüllte Sollfunktion. Ein in der
 Resolution ausdrücklich als zweiter Provider deklarierter Fallback bleibt
-dagegen deckungsfähig.
+dagegen deckungsfähig. Bei hostgebundenen Instanzen zählt ausschließlich die
+explizite Host-/Instanzbindung; die gemeinsame logische System-ID darf nicht
+mehrere Hosts gleichzeitig erfüllen.
 
 Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
 Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden

@@ -15,6 +15,10 @@
   Fallbackprovidern
 - kollisionssicher gehashte Resolution-Carrier-IDs und strikte Validierung
   von Instanzform sowie `desired_status`
+- monotone Resolution-Generationen mit stale No-op, Konfliktprüfung und
+  bytegebundener Parse-/Hash-/mtime-Provenienz
+- strikt instanzbezogenes Host-Matching ohne Nivellierung über eine gemeinsame
+  logische System-ID
 - getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und
   optionalen Gaps sowie Desired-Provider-Overlap
 - CLI- und Konfigurationsweg für Coverage gegen gespeicherte

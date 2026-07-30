@@ -1,24 +1,32 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from .contracts import OPERATIONAL_STATUSES, canonical_content_hash
 from .store import Store
-from .util import file_effective_date, sha256_file, stable_id
+from .util import file_effective_date, stable_id
 
 
 REQUIREMENTS = ("required", "recommended", "optional")
 
 
 def import_resolution(path: Path, store: Store) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    source_bytes, source_stat = _read_resolution_snapshot(path)
+    value = json.loads(source_bytes.decode("utf-8"))
     _validate_resolution(value)
     resolution_hash = value["content_hash"]
-    source_digest = sha256_file(path)
-    effective_at = file_effective_date(path)
+    source_digest = hashlib.sha256(source_bytes).hexdigest()
+    effective_at = file_effective_date(
+        path,
+        fallback_timestamp=source_stat.st_mtime,
+    )
+    generation = _generation(effective_at, source_stat.st_mtime_ns)
     system = value["system"]
     instance = value.get("instance")
     scope = instance.get("instance_id") if instance else system["id"]
@@ -83,12 +91,42 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             "resolution functions do not match active component provides"
         )
 
+    active_projection = store.resolution_projection_state(projection_key)
+    if active_projection:
+        active_generation = tuple(active_projection["generation"])
+        if generation < active_generation:
+            return _import_result(
+                value,
+                source_digest=source_digest,
+                carriers=carriers,
+                function_requirements=function_requirements,
+                provider_sources=provider_sources,
+                empty_provides=empty_provides,
+                inactive_provides=inactive_provides,
+                status="stale-ignored",
+            )
+        if generation == active_generation:
+            if active_projection["content_hash"] != resolution_hash:
+                raise ValueError(
+                    "resolution generation conflicts with the active projection"
+                )
+            return _import_result(
+                value,
+                source_digest=source_digest,
+                carriers=carriers,
+                function_requirements=function_requirements,
+                provider_sources=provider_sources,
+                empty_provides=empty_provides,
+                inactive_provides=inactive_provides,
+                status="unchanged",
+            )
+
     evidence_id = store.add_evidence(
         uri=path.resolve().as_uri(),
         source_kind="system-resolution",
         sha256=source_digest,
         effective_at=effective_at,
-        modified_at=str(path.stat().st_mtime),
+        modified_at=str(source_stat.st_mtime),
         confidence=1.0,
         sensitivity="user-local",
         metadata={
@@ -101,6 +139,7 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             "desired_profile": value.get("desired_profile"),
             "resolution_scope": scope,
             "resolution_projection": projection_key,
+            "resolution_generation": list(generation),
         },
     )
     superseded = store.clear_resolution_projection(projection_key)
@@ -126,6 +165,7 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
                 "resolution_content_hash": resolution_hash,
                 "resolution_scope": scope,
                 "resolution_projection": projection_key,
+                "resolution_generation": list(generation),
                 "resolution_host_id": host_id,
                 "resolution_system_id": system["id"],
             },
@@ -174,22 +214,50 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
                 "resolution_content_hash": resolution_hash,
                 "resolution_scope": scope,
                 "resolution_projection": projection_key,
+                "resolution_generation": list(generation),
                 "resolution_host_id": host_id,
                 "resolution_system_id": system["id"],
             },
         )
 
     store.commit()
+    return _import_result(
+        value,
+        source_digest=source_digest,
+        carriers=carriers,
+        function_requirements=function_requirements,
+        provider_sources=provider_sources,
+        empty_provides=empty_provides,
+        inactive_provides=inactive_provides,
+        status="imported",
+        superseded=superseded,
+    )
+
+
+def _import_result(
+    value: dict[str, Any],
+    *,
+    source_digest: str,
+    carriers: dict[str, dict[str, Any]],
+    function_requirements: dict[str, set[str]],
+    provider_sources: dict[tuple[str, str], list[dict[str, Any]]],
+    empty_provides: int,
+    inactive_provides: int,
+    status: str,
+    superseded: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    instance = value.get("instance")
     providers_by_function: dict[str, set[str]] = defaultdict(set)
     for ref, function in provider_sources:
         providers_by_function[function].add(ref)
     return {
         "schema": "system-explorer.resolution-import.v1",
         "source_schema": value["schema"],
-        "content_hash": resolution_hash,
+        "content_hash": value["content_hash"],
         "source_sha256": source_digest,
-        "system_id": system["id"],
+        "system_id": value["system"]["id"],
         "instance_id": instance.get("instance_id") if instance else None,
+        "status": status,
         "carriers": len(carriers),
         "functions": len(function_requirements),
         "desired_edges": len(provider_sources),
@@ -200,8 +268,35 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
         ),
         "runtime_actions": [],
         "target_mutations": [],
-        "superseded": superseded,
+        "superseded": superseded or {"edges": 0, "carriers": 0},
     }
+
+
+def _read_resolution_snapshot(path: Path) -> tuple[bytes, os.stat_result]:
+    with path.open("rb") as handle:
+        before = os.fstat(handle.fileno())
+        source = handle.read()
+        after = os.fstat(handle.fileno())
+    identity_before = (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+    )
+    identity_after = (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+    )
+    if identity_before != identity_after or len(source) != after.st_size:
+        raise ValueError("resolution source changed while it was being read")
+    return source, after
+
+
+def _generation(effective_at: str, source_mtime_ns: int) -> tuple[int, int]:
+    effective_ns = int(datetime.fromisoformat(effective_at).timestamp() * 1_000_000_000)
+    return effective_ns, source_mtime_ns
 
 
 def _validate_resolution(value: Any) -> None:

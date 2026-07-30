@@ -19,7 +19,10 @@ lokalen Evidence Store. Kollisionssicher gehashte Carrier-IDs entstehen aus
 Resolution-Scope und `component.ref`; ausschließlich bekannte aktive
 `desired_status`-Werte und deren `provides` erzeugen
 Desired-Kanten. Eine neuere Resolution ersetzt die aktive Projektion
-desselben Scopes, ohne andere Instanzen zu verdrängen. Requirement,
+desselben Scopes, ohne andere Instanzen zu verdrängen. Die Generation wird
+monoton aus effektiver Zeit und mtime des einmalig geöffneten Quellsnapshots
+geordnet; stale Importe sind No-ops, gleiche Generationen mit anderem Hash
+Konflikte. Requirement,
 `desired_status`, Bundle-Provenienz, Quellschema und Content-Hash bleiben
 erhalten. Coverage weist Required-, Recommended- und Optional-Gaps
 scopeweise getrennt aus und zeigt gewünschte Mehrfachprovider als Overlap.
@@ -27,6 +30,8 @@ Assessment und Proposal dürfen dafür kein global nivelliertes
 Funktionsurteil verwenden. Beobachtete Deckung muss außerdem über
 `component_ref` oder `stable_ref` einem gewünschten Provider zugeordnet sein;
 ein bloß hostgleicher Fremdprovider wird als Carrier-Mismatch ausgewiesen.
+Hostgebundene Instanzen dürfen dabei nicht über ihre gemeinsame logische
+System-ID nivelliert werden.
 
 ### Grenze
 

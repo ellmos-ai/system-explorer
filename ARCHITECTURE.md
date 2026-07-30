@@ -220,7 +220,10 @@ Die Kante bewahrt Requirement, Desired-Status, Bundlequelle,
 Resolution-Schema und Content-Hash über Metadaten und Evidenzreferenz.
 Provider derselben Funktion bleiben pro Systeminstanz als getrennte Kanten
 sichtbar. Eine neue Resolution desselben Scopes ersetzt dessen aktive ältere
-Projektion; andere Instanzen bleiben parallel erhalten. `unavailable`
+Projektion; eine stale Generation wird nicht erneut aktiviert, und
+gleichzeitige Generationen mit verschiedenen Hashes sind ein Konflikt. Parse,
+SHA-256 und mtime werden aus einem einzigen geöffneten Quellsnapshot
+abgeleitet. Andere Instanzen bleiben parallel erhalten. `unavailable`
 materialisiert keine Leistungszusage. Coverage aggregiert Requirements
 scopeweise: `required` erzeugt harte, `recommended` beratende und `optional`
 optionale Gaps. Discovery-Gesamtzahlen und Desired-only-Zahlen werden
@@ -230,7 +233,9 @@ beziehungsweise im strukturierten Gap. Für Resolution-Projektionen gilt die
 Provideridentität fail-closed: Nur ein beobachteter Carrier mit passendem
 `component_ref` oder `stable_ref` deckt die Desired-Kante. Ein anderer Carrier
 im selben Hostscope erzeugt `wrong-provider`/`carrier-mismatch`; ausdrücklich
-deklarierte Mehrfachprovider und Fallbacks bleiben zulässig und sichtbar.
+deklarierte Mehrfachprovider und Fallbacks bleiben zulässig und sichtbar. Für
+eine Instanzresolution wird der Actual-Host ausschließlich gegen Host-ID oder
+Instanzscope geprüft, nie gegen die von mehreren Hosts geteilte System-ID.
 Nichtleere Runtime-Aktionen oder Target-Mutationen verletzen den
 Importer-Vertrag und werden fail-closed abgewiesen.
 

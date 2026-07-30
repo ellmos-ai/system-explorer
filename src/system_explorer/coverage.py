@@ -208,16 +208,23 @@ def _desired_scope_rows(
         for edge in actual
     )
     for scope, edges in sorted(grouped.items()):
-        match_values = {
-            str(value)
+        host_values = {
+            str(edge.get("metadata", {}).get("resolution_host_id"))
             for edge in edges
-            for value in (
-                edge.get("metadata", {}).get("resolution_host_id"),
-                edge.get("metadata", {}).get("resolution_system_id"),
-                edge.get("metadata", {}).get("resolution_scope"),
-            )
-            if value
+            if edge.get("metadata", {}).get("resolution_host_id")
         }
+        if host_values:
+            match_values = host_values | {scope}
+        else:
+            match_values = {
+                str(value)
+                for edge in edges
+                for value in (
+                    edge.get("metadata", {}).get("resolution_system_id"),
+                    edge.get("metadata", {}).get("resolution_scope"),
+                )
+                if value
+            }
         observed_in_scope = [
             edge
             for edge in actual

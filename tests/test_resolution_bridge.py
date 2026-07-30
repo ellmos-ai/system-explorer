@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 from system_explorer.assessment import assess
 from system_explorer.cli import main
@@ -277,6 +280,62 @@ class ResolutionBridgeTest(unittest.TestCase):
             3,
         )
 
+    def test_logical_system_origin_cannot_satisfy_two_host_scopes(self) -> None:
+        first = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        second = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        first["instance"]["instance_id"] = "fixture-development-system@HOST-A"
+        first["instance"]["host_id"] = "HOST-A"
+        second["instance"]["instance_id"] = "fixture-development-system@HOST-B"
+        second["instance"]["host_id"] = "HOST-B"
+        first_path = self.root / "logical-origin-host-a.json"
+        second_path = self.root / "logical-origin-host-b.json"
+        self._write_resolution(first_path, first)
+        self._write_resolution(second_path, second)
+
+        with Store(self.db) as store:
+            import_resolution(first_path, store)
+            import_resolution(second_path, store)
+            actual = store.add_node(
+                "carrier",
+                "Logical system carrier without host binding",
+                node_id="carrier:logical-system-only",
+                metadata={
+                    "origin_system": "fixture-development-system",
+                    "component_ref": "module:required-provider",
+                },
+            )
+            store.add_edge(
+                actual,
+                "carries",
+                "function:function.required",
+                mode="actual",
+                status="full",
+            )
+            store.commit()
+            report = coverage_report(store)
+
+        required = next(
+            row
+            for row in report["functions"]
+            if row["function"]["name"] == "function.required"
+        )
+        self.assertEqual(
+            {
+                item["scope"]: item["verdict"]
+                for item in required["desired_by_scope"]
+            },
+            {
+                "fixture-development-system@HOST-A": "uncovered",
+                "fixture-development-system@HOST-B": "uncovered",
+            },
+        )
+        self.assertTrue(
+            all(
+                item["actual_provider_edges"] == 0
+                for item in required["desired_by_scope"]
+            )
+        )
+
     def test_new_resolution_revision_supersedes_removed_desired_edges(self) -> None:
         path = self.root / "current-resolution.json"
         first = json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -314,6 +373,51 @@ class ResolutionBridgeTest(unittest.TestCase):
         )
         self.assertEqual(optional_row["verdict"], "unproven")
         self.assertEqual(optional_row["gap_class"], "none")
+
+    def test_stale_resolution_cannot_replace_newer_projection(self) -> None:
+        stale = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        current = json.loads(json.dumps(stale))
+        optional = next(
+            component
+            for component in current["bundles"][0]["components"]
+            if component["role"] == "optional-client"
+        )
+        optional["provides"] = ["function.shared"]
+        current["functions"].remove("function.optional")
+        stale_path = self.root / "stale-resolution.json"
+        current_path = self.root / "current-resolution.json"
+        self._write_resolution(stale_path, stale)
+        self._write_resolution(current_path, current)
+        base_ns = 1_800_000_000_000_000_000
+        os.utime(stale_path, ns=(base_ns, base_ns))
+        os.utime(
+            current_path,
+            ns=(base_ns + 2_000_000_000, base_ns + 2_000_000_000),
+        )
+
+        with Store(self.db) as store:
+            current_stats = import_resolution(current_path, store)
+            stale_stats = import_resolution(stale_path, store)
+            unchanged_stats = import_resolution(current_path, store)
+            report = coverage_report(store)
+            evidence = store.evidence()
+
+        self.assertEqual(current_stats["status"], "imported")
+        self.assertEqual(stale_stats["status"], "stale-ignored")
+        self.assertEqual(stale_stats["superseded"], {"edges": 0, "carriers": 0})
+        self.assertEqual(unchanged_stats["status"], "unchanged")
+        self.assertEqual(len(evidence), 1)
+        self.assertEqual(
+            evidence[0]["metadata"]["resolution_content_hash"],
+            current["content_hash"],
+        )
+        self.assertFalse(
+            any(
+                row["function"]["name"] == "function.optional"
+                for row in report["functions"]
+            )
+        )
+        self.assertEqual(report["desired_summary"]["functions"], 3)
 
     def test_assessment_and_proposal_keep_host_gaps_isolated(self) -> None:
         first = json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -601,6 +705,44 @@ class ResolutionBridgeTest(unittest.TestCase):
                         import_resolution(path, store)
                     self.assertEqual(store.nodes(), [])
                     self.assertEqual(store.evidence(), [])
+
+    def test_import_provenance_is_bound_to_one_source_snapshot(self) -> None:
+        path = self.root / "replace-during-import.json"
+        original = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        replacement = json.loads(json.dumps(original))
+        replacement["desired_profile"] = "replacement"
+        self._write_resolution(path, original)
+        original_bytes = path.read_bytes()
+        original_stat = path.stat()
+        replacement["content_hash"] = canonical_content_hash(replacement)
+        replacement_bytes = json.dumps(replacement).encode("utf-8")
+
+        def snapshot_then_replace(source_path: Path):
+            source_path.write_bytes(replacement_bytes)
+            return original_bytes, original_stat
+
+        with patch(
+            "system_explorer.resolution_bridge._read_resolution_snapshot",
+            side_effect=snapshot_then_replace,
+        ):
+            with Store(self.db) as store:
+                stats = import_resolution(path, store)
+                evidence = store.evidence()
+
+        self.assertEqual(stats["content_hash"], original["content_hash"])
+        self.assertEqual(
+            stats["source_sha256"],
+            hashlib.sha256(original_bytes).hexdigest(),
+        )
+        self.assertEqual(
+            evidence[0]["metadata"]["resolution_content_hash"],
+            original["content_hash"],
+        )
+        self.assertEqual(
+            evidence[0]["sha256"],
+            hashlib.sha256(original_bytes).hexdigest(),
+        )
+        self.assertNotEqual(path.read_bytes(), original_bytes)
 
 
 if __name__ == "__main__":

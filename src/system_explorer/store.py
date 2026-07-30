@@ -217,6 +217,41 @@ class Store:
         row = self.db.execute("PRAGMA integrity_check").fetchone()
         return str(row[0]) if row else "missing-result"
 
+    def resolution_projection_state(
+        self, projection_key: str
+    ) -> dict[str, Any] | None:
+        rows = self.db.execute(
+            """
+            SELECT metadata_json
+            FROM evidence
+            WHERE source_kind = 'system-resolution'
+            """
+        ).fetchall()
+        states = []
+        for row in rows:
+            metadata = json.loads(row["metadata_json"])
+            if metadata.get("resolution_projection") != projection_key:
+                continue
+            generation = metadata.get("resolution_generation")
+            if (
+                not isinstance(generation, list)
+                or len(generation) != 2
+                or not all(isinstance(value, int) for value in generation)
+            ):
+                continue
+            content_hash = metadata.get("resolution_content_hash")
+            if not isinstance(content_hash, str):
+                continue
+            states.append(
+                {
+                    "generation": generation,
+                    "content_hash": content_hash,
+                }
+            )
+        if not states:
+            return None
+        return max(states, key=lambda state: tuple(state["generation"]))
+
     def clear_resolution_projection(self, projection_key: str) -> dict[str, int]:
         edge_rows = self.db.execute(
             "SELECT id, source_id, metadata_json FROM edges WHERE mode = 'desired'"
