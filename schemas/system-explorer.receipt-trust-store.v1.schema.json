@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/system-explorer.receipt-trust-store.v1.schema.json",
+  "title": "System Explorer Receipt Trust Store",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "signers", "content_hash"],
+  "properties": {
+    "schema": {"const": "system-explorer.receipt-trust-store.v1"},
+    "version": {"type": "string", "minLength": 1},
+    "signers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "signer_id",
+          "algorithm",
+          "public_key_path",
+          "allowed_receipt_schemas",
+          "allowed_actor_refs",
+          "allowed_adapter_ids",
+          "allowed_host_ids",
+          "allowed_authority_types",
+          "allowed_delegation_refs",
+          "max_ttl_seconds"
+        ],
+        "properties": {
+          "signer_id": {"$ref": "#/$defs/stable_ref"},
+          "algorithm": {"const": "ed25519"},
+          "public_key_path": {
+            "type": "string",
+            "minLength": 1,
+            "not": {"pattern": "^(?:[A-Za-z]:|/|\\\\)"}
+          },
+          "allowed_receipt_schemas": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "allowed_actor_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"$ref": "#/$defs/stable_ref"}
+          },
+          "allowed_adapter_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "allowed_host_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "allowed_authority_types": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "direct-user-decision",
+                "policy-decision",
+                "delegated-avatar-decision"
+              ]
+            }
+          },
+          "allowed_delegation_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"$ref": "#/$defs/stable_ref"}
+          },
+          "max_ttl_seconds": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "content_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "stable_ref": {
+      "type": "string",
+      "pattern": "^[^\\s:]+:[^\\s]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

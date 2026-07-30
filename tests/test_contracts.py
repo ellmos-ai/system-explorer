@@ -39,6 +39,11 @@ class ContractTest(unittest.TestCase):
             "ellmos.system-instance.v1.schema.json",
             "ellmos.system-test.v1.schema.json",
             "ellmos.fleet.v1.schema.json",
+            "ellmos.actual-self-component-receipt.v1.schema.json",
+            "ellmos.search-authority-receipt.v1.schema.json",
+            "ellmos.search-routing-query.v1.schema.json",
+            "ellmos.search-routing-receipt.v1.schema.json",
+            "system-explorer.receipt-trust-store.v1.schema.json",
         }
         for name in names:
             value = json.loads((schema_dir / name).read_text(encoding="utf-8"))

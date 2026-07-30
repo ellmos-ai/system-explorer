@@ -1,14 +1,27 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import tempfile
 import unittest
 from copy import deepcopy
 from pathlib import Path
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from jsonschema import Draft202012Validator
+
 from system_explorer.actual_self import import_actual_self_receipt
+from system_explorer.cli import main
 from system_explorer.contracts import with_content_hash
+from system_explorer.receipt_trust import (
+    load_receipt_trust_store,
+    signed_content_hash,
+    signed_payload_bytes,
+)
 from system_explorer.resolution_bridge import import_resolution
+from system_explorer.search_authority import import_search_authority_receipt
 from system_explorer.search_routing import resolve_search_route
 from system_explorer.store import Store
 
@@ -23,6 +36,71 @@ class SearchRoutingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
+        self.producer_key = Ed25519PrivateKey.generate()
+        self.authority_key = Ed25519PrivateKey.generate()
+        self._write_public_key("producer.pem", self.producer_key)
+        self._write_public_key("authority.pem", self.authority_key)
+        trust_value = with_content_hash(
+            {
+                "schema": "system-explorer.receipt-trust-store.v1",
+                "version": "1.0.0",
+                "signers": [
+                    {
+                        "signer_id": "signer:controlcenter-test-host",
+                        "algorithm": "ed25519",
+                        "public_key_path": "producer.pem",
+                        "allowed_receipt_schemas": [
+                            "ellmos.actual-self-component-receipt.v1"
+                        ],
+                        "allowed_actor_refs": [
+                            "access_surface:controlcenter"
+                        ],
+                        "allowed_adapter_ids": [
+                            "controlcenter.native-list-tools.v1"
+                        ],
+                        "allowed_host_ids": ["TEST-HOST"],
+                        "allowed_authority_types": [],
+                        "allowed_delegation_refs": [],
+                        "max_ttl_seconds": 10800,
+                    },
+                    {
+                        "signer_id": "signer:decision-resolver-test-host",
+                        "algorithm": "ed25519",
+                        "public_key_path": "authority.pem",
+                        "allowed_receipt_schemas": [
+                            "ellmos.search-authority-receipt.v1"
+                        ],
+                        "allowed_actor_refs": [
+                            "module:policy-decision-resolver"
+                        ],
+                        "allowed_adapter_ids": [
+                            "policy-decision-resolver.native.v1"
+                        ],
+                        "allowed_host_ids": ["TEST-HOST"],
+                        "allowed_authority_types": [
+                            "direct-user-decision",
+                            "policy-decision",
+                            "delegated-avatar-decision",
+                        ],
+                        "allowed_delegation_refs": [
+                            "decision:D-20260730-001"
+                        ],
+                        "max_ttl_seconds": 10800,
+                    },
+                ],
+            }
+        )
+        self.trust_path = self._write("receipt-trust.json", trust_value)
+        self.trust_file_sha256 = hashlib.sha256(
+            self.trust_path.read_bytes()
+        ).hexdigest()
+        self.trust_store = load_receipt_trust_store(
+            {
+                "_base": str(self.root),
+                "receipt_trust_store": self.trust_path.name,
+                "receipt_trust_store_sha256": self.trust_file_sha256,
+            }
+        )
         self.resolution = self._resolution()
         self.resolution_path = self._write(
             "resolution.json", self.resolution
@@ -45,6 +123,7 @@ class SearchRoutingTests(unittest.TestCase):
             self.resolution,
             self.store,
             evaluated_at=OBSERVED_AT,
+            trust_store=self.trust_store,
         )
         query = self._query(
             mode="tool-search",
@@ -52,7 +131,12 @@ class SearchRoutingTests(unittest.TestCase):
             exact_refs=["module:required-provider"],
         )
 
-        result = resolve_search_route(query, self.resolution, self.store)
+        result = resolve_search_route(
+            query,
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
 
         self.assertEqual(result["selected_ref"], "module:required-provider")
         self.assertEqual(result["candidate_method"], "exact-reference")
@@ -101,6 +185,7 @@ class SearchRoutingTests(unittest.TestCase):
             ),
             self.resolution,
             self.store,
+            trust_store=self.trust_store,
         )
 
         self.assertIsNone(result["selected_ref"])
@@ -114,7 +199,11 @@ class SearchRoutingTests(unittest.TestCase):
             ["function.required"],
         )
         wrong_host["scope"]["host_id"] = "FOREIGN-HOST"
-        wrong_host = with_content_hash(wrong_host)
+        wrong_host = self._sign(
+            wrong_host,
+            self.producer_key,
+            "signer:controlcenter-test-host",
+        )
         wrong_host_path = self._write("wrong-host.json", wrong_host)
         with self.assertRaisesRegex(ValueError, "scope does not match"):
             import_actual_self_receipt(
@@ -122,6 +211,7 @@ class SearchRoutingTests(unittest.TestCase):
                 self.resolution,
                 self.store,
                 evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
             )
 
         wrong_registry = self._receipt_value(
@@ -130,7 +220,11 @@ class SearchRoutingTests(unittest.TestCase):
             ["function.required"],
         )
         wrong_registry["registry_binding"]["registry_content_hash"] = "e" * 64
-        wrong_registry = with_content_hash(wrong_registry)
+        wrong_registry = self._sign(
+            wrong_registry,
+            self.producer_key,
+            "signer:controlcenter-test-host",
+        )
         wrong_registry_path = self._write("wrong-registry.json", wrong_registry)
         with self.assertRaisesRegex(ValueError, "registry_content_hash mismatch"):
             import_actual_self_receipt(
@@ -138,6 +232,7 @@ class SearchRoutingTests(unittest.TestCase):
                 self.resolution,
                 self.store,
                 evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
             )
 
     def test_expired_receipt_is_rejected(self) -> None:
@@ -147,7 +242,11 @@ class SearchRoutingTests(unittest.TestCase):
             ["function.required"],
         )
         receipt["expires_at"] = "2026-07-30T20:30:00Z"
-        receipt = with_content_hash(receipt)
+        receipt = self._sign(
+            receipt,
+            self.producer_key,
+            "signer:controlcenter-test-host",
+        )
         path = self._write("expired.json", receipt)
 
         with self.assertRaisesRegex(ValueError, "expired"):
@@ -156,6 +255,248 @@ class SearchRoutingTests(unittest.TestCase):
                 self.resolution,
                 self.store,
                 evaluated_at="2026-07-30T21:00:00Z",
+                trust_store=self.trust_store,
+            )
+
+    def test_expiry_is_bound_to_each_function_edge_not_latest_carrier(self) -> None:
+        first = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-required",
+            expires_at="2026-07-30T20:30:00Z",
+        )
+        import_actual_self_receipt(
+            first,
+            self.resolution,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            trust_store=self.trust_store,
+        )
+        second = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.shared"],
+            suffix="-shared",
+            expires_at=EXPIRES_AT,
+        )
+        import_actual_self_receipt(
+            second,
+            self.resolution,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            trust_store=self.trust_store,
+        )
+
+        result = resolve_search_route(
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+                observed_at="2026-07-30T21:00:00Z",
+            ),
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
+
+        self.assertIsNone(result["selected_ref"])
+        self.assertEqual(result["result_status"], "declared-not-observed")
+        candidate = next(
+            item
+            for item in result["candidates"]
+            if item["ref"] == "module:required-provider"
+        )
+        self.assertIn(
+            "actual-self-receipt-expired",
+            candidate["rejection_reasons"],
+        )
+
+    def test_untrusted_or_tampered_producer_receipt_is_rejected(self) -> None:
+        untrusted_key = Ed25519PrivateKey.generate()
+        untrusted = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-untrusted",
+            private_key=untrusted_key,
+            signer_id="signer:forged",
+        )
+        with self.assertRaisesRegex(ValueError, "not in the configured trust store"):
+            import_actual_self_receipt(
+                untrusted,
+                self.resolution,
+                self.store,
+                evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
+            )
+
+    def test_store_metadata_flags_cannot_spoof_receipt_signatures(self) -> None:
+        evidence_id = self.store.add_evidence(
+            uri="actual-self://TEST-HOST/module%3Arequired-provider",
+            source_kind="actual-self-native-receipt",
+            sha256="a" * 64,
+            effective_at="2026-07-30T19:55:00Z",
+            metadata={
+                "signature_verified": True,
+                "receipt_id": "receipt-forged",
+                "producer_signer_id": "signer:controlcenter-test-host",
+                "trust_store_content_hash": self.trust_store.content_hash,
+            },
+        )
+        carrier_id = self.store.add_node(
+            "carrier",
+            "module:required-provider",
+            scope=self.resolution["instance"]["instance_id"],
+            metadata={
+                "origin_system": "TEST-HOST",
+                "actual_self": True,
+            },
+        )
+        self.store.register_component_identity_claim(
+            carrier_id=carrier_id,
+            component_ref="module:required-provider",
+            evidence_id=evidence_id,
+            source_kind="actual-self-native-receipt",
+            source_id="required-provider",
+        )
+        self.store.add_edge(
+            carrier_id,
+            "carries",
+            "function:function.required",
+            mode="actual",
+            status="observed",
+            evidence_id=evidence_id,
+            metadata={
+                "receipt_id": "receipt-forged",
+                "probe_id": "forged",
+                "readback_sha256": "b" * 64,
+                "producer_signer_id": "signer:controlcenter-test-host",
+                "signature_verified": True,
+                "trust_store_content_hash": self.trust_store.content_hash,
+                "expires_at": EXPIRES_AT,
+            },
+        )
+        self.store.commit()
+        result = resolve_search_route(
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+            ),
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
+        self.assertIsNone(result["selected_ref"])
+        self.assertIn(
+            "actual-self-receipt-reverification-failed",
+            result["candidates"][0]["rejection_reasons"],
+        )
+
+        self.store.add_evidence(
+            uri="search-authority://TEST-HOST/authority%3Aforged-store",
+            source_kind="search-authority-receipt",
+            sha256="c" * 64,
+            effective_at="2026-07-30T19:00:00Z",
+            metadata={
+                "signature_verified": True,
+                "receipt_ref": "authority:forged-store",
+                "issued_at": "2026-07-30T19:00:00Z",
+                "expires_at": EXPIRES_AT,
+                "host_id": "TEST-HOST",
+                "authority_type": "delegated-avatar-decision",
+                "decision_ref": "decision:FORGED",
+                "delegation_ref": "decision:D-20260730-001",
+                "confidence": 1.0,
+                "minimum_confidence": 0.0,
+                "scope": {
+                    "query_modes": ["tool-search"],
+                    "system_instance_ids": [
+                        self.resolution["instance"]["instance_id"]
+                    ],
+                    "component_refs": ["module:required-provider"],
+                    "capabilities": ["function.required"],
+                },
+                "conflicts": [],
+            },
+        )
+        self.store.commit()
+        gate_results = resolve_search_route(
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                authority_receipt_refs=["authority:forged-store"],
+                execution_requested=True,
+            ),
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
+        self.assertFalse(gate_results["executable"])
+        self.assertEqual(
+            gate_results["authority_gates"][0]["status"],
+            "blocked",
+        )
+        self.assertIn(
+            "authority-receipt-reverification-failed",
+            gate_results["authority_gates"][0]["reasons"],
+        )
+
+        tampered = json.loads(
+            self._receipt(
+                "module:required-provider",
+                "module",
+                ["function.required"],
+                suffix="-tampered",
+            ).read_text(encoding="utf-8")
+        )
+        tampered["functions"][0]["readback_sha256"] = "9" * 64
+        tampered_path = self._write("tampered.json", tampered)
+        with self.assertRaisesRegex(
+            ValueError,
+            "content_hash mismatch|signature verification failed",
+        ):
+            import_actual_self_receipt(
+                tampered_path,
+                self.resolution,
+                self.store,
+                evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
+            )
+
+    def test_producer_receipt_ttl_is_bounded_by_trust_policy(self) -> None:
+        path = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-long-ttl",
+            expires_at="2026-07-31T01:00:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "max_ttl_seconds"):
+            import_actual_self_receipt(
+                path,
+                self.resolution,
+                self.store,
+                evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
+            )
+
+    def test_trust_store_requires_external_config_fingerprint(self) -> None:
+        with self.assertRaisesRegex(ValueError, "configured SHA-256 pin"):
+            load_receipt_trust_store(
+                {
+                    "_base": str(self.root),
+                    "receipt_trust_store": self.trust_path.name,
+                    "receipt_trust_store_sha256": "0" * 64,
+                }
+            )
+        with self.assertRaisesRegex(ValueError, "must pin"):
+            load_receipt_trust_store(
+                {
+                    "_base": str(self.root),
+                    "receipt_trust_store": self.trust_path.name,
+                }
             )
 
     def test_declared_only_component_cannot_be_imported(self) -> None:
@@ -181,6 +522,7 @@ class SearchRoutingTests(unittest.TestCase):
                 resolution,
                 self.store,
                 evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
             )
 
     def test_name_case_and_alias_do_not_become_exact_matches(self) -> None:
@@ -195,7 +537,12 @@ class SearchRoutingTests(unittest.TestCase):
             exact_refs=["module:Required_Provider"],
         )
 
-        result = resolve_search_route(query, self.resolution, self.store)
+        result = resolve_search_route(
+            query,
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
 
         self.assertEqual(result["selected_ref"], "module:required-provider")
         self.assertEqual(result["candidate_method"], "registry-capability")
@@ -235,7 +582,12 @@ class SearchRoutingTests(unittest.TestCase):
             ],
         )
 
-        result = resolve_search_route(query, self.resolution, self.store)
+        result = resolve_search_route(
+            query,
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
 
         self.assertEqual(result["selected_ref"], "software:optional-provider")
         self.assertEqual(result["candidate_method"], "semantic-ranker")
@@ -271,6 +623,7 @@ class SearchRoutingTests(unittest.TestCase):
             ),
             self.resolution,
             self.store,
+            trust_store=self.trust_store,
         )
 
         self.assertEqual(result["result_status"], "ambiguous")
@@ -283,16 +636,28 @@ class SearchRoutingTests(unittest.TestCase):
             "module",
             ["function.required"],
         )
-        gate = self._delegated_gate()
+        authority_path, authority_ref = self._authority_receipt()
+        import_search_authority_receipt(
+            authority_path,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            expected_host_id="TEST-HOST",
+            trust_store=self.trust_store,
+        )
         query = self._query(
             mode="tool-search",
             capabilities=["function.required"],
             exact_refs=["module:required-provider"],
-            authority_gates=[gate],
+            authority_receipt_refs=[authority_ref],
             execution_requested=True,
         )
 
-        result = resolve_search_route(query, self.resolution, self.store)
+        result = resolve_search_route(
+            query,
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
 
         self.assertTrue(result["executable"])
         self.assertEqual(result["authority_gates"][0]["status"], "passed")
@@ -307,29 +672,294 @@ class SearchRoutingTests(unittest.TestCase):
             "module",
             ["function.required"],
         )
-        variants = []
-        low_confidence = self._delegated_gate()
-        low_confidence["confidence"] = 0.7
-        variants.append(low_confidence)
-        conflict = self._delegated_gate()
-        conflict["conflicts"] = ["decision:conflicting-user-choice"]
-        variants.append(conflict)
-        out_of_scope = self._delegated_gate()
-        out_of_scope["applies_to"]["component_refs"] = ["module:other-provider"]
-        variants.append(out_of_scope)
+        variants = [
+            {"confidence": 0.7},
+            {
+                "conflicts": [
+                    {
+                        "ref": "decision:conflicting-user-choice",
+                        "sha256": "8" * 64,
+                    }
+                ]
+            },
+            {"component_refs": ["module:other-provider"]},
+        ]
 
-        for gate in variants:
-            with self.subTest(gate=gate):
+        for index, override in enumerate(variants):
+            with self.subTest(override=override):
+                authority_path, authority_ref = self._authority_receipt(
+                    suffix=str(index),
+                    **override,
+                )
+                import_search_authority_receipt(
+                    authority_path,
+                    self.store,
+                    evaluated_at=OBSERVED_AT,
+                    expected_host_id="TEST-HOST",
+                    trust_store=self.trust_store,
+                )
                 query = self._query(
                     mode="tool-search",
                     capabilities=["function.required"],
                     exact_refs=["module:required-provider"],
-                    authority_gates=[gate],
+                    authority_receipt_refs=[authority_ref],
                     execution_requested=True,
                 )
-                result = resolve_search_route(query, self.resolution, self.store)
+                result = resolve_search_route(
+                    query,
+                    self.resolution,
+                    self.store,
+                    trust_store=self.trust_store,
+                )
                 self.assertFalse(result["executable"])
                 self.assertEqual(result["authority_gates"][0]["status"], "blocked")
+
+    def test_forged_delegation_or_missing_authority_receipt_fails_closed(self) -> None:
+        forged_path, _ = self._authority_receipt(
+            suffix="-forged",
+            delegation_ref="decision:FORGED-NOT-D-20260730-001",
+        )
+        with self.assertRaisesRegex(ValueError, "delegation ref is not allowed"):
+            import_search_authority_receipt(
+                forged_path,
+                self.store,
+                evaluated_at=OBSERVED_AT,
+                expected_host_id="TEST-HOST",
+                trust_store=self.trust_store,
+            )
+
+        self._import_receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+        )
+        result = resolve_search_route(
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+                authority_receipt_refs=["authority:not-imported"],
+                execution_requested=True,
+            ),
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
+        self.assertFalse(result["executable"])
+        self.assertEqual(result["authority_gates"][0]["status"], "blocked")
+        self.assertEqual(
+            result["authority_gates"][0]["reasons"],
+            ["authority-receipt-not-found"],
+        )
+
+    def test_authority_revision_order_uses_parsed_utc_not_iso_text(self) -> None:
+        self._import_receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+        )
+        receipt_ref = "authority:offset-conflict"
+        first_path, _ = self._authority_receipt(
+            suffix="-offset-a",
+            receipt_ref=receipt_ref,
+            issued_at="2026-07-30T19:00:00Z",
+            expires_at="2026-07-30T22:00:00Z",
+            confidence=0.96,
+        )
+        second_path, _ = self._authority_receipt(
+            suffix="-offset-b",
+            receipt_ref=receipt_ref,
+            issued_at="2026-07-30T21:00:00+02:00",
+            expires_at="2026-07-31T00:00:00+02:00",
+            confidence=0.95,
+        )
+        for path in (first_path, second_path):
+            import_search_authority_receipt(
+                path,
+                self.store,
+                evaluated_at=OBSERVED_AT,
+                expected_host_id="TEST-HOST",
+                trust_store=self.trust_store,
+            )
+
+        result = resolve_search_route(
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+                authority_receipt_refs=[receipt_ref],
+                execution_requested=True,
+            ),
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
+
+        self.assertFalse(result["executable"])
+        self.assertEqual(
+            result["authority_gates"][0]["reasons"],
+            ["authority-receipt-revision-conflict"],
+        )
+
+    def test_cli_end_to_end_and_forged_receipts_fail_closed(self) -> None:
+        config_path = self._write(
+            "cli-config.json",
+            {
+                "schema": "system-explorer.config.v1",
+                "database": str(self.root / "cli.db"),
+                "receipt_trust_store": self.trust_path.name,
+                "receipt_trust_store_sha256": self.trust_file_sha256,
+                "roots": [],
+            },
+        )
+        actual_path = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-cli",
+        )
+        authority_path, authority_ref = self._authority_receipt(suffix="-cli")
+        query_path = self._write(
+            "cli-query.json",
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+                authority_receipt_refs=[authority_ref],
+                execution_requested=True,
+            ),
+        )
+        output_path = self.root / "cli-search-receipt.json"
+
+        result = main(
+            [
+                "search-route",
+                str(query_path),
+                "--resolution",
+                str(self.resolution_path),
+                "--actual-self",
+                str(actual_path),
+                "--authority-receipt",
+                str(authority_path),
+                "--config",
+                str(config_path),
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        self.assertEqual(result, 0)
+        output = json.loads(output_path.read_text(encoding="utf-8"))
+        self.assertTrue(output["executable"])
+        self.assertEqual(output["selected_ref"], "module:required-provider")
+
+        arbitrary = self._receipt_value(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-arbitrary",
+        )
+        arbitrary_path = self._write("arbitrary-unsigned.json", arbitrary)
+        self.assertNotEqual(
+            main(
+                [
+                    "import-actual-self",
+                    str(arbitrary_path),
+                    "--resolution",
+                    str(self.resolution_path),
+                    "--config",
+                    str(config_path),
+                    "--evaluated-at",
+                    OBSERVED_AT,
+                ]
+            ),
+            0,
+        )
+
+        forged_path, _ = self._authority_receipt(
+            suffix="-cli-forged",
+            delegation_ref="decision:FORGED",
+        )
+        self.assertNotEqual(
+            main(
+                [
+                    "import-search-authority",
+                    str(forged_path),
+                    "--resolution",
+                    str(self.resolution_path),
+                    "--config",
+                    str(config_path),
+                    "--evaluated-at",
+                    OBSERVED_AT,
+                ]
+            ),
+            0,
+        )
+
+    def test_public_search_receipt_schemas_validate_real_values(self) -> None:
+        schema_root = Path(__file__).resolve().parents[1] / "schemas"
+        schema_names = [
+            "ellmos.actual-self-component-receipt.v1.schema.json",
+            "ellmos.search-authority-receipt.v1.schema.json",
+            "ellmos.search-routing-query.v1.schema.json",
+            "ellmos.search-routing-receipt.v1.schema.json",
+            "system-explorer.receipt-trust-store.v1.schema.json",
+        ]
+        schemas = {
+            name: json.loads((schema_root / name).read_text(encoding="utf-8"))
+            for name in schema_names
+        }
+        for schema in schemas.values():
+            Draft202012Validator.check_schema(schema)
+
+        actual_path = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-schema",
+        )
+        actual = json.loads(actual_path.read_text(encoding="utf-8"))
+        authority_path, authority_ref = self._authority_receipt(suffix="-schema")
+        authority = json.loads(authority_path.read_text(encoding="utf-8"))
+        query = self._query(
+            mode="tool-search",
+            capabilities=["function.required"],
+            exact_refs=["module:required-provider"],
+            authority_receipt_refs=[authority_ref],
+            execution_requested=True,
+        )
+        import_actual_self_receipt(
+            actual_path,
+            self.resolution,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            trust_store=self.trust_store,
+        )
+        import_search_authority_receipt(
+            authority_path,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            expected_host_id="TEST-HOST",
+            trust_store=self.trust_store,
+        )
+        receipt = resolve_search_route(
+            query,
+            self.resolution,
+            self.store,
+            trust_store=self.trust_store,
+        )
+        trust_value = json.loads(self.trust_path.read_text(encoding="utf-8"))
+        values = [actual, authority, query, receipt, trust_value]
+        for name, value in zip(schema_names, values):
+            errors = sorted(
+                Draft202012Validator(schemas[name]).iter_errors(value),
+                key=lambda error: list(error.path),
+            )
+            self.assertEqual(
+                errors,
+                [],
+                msg=f"{name}: {[error.message for error in errors]}",
+            )
 
     def _resolution(self) -> dict:
         value = json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -357,12 +987,25 @@ class SearchRoutingTests(unittest.TestCase):
         component_ref: str,
         component_type: str,
         functions: list[str],
+        *,
+        suffix: str = "",
+        observed_at: str = "2026-07-30T19:55:00Z",
+        expires_at: str = EXPIRES_AT,
+        private_key: Ed25519PrivateKey | None = None,
+        signer_id: str = "signer:controlcenter-test-host",
     ) -> Path:
+        value = self._receipt_value(
+            component_ref,
+            component_type,
+            functions,
+            suffix=suffix,
+            observed_at=observed_at,
+            expires_at=expires_at,
+            signer_id=signer_id,
+        )
         return self._write(
-            component_ref.replace(":", "-") + ".actual.json",
-            with_content_hash(
-                self._receipt_value(component_ref, component_type, functions)
-            ),
+            component_ref.replace(":", "-") + suffix + ".actual.json",
+            self._sign(value, private_key or self.producer_key, signer_id),
         )
 
     def _receipt_value(
@@ -370,11 +1013,18 @@ class SearchRoutingTests(unittest.TestCase):
         component_ref: str,
         component_type: str,
         functions: list[str],
+        *,
+        suffix: str = "",
+        observed_at: str = "2026-07-30T19:55:00Z",
+        expires_at: str = EXPIRES_AT,
+        signer_id: str = "signer:controlcenter-test-host",
     ) -> dict:
         component = self._component(self.resolution, component_ref)
         return {
             "schema": "ellmos.actual-self-component-receipt.v1",
-            "receipt_id": "receipt-" + component_ref.replace(":", "-"),
+            "receipt_id": (
+                "receipt-" + component_ref.replace(":", "-") + suffix
+            ),
             "component_ref": component_ref,
             "component_type": component_type,
             "scope": {
@@ -389,10 +1039,13 @@ class SearchRoutingTests(unittest.TestCase):
             },
             "producer": {
                 "ref": "access_surface:controlcenter",
+                "adapter_id": "controlcenter.native-list-tools.v1",
+                "signer_id": signer_id,
+                "host_id": "TEST-HOST",
                 "probe_kind": "native-runtime-readback",
             },
-            "observed_at": "2026-07-30T19:55:00Z",
-            "expires_at": EXPIRES_AT,
+            "observed_at": observed_at,
+            "expires_at": expires_at,
             "functions": [
                 {
                     "id": function,
@@ -417,6 +1070,7 @@ class SearchRoutingTests(unittest.TestCase):
             self.resolution,
             self.store,
             evaluated_at=OBSERVED_AT,
+            trust_store=self.trust_store,
         )
 
     def _query(
@@ -426,8 +1080,9 @@ class SearchRoutingTests(unittest.TestCase):
         capabilities: list[str],
         exact_refs: list[str] | None = None,
         ranked_candidates: list[dict] | None = None,
-        authority_gates: list[dict] | None = None,
+        authority_receipt_refs: list[str] | None = None,
         execution_requested: bool = False,
+        observed_at: str = OBSERVED_AT,
     ) -> dict:
         return with_content_hash(
             {
@@ -438,31 +1093,98 @@ class SearchRoutingTests(unittest.TestCase):
                 "required_capabilities": capabilities,
                 "exact_refs": exact_refs or [],
                 "ranked_candidates": ranked_candidates or [],
-                "authority_gates": authority_gates or [],
+                "authority_receipt_refs": authority_receipt_refs or [],
                 "execution_requested": execution_requested,
-                "observed_at": OBSERVED_AT,
+                "observed_at": observed_at,
             }
         )
 
-    def _delegated_gate(self) -> dict:
-        return {
+    def _authority_receipt(
+        self,
+        *,
+        suffix: str = "",
+        confidence: float = 0.96,
+        conflicts: list[dict] | None = None,
+        component_refs: list[str] | None = None,
+        delegation_ref: str = "decision:D-20260730-001",
+        private_key: Ed25519PrivateKey | None = None,
+        signer_id: str = "signer:decision-resolver-test-host",
+        receipt_ref: str | None = None,
+        issued_at: str = "2026-07-30T19:00:00Z",
+        expires_at: str = EXPIRES_AT,
+    ) -> tuple[Path, str]:
+        receipt_ref = receipt_ref or "authority:avatar-routing-001" + suffix
+        value = {
+            "schema": "ellmos.search-authority-receipt.v1",
+            "receipt_ref": receipt_ref,
             "authority_type": "delegated-avatar-decision",
             "decision_ref": "decision:avatar-routing-001",
-            "delegation_ref": "decision:D-20260730-001",
+            "delegation_ref": delegation_ref,
             "decision_kind": "predicted",
-            "confidence": 0.96,
+            "confidence": confidence,
             "minimum_confidence": 0.9,
-            "evidence_refs": ["evidence:tom-lm-prediction-001"],
-            "applies_to": {
+            "issuer": {
+                "ref": "module:policy-decision-resolver",
+                "adapter_id": "policy-decision-resolver.native.v1",
+                "signer_id": signer_id,
+                "host_id": "TEST-HOST",
+            },
+            "scope": {
                 "query_modes": ["tool-search"],
-                "scopes": [self.resolution["instance"]["instance_id"]],
-                "component_refs": ["module:required-provider"],
+                "system_instance_ids": [
+                    self.resolution["instance"]["instance_id"]
+                ],
+                "component_refs": component_refs
+                or ["module:required-provider"],
                 "capabilities": ["function.required"],
             },
-            "issued_at": "2026-07-30T19:00:00Z",
-            "expires_at": EXPIRES_AT,
-            "conflicts": [],
+            "evidence": [
+                {
+                    "ref": "evidence:tom-lm-prediction-001",
+                    "sha256": "7" * 64,
+                },
+                {
+                    "ref": "evidence:D-20260730-001",
+                    "sha256": "6" * 64,
+                },
+            ],
+            "issued_at": issued_at,
+            "expires_at": expires_at,
+            "conflicts": conflicts or [],
         }
+        path = self._write(
+            "authority" + suffix + ".json",
+            self._sign(value, private_key or self.authority_key, signer_id),
+        )
+        return path, receipt_ref
+
+    def _sign(
+        self,
+        value: dict,
+        private_key: Ed25519PrivateKey,
+        signer_id: str,
+    ) -> dict:
+        value = deepcopy(value)
+        value["content_hash"] = signed_content_hash(value)
+        signature = private_key.sign(signed_payload_bytes(value))
+        value["signature"] = {
+            "algorithm": "ed25519",
+            "signer_id": signer_id,
+            "value": base64.b64encode(signature).decode("ascii"),
+        }
+        return value
+
+    def _write_public_key(
+        self,
+        name: str,
+        private_key: Ed25519PrivateKey,
+    ) -> None:
+        (self.root / name).write_bytes(
+            private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+        )
 
     def _component(self, resolution: dict, ref: str) -> dict:
         for bundle in resolution["bundles"]:

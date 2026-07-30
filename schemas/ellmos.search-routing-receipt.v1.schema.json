@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/ellmos.search-routing-receipt.v1.schema.json",
+  "title": "ellmos Search Routing Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "query_id",
+    "query_mode",
+    "scope",
+    "source_hashes",
+    "candidate_ids",
+    "candidate_method",
+    "score_domain",
+    "eligibility_filters",
+    "semantic_ranker_used",
+    "selected_ref",
+    "selection_authority",
+    "authority_gates",
+    "identity_verified",
+    "availability_verified",
+    "verification_receipt",
+    "executable",
+    "observed_at",
+    "result_status",
+    "candidates",
+    "content_hash"
+  ],
+  "properties": {
+    "schema": {"const": "ellmos.search-routing-receipt.v1"},
+    "query_id": {"type": "string", "minLength": 1},
+    "query_mode": {"enum": ["skill-search", "tool-search", "tool-overview"]},
+    "scope": {"type": "string", "minLength": 1},
+    "source_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query", "resolution", "component_registry", "actual_evidence"],
+      "properties": {
+        "query": {"$ref": "#/$defs/sha256"},
+        "resolution": {"$ref": "#/$defs/sha256"},
+        "component_registry": {"$ref": "#/$defs/sha256"},
+        "actual_evidence": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "candidate_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/stable_ref"}
+    },
+    "candidate_method": {
+      "enum": [
+        "exact-reference",
+        "registry-capability",
+        "semantic-ranker",
+        "controlcenter-lexical-candidate"
+      ]
+    },
+    "score_domain": {
+      "oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]
+    },
+    "eligibility_filters": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "semantic_ranker_used": {"type": "boolean"},
+    "selected_ref": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/stable_ref"}]
+    },
+    "selection_authority": {"type": "string", "minLength": 1},
+    "authority_gates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/authority_gate"}
+    },
+    "identity_verified": {"type": "boolean"},
+    "availability_verified": {"type": "boolean"},
+    "verification_receipt": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "executable": {"type": "boolean"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "result_status": {
+      "enum": ["resolved", "ambiguous", "declared-not-observed", "not-found", "overview"]
+    },
+    "candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "content_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "stable_ref": {
+      "type": "string",
+      "pattern": "^[^\\s:]+:[^\\s]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authority_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_ref",
+        "authority_type",
+        "decision_ref",
+        "evidence_id",
+        "status",
+        "reasons"
+      ],
+      "properties": {
+        "receipt_ref": {"$ref": "#/$defs/stable_ref"},
+        "authority_type": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "enum": [
+                "direct-user-decision",
+                "policy-decision",
+                "delegated-avatar-decision"
+              ]
+            }
+          ]
+        },
+        "decision_ref": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/stable_ref"}]
+        },
+        "delegation_ref": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/stable_ref"}]
+        },
+        "evidence_id": {
+          "oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]
+        },
+        "status": {"enum": ["passed", "blocked"]},
+        "reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "component_type",
+        "provides",
+        "identity_verified",
+        "type_eligible",
+        "capability_eligible",
+        "desired_active",
+        "coverage_verdicts",
+        "availability_verified",
+        "verification_receipts",
+        "evidence_sha256",
+        "rejection_reasons"
+      ],
+      "properties": {
+        "ref": {"$ref": "#/$defs/stable_ref"},
+        "component_type": {"type": "string", "minLength": 1},
+        "provides": {"type": "array", "items": {"type": "string"}},
+        "identity_verified": {"type": "boolean"},
+        "type_eligible": {"type": "boolean"},
+        "capability_eligible": {"type": "boolean"},
+        "desired_active": {"type": "boolean"},
+        "coverage_verdicts": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "availability_verified": {"type": "boolean"},
+        "verification_receipts": {"type": "array", "items": {"type": "string"}},
+        "evidence_sha256": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sha256"}
+        },
+        "rejection_reasons": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

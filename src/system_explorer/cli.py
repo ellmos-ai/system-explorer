@@ -37,10 +37,12 @@ from .media_connector import (
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
+from .receipt_trust import load_receipt_trust_store
 from .resolution_bridge import import_resolution
 from .resolver import resolve_system, resolve_test, validate_manifest_target
 from .resources import resource_report
 from .scanner import ProgressCallback, scan
+from .search_authority import import_search_authority_receipt
 from .search_routing import resolve_search_route
 from .server import serve
 from .specs import desired_template, import_spec
@@ -130,6 +132,18 @@ def build_parser() -> argparse.ArgumentParser:
     actual_self.add_argument("--config", type=Path, required=True)
     actual_self.add_argument("--evaluated-at", required=True)
 
+    search_authority = sub.add_parser(
+        "import-search-authority",
+        help=(
+            "Import one signed, trust-store-bound search authority receipt "
+            "without accepting query-supplied authority claims."
+        ),
+    )
+    search_authority.add_argument("path", type=Path)
+    search_authority.add_argument("--resolution", type=Path, required=True)
+    search_authority.add_argument("--config", type=Path, required=True)
+    search_authority.add_argument("--evaluated-at", required=True)
+
     search_route = sub.add_parser(
         "search-route",
         help=(
@@ -145,6 +159,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         dest="actual_self_receipts",
+    )
+    search_route.add_argument(
+        "--authority-receipt",
+        type=Path,
+        action="append",
+        default=[],
+        dest="authority_receipts",
     )
     search_route.add_argument("--config", type=Path, required=True)
     search_route.add_argument("--output", type=Path)
@@ -556,24 +577,52 @@ def _run(args: argparse.Namespace) -> int:
         elif args.command == "import-actual-self":
             resolution_value = _read_json_object(args.resolution)
             import_resolution(args.resolution, store)
+            trust_store = load_receipt_trust_store(config)
             value = import_actual_self_receipt(
                 args.path,
                 resolution_value,
                 store,
                 evaluated_at=args.evaluated_at,
+                trust_store=trust_store,
+            )
+        elif args.command == "import-search-authority":
+            resolution_value = _read_json_object(args.resolution)
+            import_resolution(args.resolution, store)
+            trust_store = load_receipt_trust_store(config)
+            value = import_search_authority_receipt(
+                args.path,
+                store,
+                evaluated_at=args.evaluated_at,
+                expected_host_id=resolution_value["instance"]["host_id"],
+                trust_store=trust_store,
             )
         elif args.command == "search-route":
             resolution_value = _read_json_object(args.resolution)
             import_resolution(args.resolution, store)
             query_value = _read_json_object(args.query)
+            trust_store = load_receipt_trust_store(config)
             for path in args.actual_self_receipts:
                 import_actual_self_receipt(
                     path,
                     resolution_value,
                     store,
                     evaluated_at=query_value["observed_at"],
+                    trust_store=trust_store,
                 )
-            value = resolve_search_route(query_value, resolution_value, store)
+            for path in args.authority_receipts:
+                import_search_authority_receipt(
+                    path,
+                    store,
+                    evaluated_at=query_value["observed_at"],
+                    expected_host_id=resolution_value["instance"]["host_id"],
+                    trust_store=trust_store,
+                )
+            value = resolve_search_route(
+                query_value,
+                resolution_value,
+                store,
+                trust_store=trust_store,
+            )
             if args.output:
                 _write_json_atomic(args.output, value)
                 print(

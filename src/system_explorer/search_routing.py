@@ -3,8 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from .actual_self import validate_actual_self_receipt
 from .contracts import canonical_content_hash, with_content_hash
 from .coverage import coverage_report
+from .receipt_trust import ReceiptTrustStore
+from .search_authority import resolve_authority_receipts
 from .store import Store
 
 
@@ -22,7 +25,7 @@ ROOT_FIELDS = {
     "required_capabilities",
     "exact_refs",
     "ranked_candidates",
-    "authority_gates",
+    "authority_receipt_refs",
     "execution_requested",
     "observed_at",
     "content_hash",
@@ -33,6 +36,8 @@ def resolve_search_route(
     query: dict[str, Any],
     resolution: dict[str, Any],
     store: Store,
+    *,
+    trust_store: ReceiptTrustStore,
 ) -> dict[str, Any]:
     """Resolve stable component references against native actual-self evidence."""
 
@@ -53,6 +58,8 @@ def resolve_search_route(
             observed_at=observed_at,
             store=store,
             coverage=coverage,
+            resolution=resolution,
+            trust_store=trust_store,
         )
         for ref, component in components.items()
     }
@@ -102,11 +109,15 @@ def resolve_search_route(
                 ambiguous = True
 
     selected = evaluated.get(selected_ref) if selected_ref else None
-    gate_results = _evaluate_authority_gates(
-        query["authority_gates"],
-        query=query,
-        selected_ref=selected_ref,
-        observed_at=observed_at,
+    gate_results = resolve_authority_receipts(
+        store,
+        query["authority_receipt_refs"],
+        query_mode=query["query_mode"],
+        scope=query["scope"],
+        component_ref=selected_ref,
+        capabilities=query["required_capabilities"],
+        observed_at=query["observed_at"],
+        trust_store=trust_store,
     )
     authority_passed = bool(gate_results) and all(
         gate["status"] == "passed" for gate in gate_results
@@ -190,6 +201,8 @@ def _evaluate_candidate(
     observed_at: datetime,
     store: Store,
     coverage: dict[str, Any],
+    resolution: dict[str, Any],
+    trust_store: ReceiptTrustStore,
 ) -> dict[str, Any]:
     component_type = component["type"]
     provides = sorted(component.get("provides", []))
@@ -212,6 +225,8 @@ def _evaluate_candidate(
         capabilities=capabilities,
         scope=scope,
         observed_at=observed_at,
+        resolution=resolution,
+        trust_store=trust_store,
     )
     coverage_verdicts = {
         capability: _scope_coverage_verdict(coverage, capability, scope, ref)
@@ -265,6 +280,8 @@ def _actual_self_observation(
     capabilities: list[str],
     scope: str,
     observed_at: datetime,
+    resolution: dict[str, Any],
+    trust_store: ReceiptTrustStore,
 ) -> dict[str, Any]:
     nodes = {node["id"]: node for node in store.nodes()}
     function_names = {
@@ -302,9 +319,10 @@ def _actual_self_observation(
         if instance_scope != scope:
             reasons.add("actual-self-scope-mismatch")
             continue
-        expires_at = metadata.get("actual_self_expires_at")
+        edge_metadata = edge.get("metadata", {})
+        expires_at = edge_metadata.get("expires_at")
         if not isinstance(expires_at, str) or observed_at > _timestamp(
-            expires_at, "actual_self_expires_at"
+            expires_at, "actual_self_edge.expires_at"
         ):
             reasons.add("actual-self-receipt-expired")
             continue
@@ -318,6 +336,61 @@ def _actual_self_observation(
             continue
         if evidence_item.get("source_kind") != "actual-self-native-receipt":
             reasons.add("actual-self-evidence-kind-mismatch")
+            continue
+        evidence_metadata = evidence_item.get("metadata", {})
+        if evidence_metadata.get("signature_verified") is not True:
+            reasons.add("actual-self-producer-signature-unverified")
+            continue
+        signed_receipt = evidence_metadata.get("signed_receipt")
+        try:
+            if not isinstance(signed_receipt, dict):
+                raise ValueError("stored actual-self receipt is missing")
+            validate_actual_self_receipt(
+                signed_receipt,
+                resolution,
+                evaluated_at=observed_at.isoformat(),
+                trust_store=trust_store,
+            )
+        except ValueError:
+            reasons.add("actual-self-receipt-reverification-failed")
+            continue
+        signed_functions = {
+            item["id"]: item for item in signed_receipt["functions"]
+        }
+        signed_function = signed_functions.get(capability)
+        if (
+            signed_receipt["receipt_id"] != edge_metadata.get("receipt_id")
+            or signed_receipt["receipt_id"]
+            != evidence_metadata.get("receipt_id")
+            or signed_receipt["component_ref"] != component_ref
+            or signed_function is None
+            or signed_function["status"] != edge["status"]
+            or signed_function["probe_id"] != edge_metadata.get("probe_id")
+            or signed_function["readback_sha256"]
+            != edge_metadata.get("readback_sha256")
+            or signed_receipt["expires_at"] != edge_metadata.get("expires_at")
+        ):
+            reasons.add("actual-self-edge-signed-payload-mismatch")
+            continue
+        if edge_metadata.get("signature_verified") is not True:
+            reasons.add("actual-self-edge-signature-unverified")
+            continue
+        if edge_metadata.get("receipt_id") != evidence_metadata.get("receipt_id"):
+            reasons.add("actual-self-edge-receipt-mismatch")
+            continue
+        if (
+            edge_metadata.get("producer_signer_id")
+            != evidence_metadata.get("producer_signer_id")
+        ):
+            reasons.add("actual-self-edge-signer-mismatch")
+            continue
+        if (
+            edge_metadata.get("trust_store_content_hash")
+            != evidence_metadata.get("trust_store_content_hash")
+            or edge_metadata.get("trust_store_content_hash")
+            != trust_store.content_hash
+        ):
+            reasons.add("actual-self-edge-trust-store-mismatch")
             continue
         receipts_by_capability[capability].add(evidence_id)
         hashes.add(evidence_item["sha256"])
@@ -373,57 +446,6 @@ def _rank_eligible(ranking: dict[str, Any], eligible_refs: list[str]) -> list[st
     return sorted(
         candidate["ref"] for candidate in candidates if candidate["score"] == highest
     )
-
-
-def _evaluate_authority_gates(
-    gates: list[dict[str, Any]],
-    *,
-    query: dict[str, Any],
-    selected_ref: str | None,
-    observed_at: datetime,
-) -> list[dict[str, Any]]:
-    results = []
-    for gate in gates:
-        reasons = []
-        applies_to = gate["applies_to"]
-        if query["query_mode"] not in applies_to["query_modes"]:
-            reasons.append("query-mode-out-of-scope")
-        if query["scope"] not in applies_to["scopes"]:
-            reasons.append("system-scope-out-of-scope")
-        if selected_ref and selected_ref not in applies_to["component_refs"]:
-            reasons.append("component-out-of-scope")
-        if not set(query["required_capabilities"]) <= set(
-            applies_to["capabilities"]
-        ):
-            reasons.append("capability-out-of-scope")
-        issued_at = _timestamp(gate["issued_at"], "authority_gate.issued_at")
-        expires_at = _timestamp(gate["expires_at"], "authority_gate.expires_at")
-        if observed_at < issued_at:
-            reasons.append("authority-not-yet-effective")
-        if observed_at > expires_at:
-            reasons.append("authority-expired")
-        if gate["conflicts"]:
-            reasons.append("authority-conflict")
-
-        if gate["authority_type"] == "delegated-avatar-decision":
-            if gate.get("decision_kind") != "predicted":
-                reasons.append("delegated-avatar-decision-kind-invalid")
-            if not gate.get("delegation_ref"):
-                reasons.append("delegation-reference-missing")
-            if not gate.get("evidence_refs"):
-                reasons.append("delegated-evidence-missing")
-            if gate.get("confidence", 0.0) < gate.get("minimum_confidence", 1.0):
-                reasons.append("delegated-confidence-below-threshold")
-
-        results.append(
-            {
-                "authority_type": gate["authority_type"],
-                "decision_ref": gate["decision_ref"],
-                "status": "blocked" if reasons else "passed",
-                "reasons": sorted(reasons),
-            }
-        )
-    return results
 
 
 def _validate_query(query: Any, resolution: dict[str, Any]) -> None:
@@ -504,81 +526,10 @@ def _validate_query(query: Any, resolution: dict[str, Any]) -> None:
         if len(refs) != len(set(refs)):
             raise ValueError("ranked candidate refs must be unique per score domain")
 
-    gates = query["authority_gates"]
-    if not isinstance(gates, list):
-        raise ValueError("authority_gates must be a list")
-    for index, gate in enumerate(gates):
-        _validate_authority_gate(gate, index)
-
-
-def _validate_authority_gate(gate: Any, index: int) -> None:
-    if not isinstance(gate, dict):
-        raise ValueError(f"authority_gates[{index}] must be an object")
-    base = {
-        "authority_type",
-        "decision_ref",
-        "applies_to",
-        "issued_at",
-        "expires_at",
-        "conflicts",
-    }
-    delegated = {
-        "delegation_ref",
-        "decision_kind",
-        "confidence",
-        "minimum_confidence",
-        "evidence_refs",
-    }
-    authority_type = gate.get("authority_type")
-    allowed_types = {
-        "direct-user-decision",
-        "policy-decision",
-        "delegated-avatar-decision",
-    }
-    if authority_type not in allowed_types:
-        raise ValueError(f"authority_gates[{index}].authority_type is unsupported")
-    expected = base | (delegated if authority_type == "delegated-avatar-decision" else set())
-    if set(gate) != expected:
-        raise ValueError(f"authority_gates[{index}] has invalid fields")
-    _stable_ref(gate["decision_ref"], f"authority_gates[{index}].decision_ref")
-    issued_at = _timestamp(gate["issued_at"], f"authority_gates[{index}].issued_at")
-    expires_at = _timestamp(gate["expires_at"], f"authority_gates[{index}].expires_at")
-    if expires_at <= issued_at:
-        raise ValueError(f"authority_gates[{index}] expires before it is effective")
-    if not isinstance(gate["conflicts"], list):
-        raise ValueError(f"authority_gates[{index}].conflicts must be a list")
-    _unique_stable_refs(gate["conflicts"], f"authority_gates[{index}].conflicts")
-
-    applies_to = gate["applies_to"]
-    fields = {"query_modes", "scopes", "component_refs", "capabilities"}
-    if not isinstance(applies_to, dict) or set(applies_to) != fields:
-        raise ValueError(f"authority_gates[{index}].applies_to has invalid fields")
-    _unique_strings(applies_to["query_modes"], "authority applies_to.query_modes")
-    if not set(applies_to["query_modes"]) <= QUERY_MODES:
-        raise ValueError("authority gate contains an unsupported query mode")
-    _unique_strings(applies_to["scopes"], "authority applies_to.scopes")
-    _unique_stable_refs(
-        applies_to["component_refs"], "authority applies_to.component_refs"
-    )
-    _unique_strings(applies_to["capabilities"], "authority applies_to.capabilities")
-
-    if authority_type == "delegated-avatar-decision":
-        _stable_ref(gate["delegation_ref"], f"authority_gates[{index}].delegation_ref")
-        if gate["decision_kind"] != "predicted":
-            raise ValueError("delegated avatar decision_kind must be predicted")
-        for field in ("confidence", "minimum_confidence"):
-            value = gate[field]
-            if (
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not 0 <= value <= 1
-            ):
-                raise ValueError(f"authority_gates[{index}].{field} must be 0..1")
-        if not isinstance(gate["evidence_refs"], list) or not gate["evidence_refs"]:
-            raise ValueError("delegated avatar decision requires evidence_refs")
-        _unique_stable_refs(
-            gate["evidence_refs"], f"authority_gates[{index}].evidence_refs"
-        )
+    authority_refs = query["authority_receipt_refs"]
+    if not isinstance(authority_refs, list):
+        raise ValueError("authority_receipt_refs must be a list")
+    _unique_stable_refs(authority_refs, "authority_receipt_refs")
 
 
 def _components(resolution: dict[str, Any]) -> dict[str, dict[str, Any]]:

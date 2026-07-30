@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-from .contracts import canonical_content_hash
+from .receipt_trust import ReceiptTrustStore, verify_signed_receipt
 from .store import Store
 from .util import stable_id
 
@@ -26,6 +26,7 @@ ROOT_FIELDS = {
     "observed_at",
     "expires_at",
     "functions",
+    "signature",
     "content_hash",
 }
 
@@ -36,6 +37,7 @@ def import_actual_self_receipt(
     store: Store,
     *,
     evaluated_at: str,
+    trust_store: ReceiptTrustStore,
 ) -> dict[str, Any]:
     """Import one native, stable-ID-bound runtime readback.
 
@@ -48,7 +50,12 @@ def import_actual_self_receipt(
     path = Path(path).resolve()
     source_bytes = path.read_bytes()
     receipt = json.loads(source_bytes.decode("utf-8"))
-    _validate_receipt(receipt, resolution, evaluated_at=evaluated_at)
+    trust_verification = validate_actual_self_receipt(
+        receipt,
+        resolution,
+        evaluated_at=evaluated_at,
+        trust_store=trust_store,
+    )
 
     scope = receipt["scope"]
     component_ref = receipt["component_ref"]
@@ -85,12 +92,16 @@ def import_actual_self_receipt(
                 "instance_id": scope["instance_id"],
                 "host_id": scope["host_id"],
                 "producer_ref": receipt["producer"]["ref"],
+                "producer_adapter_id": receipt["producer"]["adapter_id"],
+                "producer_signer_id": receipt["producer"]["signer_id"],
                 "probe_kind": receipt["producer"]["probe_kind"],
                 "observed_at": receipt["observed_at"],
                 "expires_at": receipt["expires_at"],
                 "registry_content_hash": receipt["registry_binding"][
                     "registry_content_hash"
                 ],
+                "signed_receipt": receipt,
+                **trust_verification,
             },
         )
         store.add_node(
@@ -104,8 +115,11 @@ def import_actual_self_receipt(
                 "actual_self": True,
                 "actual_self_receipt_id": receipt["receipt_id"],
                 "actual_self_observed_at": receipt["observed_at"],
-                "actual_self_expires_at": receipt["expires_at"],
                 "producer_ref": receipt["producer"]["ref"],
+                "producer_adapter_id": receipt["producer"]["adapter_id"],
+                "producer_signer_id": receipt["producer"]["signer_id"],
+                "producer_signature_verified": True,
+                "trust_store_content_hash": trust_store.content_hash,
             },
         )
         identity_status = store.register_component_identity_claim(
@@ -145,6 +159,10 @@ def import_actual_self_receipt(
                         "readback_sha256": function["readback_sha256"],
                         "probe_id": function["probe_id"],
                         "producer_ref": receipt["producer"]["ref"],
+                        "producer_adapter_id": receipt["producer"]["adapter_id"],
+                        "producer_signer_id": receipt["producer"]["signer_id"],
+                        "signature_verified": True,
+                        "trust_store_content_hash": trust_store.content_hash,
                         "expires_at": receipt["expires_at"],
                     },
                 )
@@ -166,15 +184,18 @@ def import_actual_self_receipt(
         "evidence_id": evidence_id,
         "function_edges": len(edge_ids),
         "source_sha256": source_sha256,
+        "signer_id": receipt["producer"]["signer_id"],
+        "trust_store_content_hash": trust_store.content_hash,
     }
 
 
-def _validate_receipt(
+def validate_actual_self_receipt(
     receipt: Any,
     resolution: dict[str, Any],
     *,
     evaluated_at: str,
-) -> None:
+    trust_store: ReceiptTrustStore,
+) -> dict[str, Any]:
     if not isinstance(receipt, dict):
         raise ValueError("actual-self receipt must be an object")
     unknown = sorted(set(receipt) - ROOT_FIELDS)
@@ -185,8 +206,6 @@ def _validate_receipt(
         raise ValueError("actual-self receipt is missing fields: " + ", ".join(missing))
     if receipt["schema"] != RECEIPT_SCHEMA:
         raise ValueError(f"actual-self receipt must use {RECEIPT_SCHEMA}")
-    if receipt["content_hash"] != canonical_content_hash(receipt):
-        raise ValueError("actual-self receipt content_hash mismatch")
     _nonempty_string(receipt["receipt_id"], "receipt_id")
     _nonempty_string(receipt["component_ref"], "component_ref")
     if receipt["component_type"] not in COMPONENT_TYPES:
@@ -247,9 +266,13 @@ def _validate_receipt(
     producer = _object_with_fields(
         receipt["producer"],
         "producer",
-        {"ref", "probe_kind"},
+        {"ref", "adapter_id", "signer_id", "host_id", "probe_kind"},
     )
     _stable_ref(producer["ref"], "producer.ref")
+    _nonempty_string(producer["adapter_id"], "producer.adapter_id")
+    _nonempty_string(producer["signer_id"], "producer.signer_id")
+    if producer["host_id"] != scope["host_id"]:
+        raise ValueError("actual-self receipt producer host_id mismatch")
     if producer["probe_kind"] != "native-runtime-readback":
         raise ValueError("actual-self receipt producer must use native-runtime-readback")
 
@@ -276,6 +299,16 @@ def _validate_receipt(
             raise ValueError(f"functions[{index}].status is unsupported")
         _nonempty_string(item["probe_id"], f"functions[{index}].probe_id")
         _sha256(item["readback_sha256"], f"functions[{index}].readback_sha256")
+    return verify_signed_receipt(
+        receipt,
+        trust_store,
+        receipt_schema=RECEIPT_SCHEMA,
+        actor=producer,
+        actor_kind="producer",
+        host_id=scope["host_id"],
+        issued_at=observed_at,
+        expires_at=expires_at,
+    )
 
 
 def _resolution_component(
