@@ -10,6 +10,11 @@
   oder Leistungszusage durch `unavailable`
 - scopebewusste Assessment- und Proposal-Gaps ohne Maskierung durch einen
   anderen erfüllten Host
+- fail-closed Providerabgleich über `component_ref`/`stable_ref` mit
+  `wrong-provider`-/Carrier-Mismatch-Ausweisung und erlaubten deklarierten
+  Fallbackprovidern
+- kollisionssicher gehashte Resolution-Carrier-IDs und strikte Validierung
+  von Instanzform sowie `desired_status`
 - getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und
   optionalen Gaps sowie Desired-Provider-Overlap
 - CLI- und Konfigurationsweg für Coverage gegen gespeicherte

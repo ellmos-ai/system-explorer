@@ -14,9 +14,14 @@ from system_explorer.coverage import coverage_report
 from system_explorer.proposals import propose
 from system_explorer.resolution_bridge import import_resolution
 from system_explorer.store import Store
+from system_explorer.util import stable_id
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "resolution.v1.json"
+
+
+def carrier_id(scope: str, ref: str) -> str:
+    return stable_id("carrier", scope, ref)
 
 
 class ResolutionBridgeTest(unittest.TestCase):
@@ -73,15 +78,17 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(stats["target_mutations"], [])
 
         scope = "fixture-development-system@TEST-HOST"
-        self.assertIn(f"carrier:{scope}:module:required-provider", nodes)
-        self.assertIn(f"carrier:{scope}:skill:recommended-provider", nodes)
-        self.assertIn(f"carrier:{scope}:software:optional-provider", nodes)
-        self.assertIn(f"carrier:{scope}:skill:empty-provider", nodes)
-        self.assertIn(f"carrier:{scope}:software:unavailable-provider", nodes)
+        self.assertIn(carrier_id(scope, "module:required-provider"), nodes)
+        self.assertIn(carrier_id(scope, "skill:recommended-provider"), nodes)
+        self.assertIn(carrier_id(scope, "software:optional-provider"), nodes)
+        self.assertIn(carrier_id(scope, "skill:empty-provider"), nodes)
+        self.assertIn(carrier_id(scope, "software:unavailable-provider"), nodes)
         self.assertNotIn("function:function.consumed-only", nodes)
         self.assertNotIn("function:function.unavailable", nodes)
         self.assertEqual(
-            nodes[f"carrier:{scope}:module:required-provider"]["metadata"]["consumes"],
+            nodes[carrier_id(scope, "module:required-provider")]["metadata"][
+                "consumes"
+            ],
             ["function.consumed-only"],
         )
 
@@ -91,7 +98,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    f"carrier:{scope}:module:required-provider",
+                    carrier_id(scope, "module:required-provider"),
                     "function:function.required",
                 )
             ]["metadata"]["requirement"],
@@ -100,7 +107,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    f"carrier:{scope}:skill:recommended-provider",
+                    carrier_id(scope, "skill:recommended-provider"),
                     "function:function.recommended",
                 )
             ]["metadata"]["requirement"],
@@ -109,7 +116,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    f"carrier:{scope}:software:optional-provider",
+                    carrier_id(scope, "software:optional-provider"),
                     "function:function.optional",
                 )
             ]["metadata"]["requirement"],
@@ -122,7 +129,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    f"carrier:{scope}:module:required-provider",
+                    carrier_id(scope, "module:required-provider"),
                     "function:function.required",
                 )
             ]["metadata"]["desired_status"],
@@ -221,11 +228,17 @@ class ResolutionBridgeTest(unittest.TestCase):
 
         self.assertEqual(len(edges), 10)
         self.assertIn(
-            "carrier:fixture-development-system@HOST-A:module:required-provider",
+            carrier_id(
+                "fixture-development-system@HOST-A",
+                "module:required-provider",
+            ),
             nodes,
         )
         self.assertIn(
-            "carrier:fixture-development-system@HOST-B:module:required-provider",
+            carrier_id(
+                "fixture-development-system@HOST-B",
+                "module:required-provider",
+            ),
             nodes,
         )
         self.assertTrue(all(function["scope"] is None for function in functions))
@@ -321,7 +334,10 @@ class ResolutionBridgeTest(unittest.TestCase):
                 "carrier",
                 "Observed provider on A",
                 node_id="carrier:observed-host-a",
-                metadata={"origin_system": "HOST-A"},
+                metadata={
+                    "origin_system": "HOST-A",
+                    "component_ref": "module:required-provider",
+                },
             )
             store.add_edge(
                 actual,
@@ -376,6 +392,140 @@ class ResolutionBridgeTest(unittest.TestCase):
             proposal["relevant_function_gaps"],
         )
 
+    def test_provider_identity_is_fail_closed_and_allows_declared_fallbacks(
+        self,
+    ) -> None:
+        with Store(self.db) as store:
+            import_resolution(FIXTURE, store)
+            actual_required = store.add_node(
+                "carrier",
+                "Observed required provider",
+                node_id="carrier:observed-required",
+                metadata={
+                    "origin_system": "TEST-HOST",
+                    "component_ref": "module:required-provider",
+                },
+            )
+            actual_wrong = store.add_node(
+                "carrier",
+                "Observed wrong provider",
+                node_id="carrier:observed-wrong",
+                metadata={
+                    "origin_system": "TEST-HOST",
+                    "component_ref": "module:not-recommended-provider",
+                },
+            )
+            actual_fallback = store.add_node(
+                "carrier",
+                "Observed declared fallback",
+                node_id="carrier:observed-fallback",
+                metadata={
+                    "origin_system": "TEST-HOST",
+                    "stable_ref": "software:optional-provider",
+                },
+            )
+            store.add_edge(
+                actual_required,
+                "carries",
+                "function:function.required",
+                mode="actual",
+                status="full",
+            )
+            store.add_edge(
+                actual_wrong,
+                "carries",
+                "function:function.recommended",
+                mode="actual",
+                status="full",
+            )
+            store.add_edge(
+                actual_fallback,
+                "carries",
+                "function:function.shared",
+                mode="actual",
+                status="full",
+            )
+            store.commit()
+            report = coverage_report(store)
+            assessment = assess(store)
+            proposal = propose("Review provider identity", store)
+
+        rows = {
+            row["function"]["name"]: row for row in report["functions"]
+        }
+        required = rows["function.required"]["desired_by_scope"][0]
+        recommended = rows["function.recommended"]["desired_by_scope"][0]
+        fallback = rows["function.shared"]["desired_by_scope"][0]
+        self.assertEqual(required["verdict"], "full")
+        self.assertFalse(required["carrier_mismatch"])
+        self.assertEqual(recommended["verdict"], "wrong-provider")
+        self.assertTrue(recommended["carrier_mismatch"])
+        self.assertEqual(recommended["actual_provider_edges"], 0)
+        self.assertEqual(recommended["observed_provider_edges"], 1)
+        self.assertEqual(
+            recommended["unexpected_actual_providers"],
+            ["carrier:observed-wrong"],
+        )
+        self.assertEqual(recommended["gap_class"], "advisory")
+        self.assertEqual(fallback["verdict"], "full")
+        self.assertTrue(fallback["overlap"])
+        self.assertFalse(fallback["carrier_mismatch"])
+        mismatch = next(
+            finding
+            for finding in assessment["findings"]
+            if finding["kind"] == "carrier-mismatch"
+        )
+        self.assertEqual(
+            mismatch["function"],
+            "function:function.recommended",
+        )
+        self.assertEqual(mismatch["severity"], "medium")
+        proposal_gap = next(
+            gap
+            for gap in proposal["relevant_scoped_function_gaps"]
+            if gap["function"] == "function:function.recommended"
+        )
+        self.assertEqual(proposal_gap["verdict"], "wrong-provider")
+
+    def test_carrier_ids_do_not_collide_when_scope_and_ref_contain_colons(
+        self,
+    ) -> None:
+        first = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        second = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        for value, scope, host, ref in (
+            (first, "alpha:beta", "HOST-A", "gamma"),
+            (second, "alpha", "HOST-B", "beta:gamma"),
+        ):
+            value["instance"]["instance_id"] = scope
+            value["instance"]["host_id"] = host
+            value["bundles"][0]["components"] = [
+                value["bundles"][0]["components"][0]
+            ]
+            value["bundles"][0]["components"][0]["ref"] = ref
+            value["functions"] = ["function.required", "function.shared"]
+        first_path = self.root / "collision-a.json"
+        second_path = self.root / "collision-b.json"
+        self._write_resolution(first_path, first)
+        self._write_resolution(second_path, second)
+
+        with Store(self.db) as store:
+            import_resolution(first_path, store)
+            import_resolution(second_path, store)
+            nodes = {
+                node["id"]: node for node in store.nodes("carrier")
+            }
+
+        first_id = carrier_id("alpha:beta", "gamma")
+        second_id = carrier_id("alpha", "beta:gamma")
+        self.assertNotEqual(first_id, second_id)
+        self.assertIn(first_id, nodes)
+        self.assertIn(second_id, nodes)
+        self.assertEqual(nodes[first_id]["metadata"]["component_ref"], "gamma")
+        self.assertEqual(
+            nodes[second_id]["metadata"]["component_ref"],
+            "beta:gamma",
+        )
+
     def test_cli_and_config_import_resolution_before_coverage(self) -> None:
         config = self._config(resolution_sources=[str(FIXTURE)])
         stdout = StringIO()
@@ -419,6 +569,27 @@ class ResolutionBridgeTest(unittest.TestCase):
         mismatch["functions"].append("function.not-provided")
         mismatch["content_hash"] = canonical_content_hash(mismatch)
         candidates.append(mismatch)
+
+        unknown_status = json.loads(json.dumps(original))
+        unknown_status["bundles"][0]["components"][0][
+            "desired_status"
+        ] = "configrued"
+        unknown_status["content_hash"] = canonical_content_hash(unknown_status)
+        candidates.append(unknown_status)
+
+        malformed_instance = json.loads(json.dumps(original))
+        malformed_instance["instance"] = ["not", "an", "object"]
+        malformed_instance["content_hash"] = canonical_content_hash(
+            malformed_instance
+        )
+        candidates.append(malformed_instance)
+
+        incomplete_instance = json.loads(json.dumps(original))
+        del incomplete_instance["instance"]["host_id"]
+        incomplete_instance["content_hash"] = canonical_content_hash(
+            incomplete_instance
+        )
+        candidates.append(incomplete_instance)
 
         for index, candidate in enumerate(candidates):
             with self.subTest(index=index):

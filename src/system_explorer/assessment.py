@@ -32,6 +32,10 @@ def assess(store: Store) -> dict[str, Any]:
                         gap_class=scope_row["gap_class"],
                         requirement=scope_row["effective_requirement"],
                         scope=scope_row["scope"],
+                        carrier_mismatch=scope_row["carrier_mismatch"],
+                        unexpected_actual_providers=scope_row[
+                            "unexpected_actual_providers"
+                        ],
                     )
                 )
                 if scope_row["overlap"]:
@@ -52,6 +56,8 @@ def assess(store: Store) -> dict[str, Any]:
                     gap_class=row["gap_class"],
                     requirement=row["effective_requirement"],
                     scope=None,
+                    carrier_mismatch=False,
+                    unexpected_actual_providers=[],
                 )
             )
         if row["overlap"]:
@@ -102,9 +108,28 @@ def _scope_coverage_findings(
     gap_class: str,
     requirement: str,
     scope: str | None,
+    carrier_mismatch: bool,
+    unexpected_actual_providers: list[str],
 ) -> list[dict[str, Any]]:
     findings = []
     scope_field = {"scope": scope} if scope is not None else {}
+    if carrier_mismatch:
+        findings.append(
+            {
+                "severity": {
+                    "required": "high",
+                    "recommended": "medium",
+                    "optional": "review",
+                    "unspecified": "high",
+                }[requirement],
+                "kind": "carrier-mismatch",
+                "function": row["function"]["id"],
+                "requirement": requirement,
+                **scope_field,
+                "unexpected_actual_providers": unexpected_actual_providers,
+                "recommendation": "Verify the desired component_ref on the observed carrier or approve an explicit fallback provider.",
+            }
+        )
     if verdict == "uncovered":
         severity, kind = {
             "hard": ("high", "function-gap"),

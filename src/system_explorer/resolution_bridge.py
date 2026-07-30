@@ -5,9 +5,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .contracts import canonical_content_hash
+from .contracts import OPERATIONAL_STATUSES, canonical_content_hash
 from .store import Store
-from .util import file_effective_date, sha256_file
+from .util import file_effective_date, sha256_file, stable_id
 
 
 REQUIREMENTS = ("required", "recommended", "optional")
@@ -219,6 +219,13 @@ def _validate_resolution(value: Any) -> None:
             raise ValueError(f"resolution {field} must be an explicit empty array")
     if not isinstance(value.get("system"), dict) or not value["system"].get("id"):
         raise ValueError("resolution system.id is required")
+    instance = value.get("instance")
+    if instance is not None:
+        if not isinstance(instance, dict):
+            raise ValueError("resolution instance must be an object")
+        for field in ("id", "instance_id", "host_id"):
+            if not isinstance(instance.get(field), str) or not instance[field]:
+                raise ValueError(f"resolution instance requires non-empty {field}")
     if not isinstance(value.get("bundles"), list):
         raise ValueError("resolution bundles must be an array")
     if not isinstance(value.get("functions"), list) or not all(
@@ -244,6 +251,8 @@ def _validate_resolution(value: Any) -> None:
                     raise ValueError(f"{location} requires non-empty {field}")
             if component["requirement"] not in REQUIREMENTS:
                 raise ValueError(f"{location} has unsupported requirement")
+            if component["desired_status"] not in OPERATIONAL_STATUSES:
+                raise ValueError(f"{location} has unsupported desired_status")
             for field in ("provides", "consumes"):
                 items = component.get(field, [])
                 if not isinstance(items, list) or not all(
@@ -255,7 +264,7 @@ def _validate_resolution(value: Any) -> None:
 
 
 def _carrier_id(scope: str, ref: str) -> str:
-    return f"carrier:{scope}:{ref}"
+    return stable_id("carrier", scope, ref)
 
 
 def _ref_name(value: Any) -> str:

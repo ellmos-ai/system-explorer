@@ -211,7 +211,7 @@ noch keine Coverage-Evidenz. Der Resolution-Importer materialisiert deshalb
 nur folgende read-only Abbildung im lokalen Evidence Store:
 
 ```text
-resolution-scope + component.ref ──stabile ID──> carrier
+resolution-scope + component.ref ──Hash-ID──> carrier
 component.provides[] ────────> desired carries ──> function
 component.consumes[] ────────> Carrier-Metadaten, keine carries-Kante
 ```
@@ -226,7 +226,11 @@ scopeweise: `required` erzeugt harte, `recommended` beratende und `optional`
 optionale Gaps. Discovery-Gesamtzahlen und Desired-only-Zahlen werden
 getrennt ausgegeben. Assessment und Change-Proposal konsumieren die
 scopeweisen Urteile und tragen den betroffenen Scope im Finding
-beziehungsweise im strukturierten Gap.
+beziehungsweise im strukturierten Gap. Für Resolution-Projektionen gilt die
+Provideridentität fail-closed: Nur ein beobachteter Carrier mit passendem
+`component_ref` oder `stable_ref` deckt die Desired-Kante. Ein anderer Carrier
+im selben Hostscope erzeugt `wrong-provider`/`carrier-mismatch`; ausdrücklich
+deklarierte Mehrfachprovider und Fallbacks bleiben zulässig und sichtbar.
 Nichtleere Runtime-Aktionen oder Target-Mutationen verletzen den
 Importer-Vertrag und werden fail-closed abgewiesen.
 

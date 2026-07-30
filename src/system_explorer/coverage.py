@@ -8,7 +8,13 @@ from .store import Store
 
 POSITIVE = {"full", "partial", "declared", "inferred", "observed", "fulfilled"}
 REQUIREMENT_ORDER = ("required", "recommended", "optional", "unspecified")
-GAP_VERDICTS = {"uncovered", "unproven", "partial", "negative"}
+GAP_VERDICTS = {
+    "uncovered",
+    "unproven",
+    "partial",
+    "negative",
+    "wrong-provider",
+}
 
 
 def coverage_report(store: Store) -> dict[str, Any]:
@@ -101,6 +107,7 @@ def coverage_report(store: Store) -> dict[str, Any]:
                 "provider_edges": 0,
                 "actual_provider_edges": 0,
                 "duplicate_provider_functions": 0,
+                "carrier_mismatches": 0,
                 "hard_gaps": 0,
                 "advisory_gaps": 0,
                 "optional_gaps": 0,
@@ -112,6 +119,8 @@ def coverage_report(store: Store) -> dict[str, Any]:
         scope["actual_provider_edges"] += item["actual_provider_edges"]
         if item["overlap"]:
             scope["duplicate_provider_functions"] += 1
+        if item["carrier_mismatch"]:
+            scope["carrier_mismatches"] += 1
         gap_counter = {
             "hard": "hard_gaps",
             "advisory": "advisory_gaps",
@@ -126,6 +135,9 @@ def coverage_report(store: Store) -> dict[str, Any]:
         "provider_edges": sum(len(row["desired"]) for row in desired_rows),
         "duplicate_provider_functions": sum(
             1 for row in desired_rows if row["desired_overlap"]
+        ),
+        "carrier_mismatches": sum(
+            1 for item in scope_rows if item["carrier_mismatch"]
         ),
         "hard_gaps": sum(1 for item in scope_rows if item["gap_class"] == "hard"),
         "advisory_gaps": sum(
@@ -206,7 +218,7 @@ def _desired_scope_rows(
             )
             if value
         }
-        scoped_actual = [
+        observed_in_scope = [
             edge
             for edge in actual
             if nodes.get(edge["source_id"], {})
@@ -215,8 +227,35 @@ def _desired_scope_rows(
             in match_values
         ]
         if len(grouped) == 1 and not actual_has_origin:
-            scoped_actual = actual
-        verdict = _coverage_verdict(scoped_actual, desired=True)
+            observed_in_scope = actual
+        resolution_managed = any(
+            edge.get("metadata", {}).get("resolution_projection")
+            for edge in edges
+        )
+        desired_component_refs = {
+            ref
+            for edge in edges
+            for ref in _carrier_refs(nodes.get(edge["source_id"], {}))
+        }
+        if resolution_managed:
+            scoped_actual = [
+                edge
+                for edge in observed_in_scope
+                if _carrier_refs(nodes.get(edge["source_id"], {}))
+                & desired_component_refs
+            ]
+            unexpected_actual = [
+                edge
+                for edge in observed_in_scope
+                if edge not in scoped_actual
+            ]
+        else:
+            scoped_actual = observed_in_scope
+            unexpected_actual = []
+        if resolution_managed and observed_in_scope and not scoped_actual:
+            verdict = "wrong-provider"
+        else:
+            verdict = _coverage_verdict(scoped_actual, desired=True)
         requirements = sorted(
             {
                 requirement
@@ -240,8 +279,14 @@ def _desired_scope_rows(
                 "verdict": verdict,
                 "provider_edges": len(edges),
                 "actual_provider_edges": len(scoped_actual),
+                "observed_provider_edges": len(observed_in_scope),
                 "providers": providers,
                 "overlap": len(providers) > 1,
+                "desired_component_refs": sorted(desired_component_refs),
+                "carrier_mismatch": bool(unexpected_actual),
+                "unexpected_actual_providers": sorted(
+                    {edge["source_id"] for edge in unexpected_actual}
+                ),
                 "requirements": requirements,
                 "effective_requirement": effective_requirement,
                 "desired_statuses": desired_statuses,
@@ -249,6 +294,20 @@ def _desired_scope_rows(
             }
         )
     return rows
+
+
+def _carrier_refs(node: dict[str, Any]) -> set[str]:
+    metadata = node.get("metadata", {})
+    refs = set()
+    for field in ("component_ref", "stable_ref"):
+        value = metadata.get(field)
+        if isinstance(value, str) and value:
+            refs.add(value)
+        elif isinstance(value, list):
+            refs.update(
+                item for item in value if isinstance(item, str) and item
+            )
+    return refs
 
 
 def _edge_desired_statuses(edge: dict[str, Any]) -> set[str]:

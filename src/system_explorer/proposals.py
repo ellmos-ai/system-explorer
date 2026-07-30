@@ -73,7 +73,12 @@ def _scoped_coverage_gaps(coverage: dict[str, Any]) -> list[dict[str, Any]]:
             }
         ]
         for scope_row in scope_rows:
-            if scope_row["verdict"] not in {"uncovered", "negative", "partial"}:
+            if scope_row["verdict"] not in {
+                "uncovered",
+                "negative",
+                "partial",
+                "wrong-provider",
+            }:
                 continue
             if scope_row["gap_class"] == "optional":
                 continue

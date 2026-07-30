@@ -207,8 +207,10 @@ system-explorer coverage `
 
 Alternativ nimmt `desired_resolution_sources` in der Explorer-Konfiguration
 einen oder mehrere Resolution-Pfade auf; `coverage` und `ingest` importieren
-sie relativ zum Konfigurationsordner. `component.ref` bestimmt die stabile
-Carrier-ID innerhalb der Resolution-Instanz. Nur aktive `provides` erzeugen
+sie relativ zum Konfigurationsordner. Scope und `component.ref` bestimmen eine
+kollisionssicher gehashte Carrier-ID; beide lesbaren Werte bleiben in den
+Metadaten erhalten. Nur bekannte aktive `desired_status`-Werte und deren
+`provides` erzeugen
 Desired-Funktionskanten; `unavailable` bleibt als Carrierstatus sichtbar,
 trägt aber keine Funktion. `consumes` bleibt beschreibende
 Carrier-Metadaten. `required`, `recommended`, `optional` und
@@ -222,7 +224,12 @@ bleiben. Mehrere gewünschte Provider innerhalb desselben Scopes erscheinen
 als `desired_overlap`; gleiche Provider auf unterschiedlichen Hosts werden
 nicht zu einem künstlichen Overlap vermischt. `assess` und `propose`
 übernehmen diese Scope-Grenze; ein erfüllter Host kann daher die Lücke eines
-anderen Hosts nicht verdecken.
+anderen Hosts nicht verdecken. Tatsächliche Deckung verlangt zusätzlich eine
+typisierte Übereinstimmung von `component_ref` oder `stable_ref`. Ein anderer
+beobachteter Provider desselben Hosts wird als `wrong-provider` und
+`carrier-mismatch` ausgewiesen, nicht als erfüllte Sollfunktion. Ein in der
+Resolution ausdrücklich als zweiter Provider deklarierter Fallback bleibt
+dagegen deckungsfähig.
 
 Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
 Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden

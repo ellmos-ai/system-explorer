@@ -15,15 +15,18 @@ mit der Coverage-Engine verdrahtet.
 ### Entscheidung
 
 Eine read-only Brücke importiert `system-explorer.resolution.v1` in den
-lokalen Evidence Store. Stabile Carrier-IDs entstehen aus Resolution-Scope
-und `component.ref`; ausschließlich aktive `provides` erzeugen
+lokalen Evidence Store. Kollisionssicher gehashte Carrier-IDs entstehen aus
+Resolution-Scope und `component.ref`; ausschließlich bekannte aktive
+`desired_status`-Werte und deren `provides` erzeugen
 Desired-Kanten. Eine neuere Resolution ersetzt die aktive Projektion
 desselben Scopes, ohne andere Instanzen zu verdrängen. Requirement,
 `desired_status`, Bundle-Provenienz, Quellschema und Content-Hash bleiben
 erhalten. Coverage weist Required-, Recommended- und Optional-Gaps
 scopeweise getrennt aus und zeigt gewünschte Mehrfachprovider als Overlap.
 Assessment und Proposal dürfen dafür kein global nivelliertes
-Funktionsurteil verwenden.
+Funktionsurteil verwenden. Beobachtete Deckung muss außerdem über
+`component_ref` oder `stable_ref` einem gewünschten Provider zugeordnet sein;
+ein bloß hostgleicher Fremdprovider wird als Carrier-Mismatch ausgewiesen.
 
 ### Grenze
 
