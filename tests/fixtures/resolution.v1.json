@@ -80,6 +80,18 @@
             "function.required"
           ],
           "desired_status": "available"
+        },
+        {
+          "type": "software_app",
+          "ref": "software:unavailable-provider",
+          "role": "unavailable-client",
+          "requirement": "optional",
+          "version": "1.0.0",
+          "provides": [
+            "function.unavailable"
+          ],
+          "consumes": [],
+          "desired_status": "unavailable"
         }
       ]
     }
@@ -94,5 +106,5 @@
   "runtime_actions": [],
   "target_mutations": [],
   "warnings": [],
-  "content_hash": "dd81e172466d31db54d2c6dbcdfa032f7e5010d8daa1d72447d7fb1c66129998"
+  "content_hash": "08822c2459c5b79e673bf0777e891977f897724a756709bd59074c267c4015e2"
 }

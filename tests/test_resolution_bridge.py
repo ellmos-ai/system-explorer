@@ -43,6 +43,10 @@ class ResolutionBridgeTest(unittest.TestCase):
         )
         return path
 
+    def _write_resolution(self, path: Path, value: dict[str, object]) -> None:
+        value["content_hash"] = canonical_content_hash(value)
+        path.write_text(json.dumps(value), encoding="utf-8")
+
     def test_resolution_import_preserves_typed_desired_evidence(self) -> None:
         source_before = FIXTURE.read_bytes()
         fixture_value = json.loads(source_before)
@@ -59,21 +63,25 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(FIXTURE.read_bytes(), source_before)
         self.assertEqual(stats["source_schema"], "system-explorer.resolution.v1")
         self.assertEqual(stats["content_hash"], fixture_value["content_hash"])
-        self.assertEqual(stats["carriers"], 4)
+        self.assertEqual(stats["carriers"], 5)
         self.assertEqual(stats["functions"], 4)
         self.assertEqual(stats["desired_edges"], 5)
         self.assertEqual(stats["empty_provides"], 1)
+        self.assertEqual(stats["inactive_provides"], 1)
         self.assertEqual(stats["duplicate_provider_functions"], 1)
         self.assertEqual(stats["runtime_actions"], [])
         self.assertEqual(stats["target_mutations"], [])
 
-        self.assertIn("carrier:module:required-provider", nodes)
-        self.assertIn("carrier:skill:recommended-provider", nodes)
-        self.assertIn("carrier:software:optional-provider", nodes)
-        self.assertIn("carrier:skill:empty-provider", nodes)
+        scope = "fixture-development-system@TEST-HOST"
+        self.assertIn(f"carrier:{scope}:module:required-provider", nodes)
+        self.assertIn(f"carrier:{scope}:skill:recommended-provider", nodes)
+        self.assertIn(f"carrier:{scope}:software:optional-provider", nodes)
+        self.assertIn(f"carrier:{scope}:skill:empty-provider", nodes)
+        self.assertIn(f"carrier:{scope}:software:unavailable-provider", nodes)
         self.assertNotIn("function:function.consumed-only", nodes)
+        self.assertNotIn("function:function.unavailable", nodes)
         self.assertEqual(
-            nodes["carrier:module:required-provider"]["metadata"]["consumes"],
+            nodes[f"carrier:{scope}:module:required-provider"]["metadata"]["consumes"],
             ["function.consumed-only"],
         )
 
@@ -83,7 +91,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    "carrier:module:required-provider",
+                    f"carrier:{scope}:module:required-provider",
                     "function:function.required",
                 )
             ]["metadata"]["requirement"],
@@ -92,7 +100,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    "carrier:skill:recommended-provider",
+                    f"carrier:{scope}:skill:recommended-provider",
                     "function:function.recommended",
                 )
             ]["metadata"]["requirement"],
@@ -101,7 +109,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    "carrier:software:optional-provider",
+                    f"carrier:{scope}:software:optional-provider",
                     "function:function.optional",
                 )
             ]["metadata"]["requirement"],
@@ -114,7 +122,7 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             edge_by_pair[
                 (
-                    "carrier:module:required-provider",
+                    f"carrier:{scope}:module:required-provider",
                     "function:function.required",
                 )
             ]["metadata"]["desired_status"],
@@ -144,6 +152,7 @@ class ResolutionBridgeTest(unittest.TestCase):
             row["function"]["name"]: row for row in report["functions"]
         }
         self.assertEqual(report["discovery_summary"]["functions"], 4)
+        self.assertEqual(report["discovery_summary"]["carrier_nodes"], 5)
         self.assertEqual(report["desired_summary"]["functions"], 4)
         self.assertEqual(report["desired_summary"]["hard_gaps"], 2)
         self.assertEqual(report["desired_summary"]["advisory_gaps"], 1)
@@ -188,6 +197,108 @@ class ResolutionBridgeTest(unittest.TestCase):
             "function:function.optional",
             proposal["relevant_function_gaps"],
         )
+
+    def test_resolution_instances_remain_isolated_in_coverage(self) -> None:
+        first = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        second = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        first["instance"]["instance_id"] = "fixture-development-system@HOST-A"
+        first["instance"]["host_id"] = "HOST-A"
+        second["instance"]["instance_id"] = "fixture-development-system@HOST-B"
+        second["instance"]["host_id"] = "HOST-B"
+        second["bundles"][0]["components"][0]["requirement"] = "optional"
+        first_path = self.root / "host-a.json"
+        second_path = self.root / "host-b.json"
+        self._write_resolution(first_path, first)
+        self._write_resolution(second_path, second)
+
+        with Store(self.db) as store:
+            import_resolution(first_path, store)
+            import_resolution(second_path, store)
+            edges = store.resolved_edges("desired")
+            nodes = {node["id"]: node for node in store.nodes("carrier")}
+            report = coverage_report(store)
+
+        self.assertEqual(len(edges), 10)
+        self.assertIn(
+            "carrier:fixture-development-system@HOST-A:module:required-provider",
+            nodes,
+        )
+        self.assertIn(
+            "carrier:fixture-development-system@HOST-B:module:required-provider",
+            nodes,
+        )
+        required = next(
+            row
+            for row in report["functions"]
+            if row["function"]["name"] == "function.required"
+        )
+        by_scope = {
+            item["scope"]: item for item in required["desired_by_scope"]
+        }
+        self.assertEqual(
+            by_scope["fixture-development-system@HOST-A"]["gap_class"],
+            "hard",
+        )
+        self.assertEqual(
+            by_scope["fixture-development-system@HOST-B"]["gap_class"],
+            "optional",
+        )
+        self.assertFalse(
+            by_scope["fixture-development-system@HOST-A"]["overlap"]
+        )
+        self.assertFalse(
+            by_scope["fixture-development-system@HOST-B"]["overlap"]
+        )
+        self.assertEqual(
+            report["desired_summary"]["scopes"][
+                "fixture-development-system@HOST-A"
+            ]["hard_gaps"],
+            2,
+        )
+        self.assertEqual(
+            report["desired_summary"]["scopes"][
+                "fixture-development-system@HOST-B"
+            ]["optional_gaps"],
+            3,
+        )
+
+    def test_new_resolution_revision_supersedes_removed_desired_edges(self) -> None:
+        path = self.root / "current-resolution.json"
+        first = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        self._write_resolution(path, first)
+
+        with Store(self.db) as store:
+            import_resolution(path, store)
+            second = json.loads(json.dumps(first))
+            optional = next(
+                component
+                for component in second["bundles"][0]["components"]
+                if component["role"] == "optional-client"
+            )
+            optional["provides"] = ["function.shared"]
+            second["functions"].remove("function.optional")
+            self._write_resolution(path, second)
+            stats = import_resolution(path, store)
+            edges = store.resolved_edges("desired")
+            report = coverage_report(store)
+
+        self.assertEqual(stats["superseded"]["edges"], 5)
+        self.assertEqual(len(edges), 4)
+        self.assertFalse(
+            any(
+                edge["target_id"] == "function:function.optional"
+                for edge in edges
+            )
+        )
+        self.assertEqual(report["desired_summary"]["functions"], 3)
+        self.assertEqual(report["desired_summary"]["optional_gaps"], 0)
+        optional_row = next(
+            row
+            for row in report["functions"]
+            if row["function"]["name"] == "function.optional"
+        )
+        self.assertEqual(optional_row["verdict"], "unproven")
+        self.assertEqual(optional_row["gap_class"], "none")
 
     def test_cli_and_config_import_resolution_before_coverage(self) -> None:
         config = self._config(resolution_sources=[str(FIXTURE)])

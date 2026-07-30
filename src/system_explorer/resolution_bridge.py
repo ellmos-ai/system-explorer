@@ -21,6 +21,9 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
     effective_at = file_effective_date(path)
     system = value["system"]
     instance = value.get("instance")
+    scope = instance.get("instance_id") if instance else system["id"]
+    host_id = instance.get("host_id") if instance else None
+    projection_key = f"resolution:{scope}"
     evidence_id = store.add_evidence(
         uri=path.resolve().as_uri(),
         source_kind="system-resolution",
@@ -37,6 +40,8 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             "instance_id": instance.get("instance_id") if instance else None,
             "instance_content_hash": instance.get("content_hash") if instance else None,
             "desired_profile": value.get("desired_profile"),
+            "resolution_scope": scope,
+            "resolution_projection": projection_key,
         },
     )
 
@@ -44,6 +49,7 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
     provider_sources: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     function_requirements: dict[str, set[str]] = defaultdict(set)
     empty_provides = 0
+    inactive_provides = 0
 
     for bundle in value["bundles"]:
         bundle_source = {
@@ -77,6 +83,9 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             carrier["provides"].update(provides)
             carrier["consumes"].update(consumes)
             carrier["bundles"].add(bundle["id"])
+            if desired_status in {"suppressed", "unavailable"}:
+                inactive_provides += len(provides)
+                continue
             for function in provides:
                 function_requirements[function].add(requirement)
                 provider_sources[(ref, function)].append(
@@ -87,12 +96,12 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
                     }
                 )
 
-    scope = instance.get("instance_id") if instance else system["id"]
+    superseded = store.clear_resolution_projection(projection_key)
     for ref, carrier in sorted(carriers.items()):
         store.add_node(
             "carrier",
             ref,
-            node_id=_carrier_id(ref),
+            node_id=_carrier_id(scope, ref),
             scope=scope,
             metadata={
                 "carrier_kind": _single_or_mixed(carrier["types"]),
@@ -108,29 +117,27 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
                 "source_bundles": sorted(carrier["bundles"]),
                 "source_schema": value["schema"],
                 "resolution_content_hash": resolution_hash,
+                "resolution_scope": scope,
+                "resolution_projection": projection_key,
+                "resolution_host_id": host_id,
+                "resolution_system_id": system["id"],
             },
         )
 
-    for function, requirements in sorted(function_requirements.items()):
+    for function in sorted(function_requirements):
         store.add_node(
             "function",
             function,
             node_id=_function_id(function),
             scope=scope,
-            metadata={
-                "desired": True,
-                "requirements": sorted(requirements, key=_requirement_sort_key),
-                "effective_requirement": _strongest_requirement(requirements),
-                "source_schema": value["schema"],
-                "resolution_content_hash": resolution_hash,
-            },
+            metadata={},
         )
 
     for (ref, function), sources in sorted(provider_sources.items()):
         requirements = {source["requirement"] for source in sources}
         desired_statuses = {source["desired_status"] for source in sources}
         store.add_edge(
-            _carrier_id(ref),
+            _carrier_id(scope, ref),
             "carries",
             _function_id(function),
             mode="desired",
@@ -154,6 +161,10 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
                 "method": "resolution-v1-bridge",
                 "source_schema": value["schema"],
                 "resolution_content_hash": resolution_hash,
+                "resolution_scope": scope,
+                "resolution_projection": projection_key,
+                "resolution_host_id": host_id,
+                "resolution_system_id": system["id"],
             },
         )
 
@@ -172,11 +183,13 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
         "functions": len(function_requirements),
         "desired_edges": len(provider_sources),
         "empty_provides": empty_provides,
+        "inactive_provides": inactive_provides,
         "duplicate_provider_functions": sum(
             1 for providers in providers_by_function.values() if len(providers) > 1
         ),
         "runtime_actions": [],
         "target_mutations": [],
+        "superseded": superseded,
     }
 
 
@@ -226,8 +239,8 @@ def _validate_resolution(value: Any) -> None:
                     )
 
 
-def _carrier_id(ref: str) -> str:
-    return f"carrier:{ref}"
+def _carrier_id(scope: str, ref: str) -> str:
+    return f"carrier:{scope}:{ref}"
 
 
 def _ref_name(value: Any) -> str:

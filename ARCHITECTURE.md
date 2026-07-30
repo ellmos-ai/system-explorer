@@ -211,17 +211,20 @@ noch keine Coverage-Evidenz. Der Resolution-Importer materialisiert deshalb
 nur folgende read-only Abbildung im lokalen Evidence Store:
 
 ```text
-component.ref ──stabile ID──> carrier
+resolution-scope + component.ref ──stabile ID──> carrier
 component.provides[] ────────> desired carries ──> function
 component.consumes[] ────────> Carrier-Metadaten, keine carries-Kante
 ```
 
 Die Kante bewahrt Requirement, Desired-Status, Bundlequelle,
 Resolution-Schema und Content-Hash über Metadaten und Evidenzreferenz.
-Provider derselben Funktion bleiben als getrennte Kanten sichtbar.
-Coverage aggregiert den stärksten Requirement je Funktion: `required`
-erzeugt harte, `recommended` beratende und `optional` optionale Gaps.
-Discovery-Gesamtzahlen und Desired-only-Zahlen werden getrennt ausgegeben.
+Provider derselben Funktion bleiben pro Systeminstanz als getrennte Kanten
+sichtbar. Eine neue Resolution desselben Scopes ersetzt dessen aktive ältere
+Projektion; andere Instanzen bleiben parallel erhalten. `unavailable`
+materialisiert keine Leistungszusage. Coverage aggregiert Requirements
+scopeweise: `required` erzeugt harte, `recommended` beratende und `optional`
+optionale Gaps. Discovery-Gesamtzahlen und Desired-only-Zahlen werden
+getrennt ausgegeben.
 Nichtleere Runtime-Aktionen oder Target-Mutationen verletzen den
 Importer-Vertrag und werden fail-closed abgewiesen.
 

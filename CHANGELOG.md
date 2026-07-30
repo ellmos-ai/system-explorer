@@ -6,6 +6,8 @@
 
 - read-only Resolution-v1-Importer für stabile Desired-Carrier- und
   Funktionskanten samt Requirement-, Status-, Hash- und Bundleprovenienz
+- instanzisolierte, ersetzbare Resolution-Snapshots ohne stale Desired-Kanten
+  oder Leistungszusage durch `unavailable`
 - getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und
   optionalen Gaps sowie Desired-Provider-Overlap
 - CLI- und Konfigurationsweg für Coverage gegen gespeicherte
