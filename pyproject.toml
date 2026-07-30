@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Lukas Geiger" }]
-dependencies = []
+dependencies = ["cryptography>=41"]
 
 [project.scripts]
 system-explorer = "system_explorer.cli:main"

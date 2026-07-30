@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/ellmos.actual-self-component-receipt.v1.schema.json",
+  "title": "ellmos Actual-Self Component Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "component_ref",
+    "component_type",
+    "scope",
+    "registry_binding",
+    "producer",
+    "observed_at",
+    "expires_at",
+    "functions",
+    "signature",
+    "content_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ellmos.actual-self-component-receipt.v1"
+    },
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "component_ref": {
+      "$ref": "#/$defs/stable_ref"
+    },
+    "component_type": {
+      "enum": ["module", "skill", "software_app", "interface", "access_surface"]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system_id", "instance_id", "host_id"],
+      "properties": {
+        "system_id": {"type": "string", "minLength": 1},
+        "instance_id": {"type": "string", "minLength": 1},
+        "host_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "registry_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry_content_hash", "source", "record_id"],
+      "properties": {
+        "registry_content_hash": {"$ref": "#/$defs/sha256"},
+        "source": {"type": "string", "minLength": 1},
+        "record_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "adapter_id", "signer_id", "host_id", "probe_kind"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/stable_ref"},
+        "adapter_id": {"type": "string", "minLength": 1},
+        "signer_id": {"$ref": "#/$defs/stable_ref"},
+        "host_id": {"type": "string", "minLength": 1},
+        "probe_kind": {"const": "native-runtime-readback"}
+      }
+    },
+    "observed_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "functions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "probe_id", "readback_sha256"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["observed", "full", "partial", "negative"]},
+          "probe_id": {"type": "string", "minLength": 1},
+          "readback_sha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "signature": {"$ref": "#/$defs/signature"},
+    "content_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "stable_ref": {
+      "type": "string",
+      "pattern": "^[^\\s:]+:[^\\s]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "signer_id", "value"],
+      "properties": {
+        "algorithm": {"const": "ed25519"},
+        "signer_id": {"$ref": "#/$defs/stable_ref"},
+        "value": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

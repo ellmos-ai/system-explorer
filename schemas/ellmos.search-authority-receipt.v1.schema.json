@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/ellmos.search-authority-receipt.v1.schema.json",
+  "title": "ellmos Search Authority Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_ref",
+    "authority_type",
+    "decision_ref",
+    "delegation_ref",
+    "decision_kind",
+    "confidence",
+    "minimum_confidence",
+    "issuer",
+    "scope",
+    "evidence",
+    "issued_at",
+    "expires_at",
+    "conflicts",
+    "signature",
+    "content_hash"
+  ],
+  "properties": {
+    "schema": {"const": "ellmos.search-authority-receipt.v1"},
+    "receipt_ref": {"$ref": "#/$defs/stable_ref"},
+    "authority_type": {
+      "enum": [
+        "direct-user-decision",
+        "policy-decision",
+        "delegated-avatar-decision"
+      ]
+    },
+    "decision_ref": {"$ref": "#/$defs/stable_ref"},
+    "delegation_ref": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/stable_ref"}
+      ]
+    },
+    "decision_kind": {"enum": ["explicit", "predicted"]},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "minimum_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "adapter_id", "signer_id", "host_id"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/stable_ref"},
+        "adapter_id": {"type": "string", "minLength": 1},
+        "signer_id": {"$ref": "#/$defs/stable_ref"},
+        "host_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query_modes",
+        "system_instance_ids",
+        "host_ids",
+        "component_refs",
+        "capabilities"
+      ],
+      "properties": {
+        "query_modes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["skill-search", "tool-search", "tool-overview"]}
+        },
+        "system_instance_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "host_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "component_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/stable_ref"}
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "issued_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "conflicts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "signature": {"$ref": "#/$defs/signature"},
+    "content_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "authority_type": {"const": "delegated-avatar-decision"}
+        }
+      },
+      "then": {
+        "properties": {
+          "delegation_ref": {"$ref": "#/$defs/stable_ref"},
+          "decision_kind": {"const": "predicted"}
+        }
+      },
+      "else": {
+        "properties": {
+          "delegation_ref": {"type": "null"},
+          "decision_kind": {"const": "explicit"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "stable_ref": {
+      "type": "string",
+      "pattern": "^[^\\s:]+:[^\\s]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/stable_ref"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "signer_id", "value"],
+      "properties": {
+        "algorithm": {"const": "ed25519"},
+        "signer_id": {"$ref": "#/$defs/stable_ref"},
+        "value": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

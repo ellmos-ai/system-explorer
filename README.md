@@ -182,6 +182,59 @@ Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
+### Actual-self Search Routing
+
+`import-actual-self` nimmt eine gehashte und Ed25519-signierte
+`ellmos.actual-self-component-receipt.v1` aus einer nativen
+Laufzeitabfrage auf. Stable Ref, Registry-Hash, Source-/Record-ID,
+Hostscope, Ablaufzeit und exakte Funktions-IDs müssen mit einer bereits
+source-verifizierten Resolution übereinstimmen. Der Producer – zum Beispiel
+`access_surface:controlcenter` – bleibt Evidenzursprung und wird nicht zum
+Funktionsprovider umgedeutet. `declared`, `inferred`, fremde Hosts,
+abgelaufene Receipts und Namensähnlichkeit erzeugen keine Verfügbarkeit.
+Zulässiger Signer, Host, Adapter, Receipt-Schema und maximale TTL stammen aus
+dem lokalen, content-gehashten
+`system-explorer.receipt-trust-store.v1`; die Query kann keinen eigenen
+Trust-Key mitbringen. Zusätzlich muss `receipt_trust_store_sha256` in der
+lokalen Explorer-Konfiguration den SHA-256 der Trust-Store-Datei separat
+pinnen; der im Store selbst stehende Content-Hash ist kein Root of Trust.
+Jeder Signereintrag pinnt zusätzlich den SHA-256 der referenzierten
+Public-Key-Datei. Dieser Key-Pin wird bei jeder Verifikation erneut geprüft,
+damit ein ausgetauschtes PEM nicht durch einen unveränderten Trust Store
+autorisiert wird.
+
+```powershell
+system-explorer search-route search-query.json `
+  --config explorer.json `
+  --resolution resolved-system.json `
+  --actual-self controlcenter-native-readback.json `
+  --authority-receipt scoped-decision-receipt.json `
+  --output search-receipt.json
+```
+
+`search-route` akzeptiert keine Freitextsuche. Exakte Kandidaten,
+semantisches Ranking und ControlCenter-Lexikalsuche dürfen ausschließlich
+typisierte Stable Refs liefern. System Explorer filtert diese anschließend
+gegen Registry-Identität, actual-self-Evidenz und scopeweise Coverage.
+Scorewerte werden nur innerhalb ihres ausdrücklich benannten
+`score_domain` verglichen. Mehrdeutigkeit bleibt fail-closed.
+
+Die erzeugte `ellmos.search-routing-receipt.v1` ist standardmäßig read-only
+und führt kein Tool aus. Eine ausdrücklich angeforderte ausführbare Auswahl
+braucht zusätzlich passende, separat signierte
+`ellmos.search-authority-receipt.v1`-Referenzen. Die Query enthält nur deren
+Stable Refs; eingebettete oder selbstbehauptete Authority-Felder sind
+unzulässig. Eine
+`delegated-avatar-decision` ist nur innerhalb ihrer Komponenten-,
+Capability-, Query-, Host- und Systemscopes gültig und benötigt
+Delegationsreferenz, Evidenzreferenzen, Mindest-Confidence, Frische und
+Konfliktfreiheit. Die Signer-Policy muss die Delegationsreferenz ausdrücklich
+erlauben. Der Receipt-Issuer und `scope.host_ids` müssen dem Host der aktuell
+aufgelösten Systeminstanz entsprechen; ein Multi-Host-Signer erlaubt keinen
+Foreign-Host-Replay. Eine rohe TOM_lm-Prognose allein ist keine Authority. Gespeicherte
+Actual-/Authority-Receipts werden bei jeder Suche erneut kryptografisch
+geprüft; ein manipulierter SQLite-Metadateneintrag reicht nicht.
+
 Der `ai-media-editor`-Connector materialisiert aus ausgewählten Karten ein
 UC6-Handoff mit Storyboard, deutschem Sprechertext und Mermaid-Visuals. Er
 rendert nicht still selbst und kopiert keine Rohevidenz. Der getrennte

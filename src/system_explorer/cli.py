@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from .actual_self import import_actual_self_receipt
 from .assessment import assess
 from .component_registry import (
     inspect_component_registry,
@@ -36,10 +37,13 @@ from .media_connector import (
 from .proposals import probe_plan, propose
 from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
+from .receipt_trust import load_receipt_trust_store
 from .resolution_bridge import import_resolution
 from .resolver import resolve_system, resolve_test, validate_manifest_target
 from .resources import resource_report
 from .scanner import ProgressCallback, scan
+from .search_authority import import_search_authority_receipt
+from .search_routing import resolve_search_route
 from .server import serve
 from .specs import desired_template, import_spec
 from .store import Store
@@ -115,6 +119,56 @@ def build_parser() -> argparse.ArgumentParser:
     )
     resolution.add_argument("path", type=Path)
     resolution.add_argument("--config", type=Path, required=True)
+
+    actual_self = sub.add_parser(
+        "import-actual-self",
+        help=(
+            "Import one source-verified native actual-self component receipt "
+            "as exact actual coverage evidence."
+        ),
+    )
+    actual_self.add_argument("path", type=Path)
+    actual_self.add_argument("--resolution", type=Path, required=True)
+    actual_self.add_argument("--config", type=Path, required=True)
+    actual_self.add_argument("--evaluated-at", required=True)
+
+    search_authority = sub.add_parser(
+        "import-search-authority",
+        help=(
+            "Import one signed, trust-store-bound search authority receipt "
+            "without accepting query-supplied authority claims."
+        ),
+    )
+    search_authority.add_argument("path", type=Path)
+    search_authority.add_argument("--resolution", type=Path, required=True)
+    search_authority.add_argument("--config", type=Path, required=True)
+    search_authority.add_argument("--evaluated-at", required=True)
+
+    search_route = sub.add_parser(
+        "search-route",
+        help=(
+            "Resolve stable-ID skill/tool candidates against exact registry "
+            "identity and native actual-self coverage."
+        ),
+    )
+    search_route.add_argument("query", type=Path)
+    search_route.add_argument("--resolution", type=Path, required=True)
+    search_route.add_argument(
+        "--actual-self",
+        type=Path,
+        action="append",
+        default=[],
+        dest="actual_self_receipts",
+    )
+    search_route.add_argument(
+        "--authority-receipt",
+        type=Path,
+        action="append",
+        default=[],
+        dest="authority_receipts",
+    )
+    search_route.add_argument("--config", type=Path, required=True)
+    search_route.add_argument("--output", type=Path)
 
     equivalence = sub.add_parser(
         "import-function-equivalence",
@@ -520,6 +574,70 @@ def _run(args: argparse.Namespace) -> int:
             tag_current_system(config, store)
         elif args.command == "import-resolution":
             value = import_resolution(args.path, store)
+        elif args.command == "import-actual-self":
+            resolution_value = _read_json_object(args.resolution)
+            import_resolution(args.resolution, store)
+            trust_store = load_receipt_trust_store(config)
+            value = import_actual_self_receipt(
+                args.path,
+                resolution_value,
+                store,
+                evaluated_at=args.evaluated_at,
+                trust_store=trust_store,
+            )
+        elif args.command == "import-search-authority":
+            resolution_value = _read_json_object(args.resolution)
+            import_resolution(args.resolution, store)
+            trust_store = load_receipt_trust_store(config)
+            value = import_search_authority_receipt(
+                args.path,
+                store,
+                evaluated_at=args.evaluated_at,
+                expected_host_id=resolution_value["instance"]["host_id"],
+                trust_store=trust_store,
+            )
+        elif args.command == "search-route":
+            resolution_value = _read_json_object(args.resolution)
+            import_resolution(args.resolution, store)
+            query_value = _read_json_object(args.query)
+            trust_store = load_receipt_trust_store(config)
+            for path in args.actual_self_receipts:
+                import_actual_self_receipt(
+                    path,
+                    resolution_value,
+                    store,
+                    evaluated_at=query_value["observed_at"],
+                    trust_store=trust_store,
+                )
+            for path in args.authority_receipts:
+                import_search_authority_receipt(
+                    path,
+                    store,
+                    evaluated_at=query_value["observed_at"],
+                    expected_host_id=resolution_value["instance"]["host_id"],
+                    trust_store=trust_store,
+                )
+            value = resolve_search_route(
+                query_value,
+                resolution_value,
+                store,
+                trust_store=trust_store,
+            )
+            if args.output:
+                _write_json_atomic(args.output, value)
+                print(
+                    json.dumps(
+                        {
+                            "output": str(args.output),
+                            "schema": value["schema"],
+                            "content_hash": value["content_hash"],
+                            "result_status": value["result_status"],
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+                return 0
         elif args.command == "import-function-equivalence":
             tag_current_system(config, store)
             value = import_function_equivalence(args.path, store)
@@ -640,7 +758,14 @@ def _run(args: argparse.Namespace) -> int:
         else:
             raise ValueError(f"unsupported command: {args.command}")
         print(json.dumps(value, ensure_ascii=False, indent=2))
-        return 0
+    return 0
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"{path} must contain a JSON object")
+    return value
 
 
 def _manifest(args: argparse.Namespace) -> int:
