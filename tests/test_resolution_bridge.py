@@ -302,6 +302,80 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(optional_row["verdict"], "unproven")
         self.assertEqual(optional_row["gap_class"], "none")
 
+    def test_assessment_and_proposal_keep_host_gaps_isolated(self) -> None:
+        first = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        second = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        first["instance"]["instance_id"] = "fixture-development-system@HOST-A"
+        first["instance"]["host_id"] = "HOST-A"
+        second["instance"]["instance_id"] = "fixture-development-system@HOST-B"
+        second["instance"]["host_id"] = "HOST-B"
+        first_path = self.root / "assessment-host-a.json"
+        second_path = self.root / "assessment-host-b.json"
+        self._write_resolution(first_path, first)
+        self._write_resolution(second_path, second)
+
+        with Store(self.db) as store:
+            import_resolution(first_path, store)
+            import_resolution(second_path, store)
+            actual = store.add_node(
+                "carrier",
+                "Observed provider on A",
+                node_id="carrier:observed-host-a",
+                metadata={"origin_system": "HOST-A"},
+            )
+            store.add_edge(
+                actual,
+                "carries",
+                "function:function.required",
+                mode="actual",
+                status="full",
+            )
+            store.commit()
+            report = coverage_report(store)
+            assessment = assess(store)
+            proposal = propose("Review required coverage", store)
+
+        required = next(
+            row
+            for row in report["functions"]
+            if row["function"]["name"] == "function.required"
+        )
+        self.assertEqual(required["verdict"], "full")
+        by_scope = {
+            item["scope"]: item for item in required["desired_by_scope"]
+        }
+        self.assertEqual(
+            by_scope["fixture-development-system@HOST-A"]["verdict"],
+            "full",
+        )
+        self.assertEqual(
+            by_scope["fixture-development-system@HOST-B"]["verdict"],
+            "uncovered",
+        )
+        function_gaps = [
+            finding
+            for finding in assessment["findings"]
+            if finding["kind"] == "function-gap"
+            and finding["function"] == "function:function.required"
+        ]
+        self.assertEqual(
+            [finding["scope"] for finding in function_gaps],
+            ["fixture-development-system@HOST-B"],
+        )
+        scoped_proposal_gaps = [
+            gap
+            for gap in proposal["relevant_scoped_function_gaps"]
+            if gap["function"] == "function:function.required"
+        ]
+        self.assertEqual(
+            [gap["scope"] for gap in scoped_proposal_gaps],
+            ["fixture-development-system@HOST-B"],
+        )
+        self.assertIn(
+            "function:function.required",
+            proposal["relevant_function_gaps"],
+        )
+
     def test_cli_and_config_import_resolution_before_coverage(self) -> None:
         config = self._config(resolution_sources=[str(FIXTURE)])
         stdout = StringIO()

@@ -8,6 +8,8 @@
   Funktionskanten samt Requirement-, Status-, Hash- und Bundleprovenienz
 - instanzisolierte, ersetzbare Resolution-Snapshots ohne stale Desired-Kanten
   oder Leistungszusage durch `unavailable`
+- scopebewusste Assessment- und Proposal-Gaps ohne Maskierung durch einen
+  anderen erfüllten Host
 - getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und
   optionalen Gaps sowie Desired-Provider-Overlap
 - CLI- und Konfigurationsweg für Coverage gegen gespeicherte

@@ -220,7 +220,9 @@ weist mehrere Resolution-Scopes einzeln aus: Nur `required` wird als harter
 Gap gezählt, während empfohlene und optionale Lücken separat sichtbar
 bleiben. Mehrere gewünschte Provider innerhalb desselben Scopes erscheinen
 als `desired_overlap`; gleiche Provider auf unterschiedlichen Hosts werden
-nicht zu einem künstlichen Overlap vermischt.
+nicht zu einem künstlichen Overlap vermischt. `assess` und `propose`
+übernehmen diese Scope-Grenze; ein erfüllter Host kann daher die Lücke eines
+anderen Hosts nicht verdecken.
 
 Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
 Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden

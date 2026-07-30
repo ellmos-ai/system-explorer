@@ -22,6 +22,8 @@ desselben Scopes, ohne andere Instanzen zu verdrängen. Requirement,
 `desired_status`, Bundle-Provenienz, Quellschema und Content-Hash bleiben
 erhalten. Coverage weist Required-, Recommended- und Optional-Gaps
 scopeweise getrennt aus und zeigt gewünschte Mehrfachprovider als Overlap.
+Assessment und Proposal dürfen dafür kein global nivelliertes
+Funktionsurteil verwenden.
 
 ### Grenze
 

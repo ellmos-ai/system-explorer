@@ -32,12 +32,10 @@ def propose(prompt: str, store: Store) -> dict[str, Any]:
             mentioned.append({"id": node["id"], "name": node["name"], "type": node["node_type"]})
     coverage = coverage_report(store)
     assessment = assess(store)
-    gaps = [
-        row["function"]["id"]
-        for row in coverage["functions"]
-        if row["verdict"] in {"uncovered", "negative", "partial"}
-        and row["gap_class"] != "optional"
-    ]
+    scoped_gaps = _scoped_coverage_gaps(coverage)
+    gaps = list(
+        dict.fromkeys(item["function"] for item in scoped_gaps)
+    )
     return {
         "schema": "system-explorer.change-proposal.v1",
         "created_at": utc_now(),
@@ -47,6 +45,7 @@ def propose(prompt: str, store: Store) -> dict[str, Any]:
         "actions": actions,
         "mentioned_nodes": mentioned,
         "relevant_function_gaps": gaps[:25],
+        "relevant_scoped_function_gaps": scoped_gaps[:25],
         "recommended_direction": assessment["recommended_direction"],
         "required_gates": [
             "schema-validation",
@@ -60,6 +59,34 @@ def propose(prompt: str, store: Store) -> dict[str, Any]:
         ],
         "apply": {"authorized": False, "reason": "Proposal UI never mutates the target system."},
     }
+
+
+def _scoped_coverage_gaps(coverage: dict[str, Any]) -> list[dict[str, Any]]:
+    gaps = []
+    for row in coverage["functions"]:
+        scope_rows = row["desired_by_scope"] or [
+            {
+                "scope": None,
+                "verdict": row["verdict"],
+                "gap_class": row["gap_class"],
+                "effective_requirement": row["effective_requirement"],
+            }
+        ]
+        for scope_row in scope_rows:
+            if scope_row["verdict"] not in {"uncovered", "negative", "partial"}:
+                continue
+            if scope_row["gap_class"] == "optional":
+                continue
+            gaps.append(
+                {
+                    "function": row["function"]["id"],
+                    "scope": scope_row["scope"],
+                    "verdict": scope_row["verdict"],
+                    "gap_class": scope_row["gap_class"],
+                    "requirement": scope_row["effective_requirement"],
+                }
+            )
+    return gaps
 
 
 def probe_plan(system_path: str, task: str, repetitions: int = 3, max_steps: int = 20) -> dict[str, Any]:

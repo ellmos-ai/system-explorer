@@ -224,7 +224,9 @@ Projektion; andere Instanzen bleiben parallel erhalten. `unavailable`
 materialisiert keine Leistungszusage. Coverage aggregiert Requirements
 scopeweise: `required` erzeugt harte, `recommended` beratende und `optional`
 optionale Gaps. Discovery-Gesamtzahlen und Desired-only-Zahlen werden
-getrennt ausgegeben.
+getrennt ausgegeben. Assessment und Change-Proposal konsumieren die
+scopeweisen Urteile und tragen den betroffenen Scope im Finding
+beziehungsweise im strukturierten Gap.
 Nichtleere Runtime-Aktionen oder Target-Mutationen verletzen den
 Importer-Vertrag und werden fail-closed abgewiesen.
 
