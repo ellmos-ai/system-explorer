@@ -11,6 +11,7 @@ from system_explorer.assessment import assess
 from system_explorer.cli import main
 from system_explorer.contracts import canonical_content_hash
 from system_explorer.coverage import coverage_report
+from system_explorer.proposals import propose
 from system_explorer.resolution_bridge import import_resolution
 from system_explorer.store import Store
 
@@ -53,6 +54,7 @@ class ResolutionBridgeTest(unittest.TestCase):
             evidence = store.evidence()
             report = coverage_report(store)
             findings = assess(store)["findings"]
+            proposal = propose("Review desired coverage gaps", store)
 
         self.assertEqual(FIXTURE.read_bytes(), source_before)
         self.assertEqual(stats["source_schema"], "system-explorer.resolution.v1")
@@ -177,6 +179,14 @@ class ResolutionBridgeTest(unittest.TestCase):
         self.assertEqual(
             finding_by_function["function:function.optional"]["severity"],
             "review",
+        )
+        self.assertIn(
+            "function:function.required",
+            proposal["relevant_function_gaps"],
+        )
+        self.assertNotIn(
+            "function:function.optional",
+            proposal["relevant_function_gaps"],
         )
 
     def test_cli_and_config_import_resolution_before_coverage(self) -> None:

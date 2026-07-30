@@ -126,7 +126,13 @@ def coverage_report(store: Store) -> dict[str, Any]:
         "actual_functions": len(actual_rows),
         "desired_provider_edges": desired_summary["provider_edges"],
         "actual_provider_edges": sum(len(row["actual"]) for row in actual_rows),
-        "verdicts": dict(totals),
+        "actual_overlap_functions": totals.get("overlap", 0),
+        "desired_overlap_functions": totals.get("desired_overlap", 0),
+        "verdicts": {
+            verdict: totals[verdict]
+            for verdict in ("full", "partial", "negative", "uncovered", "unproven")
+            if verdict in totals
+        },
     }
     return {
         "summary": dict(totals),
