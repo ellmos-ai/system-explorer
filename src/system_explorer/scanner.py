@@ -19,7 +19,7 @@ from .infrastructure import (
     register_declared_infrastructure,
     register_registry_file,
 )
-from .manifests import load_manifest
+from .manifests import load_manifest, validate_manifest
 from .resources import register_software_resources
 from .store import Store
 from .util import (
@@ -56,6 +56,7 @@ MANIFEST_SCHEMAS = {
     "ellmos.system.v1",
 }
 FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+MODULE_ID_RE = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 QUOTED_REF_RE = re.compile(
     r"""["'`]((?:[A-Za-z]:[\\/]|\.{1,2}[\\/])?[\w.-]+(?:[\\/][\w .-]+)*\.(?:md|txt|json|toml|ya?ml))(?:#[^"'`]*)?["'`]""",
@@ -279,6 +280,16 @@ def scan(
             force=True,
         )
         if not root.exists():
+            try:
+                removed_claims = store.clear_component_identity_claims(
+                    root.resolve().as_uri().rstrip("/") + "/"
+                )
+                if removed_claims:
+                    store.commit()
+            except BaseException:
+                if store.in_transaction:
+                    store.rollback()
+                raise
             stats["errors"] += 1
             runtime.completed_roots += 1
             runtime.checkpoint(
@@ -293,6 +304,9 @@ def scan(
             )
             continue
         try:
+            store.clear_component_identity_claims(
+                root.resolve().as_uri().rstrip("/") + "/"
+            )
             root_id = store.add_node(
                 "system",
                 root_id_value,
@@ -737,6 +751,20 @@ def _scan_manifest(
     store.add_edge(root_id, "contains", carrier_id, evidence_id=evidence_id)
     stats["nodes"] += 1
     stats["edges"] += 1
+    manifest_id = value.get("id")
+    if (
+        schema == "ellmos.module.v2"
+        and isinstance(manifest_id, str)
+        and MODULE_ID_RE.fullmatch(manifest_id)
+        and not validate_manifest(value)
+    ):
+        store.register_component_identity_claim(
+            carrier_id=carrier_id,
+            component_ref=f"module:{manifest_id}",
+            evidence_id=evidence_id,
+            source_kind="ellmos.module.v2",
+            source_id=manifest_id,
+        )
     for capability in value.get("provides", []):
         function_id = store.add_node(
             "function",
@@ -902,6 +930,15 @@ def _scan_skill(
     store.add_edge(root_id, "contains", carrier_id, evidence_id=evidence_id)
     stats["nodes"] += 1
     stats["edges"] += 1
+    component_ref = metadata.get("component_ref")
+    if _is_explicit_component_ref(component_ref, prefix="skill:"):
+        store.register_component_identity_claim(
+            carrier_id=carrier_id,
+            component_ref=component_ref,
+            evidence_id=evidence_id,
+            source_kind="skill-frontmatter-component-ref",
+            source_id=str(component_ref),
+        )
     for tag in metadata.get("tags", []):
         function_name = f"skill.{str(tag).strip().lower().replace(' ', '-')}"
         function_id = store.add_node(
@@ -917,6 +954,16 @@ def _scan_skill(
         )
         stats["nodes"] += 1
         stats["edges"] += 1
+
+
+def _is_explicit_component_ref(value: Any, *, prefix: str) -> bool:
+    return (
+        isinstance(value, str)
+        and value.startswith(prefix)
+        and value == value.strip()
+        and len(value) > len(prefix)
+        and not any(character.isspace() for character in value)
+    )
 
 
 def _scan_document_pointers(

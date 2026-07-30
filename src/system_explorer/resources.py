@@ -19,6 +19,7 @@ NATIVE_METHODS = {"mcp", "tool-api", "structured-api", "openapi"}
 DIRECT_METHODS = {"cli", "library", "sdk", "ipc", "file-protocol"}
 INDIRECT_METHODS = {"browser", "gui", "computer-use", "rpa"}
 REFERENCE_METHODS = {"documentation", "manual"}
+RESERVED_IDENTITY_FIELDS = {"component_ref", "stable_ref"}
 
 
 def register_software_resources(
@@ -171,7 +172,11 @@ def _register_resource(
                 field: value
                 for field, value in item.items()
                 if field not in {"interfaces", "functions"}
+                and field not in RESERVED_IDENTITY_FIELDS
+                and not field.startswith("identity_")
             },
+            "declared_component_ref": item.get("component_ref"),
+            "declared_stable_ref": item.get("stable_ref"),
             "resource_layer": "peripheral",
             "resource_kind": kind,
             "origin": item.get("origin", "unknown"),
@@ -184,6 +189,7 @@ def _register_resource(
             "token_saving": token_saving,
         },
     )
+    store.clear_component_identity_metadata(resource_id)
     stats["software_resources"] += 1
     stats["installed_observed" if installed else "installed_missing"] += 1
     for index, interface in enumerate(interfaces, start=1):
