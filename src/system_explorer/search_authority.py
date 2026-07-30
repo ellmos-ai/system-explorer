@@ -119,6 +119,7 @@ def resolve_authority_receipts(
     capabilities: list[str],
     observed_at: str,
     trust_store: ReceiptTrustStore,
+    expected_host_id: str,
 ) -> list[dict[str, Any]]:
     observed = _timestamp(observed_at, "observed_at")
     evidence = [
@@ -162,7 +163,7 @@ def resolve_authority_receipts(
                 validate_search_authority_receipt(
                     signed_receipt,
                     evaluated_at=signed_receipt["issued_at"],
-                    expected_host_id=signed_receipt["issuer"]["host_id"],
+                    expected_host_id=expected_host_id,
                     trust_store=trust_store,
                 )
                 verified_matches.append((item, signed_receipt, issued))
@@ -202,6 +203,8 @@ def resolve_authority_receipts(
             reasons.append("query-mode-out-of-scope")
         if scope not in receipt_scope["system_instance_ids"]:
             reasons.append("system-scope-out-of-scope")
+        if expected_host_id not in receipt_scope["host_ids"]:
+            reasons.append("host-out-of-scope")
         if component_ref and component_ref not in receipt_scope["component_refs"]:
             reasons.append("component-out-of-scope")
         if not set(capabilities) <= set(receipt_scope["capabilities"]):
@@ -289,6 +292,7 @@ def validate_search_authority_receipt(
     scope_fields = {
         "query_modes",
         "system_instance_ids",
+        "host_ids",
         "component_refs",
         "capabilities",
     }
@@ -298,6 +302,9 @@ def validate_search_authority_receipt(
     if not set(scope["query_modes"]) <= QUERY_MODES:
         raise ValueError("search authority scope has unsupported query mode")
     _unique_strings(scope["system_instance_ids"], "scope.system_instance_ids")
+    _unique_strings(scope["host_ids"], "scope.host_ids")
+    if expected_host_id not in scope["host_ids"]:
+        raise ValueError("search authority scope does not include expected host")
     _unique_refs(scope["component_refs"], "scope.component_refs")
     _unique_strings(scope["capabilities"], "scope.capabilities")
 

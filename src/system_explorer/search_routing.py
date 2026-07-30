@@ -118,6 +118,7 @@ def resolve_search_route(
         capabilities=query["required_capabilities"],
         observed_at=query["observed_at"],
         trust_store=trust_store,
+        expected_host_id=resolution["instance"]["host_id"],
     )
     authority_passed = bool(gate_results) and all(
         gate["status"] == "passed" for gate in gate_results

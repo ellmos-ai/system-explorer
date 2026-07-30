@@ -40,6 +40,12 @@ class SearchRoutingTests(unittest.TestCase):
         self.authority_key = Ed25519PrivateKey.generate()
         self._write_public_key("producer.pem", self.producer_key)
         self._write_public_key("authority.pem", self.authority_key)
+        producer_key_sha256 = hashlib.sha256(
+            (self.root / "producer.pem").read_bytes()
+        ).hexdigest()
+        authority_key_sha256 = hashlib.sha256(
+            (self.root / "authority.pem").read_bytes()
+        ).hexdigest()
         trust_value = with_content_hash(
             {
                 "schema": "system-explorer.receipt-trust-store.v1",
@@ -49,6 +55,7 @@ class SearchRoutingTests(unittest.TestCase):
                         "signer_id": "signer:controlcenter-test-host",
                         "algorithm": "ed25519",
                         "public_key_path": "producer.pem",
+                        "public_key_sha256": producer_key_sha256,
                         "allowed_receipt_schemas": [
                             "ellmos.actual-self-component-receipt.v1"
                         ],
@@ -67,6 +74,7 @@ class SearchRoutingTests(unittest.TestCase):
                         "signer_id": "signer:decision-resolver-test-host",
                         "algorithm": "ed25519",
                         "public_key_path": "authority.pem",
+                        "public_key_sha256": authority_key_sha256,
                         "allowed_receipt_schemas": [
                             "ellmos.search-authority-receipt.v1"
                         ],
@@ -415,6 +423,7 @@ class SearchRoutingTests(unittest.TestCase):
                     "system_instance_ids": [
                         self.resolution["instance"]["instance_id"]
                     ],
+                    "host_ids": ["TEST-HOST"],
                     "component_refs": ["module:required-provider"],
                     "capabilities": ["function.required"],
                 },
@@ -498,6 +507,36 @@ class SearchRoutingTests(unittest.TestCase):
                     "receipt_trust_store": self.trust_path.name,
                 }
             )
+
+    def test_public_key_swap_does_not_bypass_trust_store_pin(self) -> None:
+        key_path = self.root / "producer.pem"
+        original = key_path.read_bytes()
+        attacker = Ed25519PrivateKey.generate()
+        key_path.write_bytes(
+            attacker.public_key().public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+        )
+        forged = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-key-swap",
+            private_key=attacker,
+            signer_id="signer:controlcenter-test-host",
+        )
+        try:
+            with self.assertRaisesRegex(ValueError, "public key.*SHA-256 pin"):
+                import_actual_self_receipt(
+                    forged,
+                    self.resolution,
+                    self.store,
+                    evaluated_at=OBSERVED_AT,
+                    trust_store=self.trust_store,
+                )
+        finally:
+            key_path.write_bytes(original)
 
     def test_declared_only_component_cannot_be_imported(self) -> None:
         resolution = deepcopy(self.resolution)
@@ -750,6 +789,65 @@ class SearchRoutingTests(unittest.TestCase):
         self.assertEqual(
             result["authority_gates"][0]["reasons"],
             ["authority-receipt-not-found"],
+        )
+
+    def test_authority_receipt_cannot_be_reused_across_hosts(self) -> None:
+        self._import_receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+        )
+        trust_value = json.loads(self.trust_path.read_text(encoding="utf-8"))
+        trust_value.pop("content_hash")
+        authority_signer = next(
+            signer
+            for signer in trust_value["signers"]
+            if signer["signer_id"] == "signer:decision-resolver-test-host"
+        )
+        authority_signer["allowed_host_ids"] = ["TEST-HOST", "FOREIGN-HOST"]
+        multi_host_path = self._write(
+            "multi-host-receipt-trust.json",
+            with_content_hash(trust_value),
+        )
+        multi_host_store = load_receipt_trust_store(
+            {
+                "_base": str(self.root),
+                "receipt_trust_store": multi_host_path.name,
+                "receipt_trust_store_sha256": hashlib.sha256(
+                    multi_host_path.read_bytes()
+                ).hexdigest(),
+            }
+        )
+        authority_path, authority_ref = self._authority_receipt(
+            suffix="-foreign-host",
+            issuer_host_id="FOREIGN-HOST",
+        )
+        import_search_authority_receipt(
+            authority_path,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            expected_host_id="FOREIGN-HOST",
+            trust_store=multi_host_store,
+        )
+
+        result = resolve_search_route(
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+                authority_receipt_refs=[authority_ref],
+                execution_requested=True,
+            ),
+            self.resolution,
+            self.store,
+            trust_store=multi_host_store,
+        )
+
+        self.assertFalse(result["executable"])
+        self.assertEqual(result["authority_gates"][0]["status"], "blocked")
+        self.assertEqual(
+            result["authority_gates"][0]["reasons"],
+            ["authority-receipt-reverification-failed"],
         )
 
     def test_authority_revision_order_uses_parsed_utc_not_iso_text(self) -> None:
@@ -1112,6 +1210,7 @@ class SearchRoutingTests(unittest.TestCase):
         receipt_ref: str | None = None,
         issued_at: str = "2026-07-30T19:00:00Z",
         expires_at: str = EXPIRES_AT,
+        issuer_host_id: str = "TEST-HOST",
     ) -> tuple[Path, str]:
         receipt_ref = receipt_ref or "authority:avatar-routing-001" + suffix
         value = {
@@ -1127,13 +1226,14 @@ class SearchRoutingTests(unittest.TestCase):
                 "ref": "module:policy-decision-resolver",
                 "adapter_id": "policy-decision-resolver.native.v1",
                 "signer_id": signer_id,
-                "host_id": "TEST-HOST",
+                "host_id": issuer_host_id,
             },
             "scope": {
                 "query_modes": ["tool-search"],
                 "system_instance_ids": [
                     self.resolution["instance"]["instance_id"]
                 ],
+                "host_ids": [issuer_host_id],
                 "component_refs": component_refs
                 or ["module:required-provider"],
                 "capabilities": ["function.required"],

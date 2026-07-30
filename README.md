@@ -198,6 +198,10 @@ dem lokalen, content-gehashten
 Trust-Key mitbringen. Zusätzlich muss `receipt_trust_store_sha256` in der
 lokalen Explorer-Konfiguration den SHA-256 der Trust-Store-Datei separat
 pinnen; der im Store selbst stehende Content-Hash ist kein Root of Trust.
+Jeder Signereintrag pinnt zusätzlich den SHA-256 der referenzierten
+Public-Key-Datei. Dieser Key-Pin wird bei jeder Verifikation erneut geprüft,
+damit ein ausgetauschtes PEM nicht durch einen unveränderten Trust Store
+autorisiert wird.
 
 ```powershell
 system-explorer search-route search-query.json `
@@ -222,10 +226,12 @@ braucht zusätzlich passende, separat signierte
 Stable Refs; eingebettete oder selbstbehauptete Authority-Felder sind
 unzulässig. Eine
 `delegated-avatar-decision` ist nur innerhalb ihrer Komponenten-,
-Capability-, Query- und Systemscopes gültig und benötigt
+Capability-, Query-, Host- und Systemscopes gültig und benötigt
 Delegationsreferenz, Evidenzreferenzen, Mindest-Confidence, Frische und
 Konfliktfreiheit. Die Signer-Policy muss die Delegationsreferenz ausdrücklich
-erlauben. Eine rohe TOM_lm-Prognose allein ist keine Authority. Gespeicherte
+erlauben. Der Receipt-Issuer und `scope.host_ids` müssen dem Host der aktuell
+aufgelösten Systeminstanz entsprechen; ein Multi-Host-Signer erlaubt keinen
+Foreign-Host-Replay. Eine rohe TOM_lm-Prognose allein ist keine Authority. Gespeicherte
 Actual-/Authority-Receipts werden bei jeder Suche erneut kryptografisch
 geprüft; ein manipulierter SQLite-Metadateneintrag reicht nicht.
 

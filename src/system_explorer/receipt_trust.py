@@ -192,6 +192,7 @@ def _validate_signer(
         "signer_id",
         "algorithm",
         "public_key_path",
+        "public_key_sha256",
         "allowed_receipt_schemas",
         "allowed_actor_refs",
         "allowed_adapter_ids",
@@ -207,6 +208,16 @@ def _validate_signer(
             raise ValueError(f"receipt trust signer {position} requires {field}")
     if signer["algorithm"] != SIGNATURE_ALGORITHM:
         raise ValueError("receipt trust signers must use ed25519")
+    public_key_sha256 = signer["public_key_sha256"]
+    if (
+        not isinstance(public_key_sha256, str)
+        or len(public_key_sha256) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in public_key_sha256
+        )
+    ):
+        raise ValueError("receipt signer public_key_sha256 must be lowercase SHA-256")
     for field in (
         "allowed_receipt_schemas",
         "allowed_actor_refs",
@@ -237,7 +248,10 @@ def _public_key(
         key_path.relative_to(trust_root.resolve())
     except ValueError as error:
         raise ValueError("receipt signer public key escapes trust store root") from error
-    value = serialization.load_pem_public_key(key_path.read_bytes())
+    key_bytes = key_path.read_bytes()
+    if hashlib.sha256(key_bytes).hexdigest() != signer["public_key_sha256"]:
+        raise ValueError("receipt signer public key does not match SHA-256 pin")
+    value = serialization.load_pem_public_key(key_bytes)
     if not isinstance(value, Ed25519PublicKey):
         raise ValueError("receipt signer public key must be Ed25519")
     return value

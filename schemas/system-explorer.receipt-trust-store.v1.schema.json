@@ -18,6 +18,7 @@
           "signer_id",
           "algorithm",
           "public_key_path",
+          "public_key_sha256",
           "allowed_receipt_schemas",
           "allowed_actor_refs",
           "allowed_adapter_ids",
@@ -34,6 +35,7 @@
             "minLength": 1,
             "not": {"pattern": "^(?:[A-Za-z]:|/|\\\\)"}
           },
+          "public_key_sha256": {"$ref": "#/$defs/sha256"},
           "allowed_receipt_schemas": {
             "type": "array",
             "uniqueItems": true,

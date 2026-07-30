@@ -59,6 +59,7 @@
       "required": [
         "query_modes",
         "system_instance_ids",
+        "host_ids",
         "component_refs",
         "capabilities"
       ],
@@ -70,6 +71,12 @@
         },
         "system_instance_ids": {
           "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "host_ids": {
+          "type": "array",
+          "minItems": 1,
           "uniqueItems": true,
           "items": {"type": "string", "minLength": 1}
         },
