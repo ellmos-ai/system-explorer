@@ -41,6 +41,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "transcripts": [],
     "desired_sources": [],
     "desired_resolution_sources": [],
+    "function_equivalence_sources": [],
     "function_rules": [],
     "control_documents": [
         {"pattern": "AGENTS.md", "role": "control", "entry": True},

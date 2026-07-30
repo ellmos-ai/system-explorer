@@ -742,6 +742,9 @@ def _scan_manifest(
         metadata={
             "carrier_kind": carrier_kind,
             "manifest_schema": schema,
+            "manifest_version": value.get("version"),
+            "identity_contract_schema": schema,
+            "identity_contract_version": value.get("version"),
             "status": value.get("status"),
             "entrypoints": value.get("entrypoints", {}),
             "surfaces": value.get("surfaces", []),
@@ -925,6 +928,8 @@ def _scan_skill(
             "carrier_kind": "skill",
             "description": metadata.get("description", ""),
             "tags": metadata.get("tags", []),
+            "identity_contract_schema": metadata.get("schema"),
+            "identity_contract_version": metadata.get("version"),
         },
     )
     store.add_edge(root_id, "contains", carrier_id, evidence_id=evidence_id)

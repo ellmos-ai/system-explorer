@@ -40,7 +40,9 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
 
     for bundle in value["bundles"]:
         bundle_source = {
+            "bundle_schema": "ellmos.bundle.v1",
             "bundle_id": bundle["id"],
+            "bundle_version": bundle.get("version"),
             "bundle_content_hash": bundle.get("content_hash"),
         }
         for component in bundle.get("components", []):

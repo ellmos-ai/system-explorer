@@ -63,6 +63,31 @@ CREATE TABLE IF NOT EXISTS component_identity_claims (
 );
 CREATE INDEX IF NOT EXISTS idx_component_identity_ref
 ON component_identity_claims(component_ref);
+CREATE TABLE IF NOT EXISTS function_equivalence_claims (
+    id TEXT PRIMARY KEY,
+    projection_key TEXT NOT NULL,
+    source_uri TEXT NOT NULL,
+    generation_json TEXT NOT NULL,
+    contract_content_hash TEXT NOT NULL,
+    scope_kind TEXT NOT NULL,
+    scope_host_id TEXT,
+    component_ref TEXT NOT NULL,
+    desired_function TEXT NOT NULL,
+    actual_function TEXT NOT NULL,
+    desired_contract_json TEXT NOT NULL,
+    actual_contract_json TEXT NOT NULL,
+    authority_ref TEXT NOT NULL,
+    mapping_evidence_json TEXT NOT NULL,
+    evidence_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(evidence_id) REFERENCES evidence(id)
+);
+CREATE INDEX IF NOT EXISTS idx_function_equivalence_projection
+ON function_equivalence_claims(projection_key);
+CREATE INDEX IF NOT EXISTS idx_function_equivalence_target
+ON function_equivalence_claims(
+    scope_kind, scope_host_id, component_ref, desired_function
+);
 CREATE TABLE IF NOT EXISTS scans (
     id TEXT PRIMARY KEY,
     started_at TEXT NOT NULL,
