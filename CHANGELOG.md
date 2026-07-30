@@ -4,6 +4,27 @@
 
 ### Hinzugefügt
 
+- read-only Resolution-v1-Importer für stabile Desired-Carrier- und
+  Funktionskanten samt Requirement-, Status-, Hash- und Bundleprovenienz
+- instanzisolierte, ersetzbare Resolution-Snapshots ohne stale Desired-Kanten
+  oder Leistungszusage durch `unavailable`
+- scopebewusste Assessment- und Proposal-Gaps ohne Maskierung durch einen
+  anderen erfüllten Host
+- fail-closed Providerabgleich über `component_ref`/`stable_ref` mit
+  `wrong-provider`-/Carrier-Mismatch-Ausweisung und erlaubten deklarierten
+  Fallbackprovidern
+- kollisionssicher gehashte Resolution-Carrier-IDs und strikte Validierung
+  von Instanzform sowie `desired_status`
+- monotone Resolution-Generationen mit stale No-op, Konfliktprüfung und
+  bytegebundener Parse-/Hash-/mtime-Provenienz
+- atomar serialisierte Projection-Updates gegen gleichzeitige
+  Gleichgenerationsimporte und widersprüchliche Maximalzustände
+- strikt instanzbezogenes Host-Matching ohne Nivellierung über eine gemeinsame
+  logische System-ID
+- getrennte Discovery-/Desired-Coverage-Summaries mit harten, beratenden und
+  optionalen Gaps sowie Desired-Provider-Overlap
+- CLI- und Konfigurationsweg für Coverage gegen gespeicherte
+  `system-explorer.resolution.v1`-Outputs
 - JSONL-Fortschrittstelemetrie für `scan`/`ingest` auf `stderr`
 - konfigurierbares CLI-Zeitbudget mit fail-closed Standard von 300 Sekunden
 - atomare Root- und Nachlaufphasen-Checkpoints mit explizitem Rollback

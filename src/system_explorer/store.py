@@ -195,6 +195,13 @@ class Store:
         self._commit_database()
         self._commit_count += 1
 
+    def begin_immediate(self) -> None:
+        if self.db.in_transaction:
+            raise RuntimeError(
+                "BEGIN IMMEDIATE requires a clean Store transaction boundary"
+            )
+        self.db.execute("BEGIN IMMEDIATE")
+
     def _commit_database(self) -> None:
         self.db.commit()
 
@@ -216,6 +223,119 @@ class Store:
     def integrity_check(self) -> str:
         row = self.db.execute("PRAGMA integrity_check").fetchone()
         return str(row[0]) if row else "missing-result"
+
+    def resolution_projection_state(
+        self, projection_key: str
+    ) -> dict[str, Any] | None:
+        rows = self.db.execute(
+            """
+            SELECT metadata_json
+            FROM evidence
+            WHERE source_kind = 'system-resolution'
+            """
+        ).fetchall()
+        states = []
+        for row in rows:
+            metadata = json.loads(row["metadata_json"])
+            if metadata.get("resolution_projection") != projection_key:
+                continue
+            generation = metadata.get("resolution_generation")
+            if (
+                not isinstance(generation, list)
+                or len(generation) != 2
+                or not all(isinstance(value, int) for value in generation)
+            ):
+                continue
+            content_hash = metadata.get("resolution_content_hash")
+            if not isinstance(content_hash, str):
+                continue
+            states.append(
+                {
+                    "generation": generation,
+                    "content_hash": content_hash,
+                }
+            )
+        if not states:
+            return None
+        latest_generation = max(
+            tuple(state["generation"]) for state in states
+        )
+        latest = [
+            state
+            for state in states
+            if tuple(state["generation"]) == latest_generation
+        ]
+        hashes = {state["content_hash"] for state in latest}
+        if len(hashes) != 1:
+            raise ValueError(
+                "resolution projection has conflicting hashes at its latest generation"
+            )
+        return latest[0]
+
+    def clear_resolution_projection(self, projection_key: str) -> dict[str, int]:
+        edge_rows = self.db.execute(
+            "SELECT id, source_id, metadata_json FROM edges WHERE mode = 'desired'"
+        ).fetchall()
+        edge_ids = []
+        carrier_ids = set()
+        for row in edge_rows:
+            metadata = json.loads(row["metadata_json"])
+            if metadata.get("resolution_projection") != projection_key:
+                continue
+            edge_ids.append(row["id"])
+            carrier_ids.add(row["source_id"])
+        if edge_ids:
+            self.db.executemany("DELETE FROM edges WHERE id = ?", [(edge,) for edge in edge_ids])
+
+        carrier_rows = self.db.execute(
+            "SELECT id, metadata_json FROM nodes WHERE node_type = 'carrier'"
+        ).fetchall()
+        carrier_ids.update(
+            row["id"]
+            for row in carrier_rows
+            if json.loads(row["metadata_json"]).get("resolution_projection")
+            == projection_key
+        )
+        removed_carriers = 0
+        for carrier_id in carrier_ids:
+            row = self.db.execute(
+                "SELECT metadata_json FROM nodes WHERE id = ?",
+                (carrier_id,),
+            ).fetchone()
+            if row is None:
+                continue
+            metadata = json.loads(row["metadata_json"])
+            if metadata.get("resolution_projection") != projection_key:
+                continue
+            references = self.db.execute(
+                "SELECT COUNT(*) FROM edges WHERE source_id = ? OR target_id = ?",
+                (carrier_id, carrier_id),
+            ).fetchone()[0]
+            if references == 0:
+                self.db.execute("DELETE FROM nodes WHERE id = ?", (carrier_id,))
+                removed_carriers += 1
+            else:
+                for field in (
+                    "desired_statuses",
+                    "consumes",
+                    "provides",
+                    "requirements",
+                    "resolution_content_hash",
+                    "resolution_host_id",
+                    "resolution_projection",
+                    "resolution_scope",
+                    "resolution_system_id",
+                    "roles",
+                    "source_bundles",
+                    "source_schema",
+                ):
+                    metadata.pop(field, None)
+                metadata["desired"] = False
+                self.db.execute(
+                    "UPDATE nodes SET metadata_json = ? WHERE id = ?",
+                    (json_dumps(metadata), carrier_id),
+                )
+        return {"edges": len(edge_ids), "carriers": removed_carriers}
 
     def nodes(self, node_type: str | None = None) -> list[dict[str, Any]]:
         query = "SELECT * FROM nodes"

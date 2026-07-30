@@ -40,6 +40,8 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
   gewünschte Instanzen, Resolutionstests und Flotten
 - deterministische, gepinnte Read-only-Auflösung mit Profilen,
   Suppressions, Root-Containment und kanonischen Content-Hashes
+- typisierte Read-only-Brücke von `system-explorer.resolution.v1` in
+  Desired-/Coverage-Evidenz mit Requirement-Schwere und Provider-Overlap
 - optionale ApiProber-Evidenzaufnahme für autorisierte passive REST-Prüfungen
 - `ai-media-editor`-Connector für erklärvideo-taugliche Storyboards,
   Sprechertexte und Mermaid-Schaltpläne aus analysierten Systemkarten
@@ -77,6 +79,8 @@ system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
 system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
+system-explorer coverage --config explorer.json --resolution resolved-system.json
+system-explorer import-resolution resolved-system.json --config explorer.json
 system-explorer test-resolve system-test.v1.json --catalog bundles.catalog.v1.json
 system-explorer serve --config explorer.json
 ```
@@ -189,6 +193,56 @@ Vertrag und Sicherheitsgates stehen in
 Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), die Datenregeln in
 [`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und die Adaptergrenzen in
 [`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).
+
+## Resolution als Desired-Evidenz
+
+Ein gespeicherter `system-explorer.resolution.v1`-Output lässt sich direkt als
+Desired-Evidenz importieren:
+
+```powershell
+system-explorer coverage `
+  --config explorer.json `
+  --resolution resolved-system.json
+```
+
+Alternativ nimmt `desired_resolution_sources` in der Explorer-Konfiguration
+einen oder mehrere Resolution-Pfade auf; `coverage` und `ingest` importieren
+sie relativ zum Konfigurationsordner. Scope und `component.ref` bestimmen eine
+kollisionssicher gehashte Carrier-ID; beide lesbaren Werte bleiben in den
+Metadaten erhalten. Nur bekannte aktive `desired_status`-Werte und deren
+`provides` erzeugen
+Desired-Funktionskanten; `unavailable` bleibt als Carrierstatus sichtbar,
+trägt aber keine Funktion. `consumes` bleibt beschreibende
+Carrier-Metadaten. `required`, `recommended`, `optional` und
+`desired_status` bleiben an den Kanten erhalten. Eine neuere Resolution
+derselben Instanz ersetzt deren ältere aktive Desired-Projektion. Ältere
+Generationen werden bei späterem Import als `stale-ignored` protokolliert und
+dürfen den aktiven Stand nicht zurückdrehen; gleiche Generationen mit
+abweichendem Content-Hash werden als Konflikt abgewiesen. Parse, Quellhash und
+Dateimetadaten stammen aus demselben geöffneten Byte-Snapshot. Zustandsprüfung
+und Projektionstausch laufen gemeinsam unter einer SQLite-
+`BEGIN IMMEDIATE`-Grenze, sodass parallele Importe desselben Scopes seriell
+entschieden werden.
+
+Die Coverage-Ausgabe trennt `discovery_summary` von `desired_summary` und
+weist mehrere Resolution-Scopes einzeln aus: Nur `required` wird als harter
+Gap gezählt, während empfohlene und optionale Lücken separat sichtbar
+bleiben. Mehrere gewünschte Provider innerhalb desselben Scopes erscheinen
+als `desired_overlap`; gleiche Provider auf unterschiedlichen Hosts werden
+nicht zu einem künstlichen Overlap vermischt. `assess` und `propose`
+übernehmen diese Scope-Grenze; ein erfüllter Host kann daher die Lücke eines
+anderen Hosts nicht verdecken. Tatsächliche Deckung verlangt zusätzlich eine
+typisierte Übereinstimmung von `component_ref` oder `stable_ref`. Ein anderer
+beobachteter Provider desselben Hosts wird als `wrong-provider` und
+`carrier-mismatch` ausgewiesen, nicht als erfüllte Sollfunktion. Ein in der
+Resolution ausdrücklich als zweiter Provider deklarierter Fallback bleibt
+dagegen deckungsfähig. Bei hostgebundenen Instanzen zählt ausschließlich die
+explizite Host-/Instanzbindung; die gemeinsame logische System-ID darf nicht
+mehrere Hosts gleichzeitig erfüllen.
+
+Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
+Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden
+abgewiesen; Quelle und Zielsystem werden nicht verändert.
 
 ## Bundles und Partner
 

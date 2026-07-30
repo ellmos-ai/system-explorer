@@ -1,0 +1,110 @@
+{
+  "schema": "system-explorer.resolution.v1",
+  "system": {
+    "id": "fixture-development-system",
+    "version": "1.0.0",
+    "status": "active",
+    "lifecycle": "development",
+    "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "instance": {
+    "id": "fixture-instance",
+    "instance_id": "fixture-development-system@TEST-HOST",
+    "host_id": "TEST-HOST",
+    "version": "1.0.0",
+    "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "desired_profile": "full",
+  "stacks": [],
+  "bundles": [
+    {
+      "id": "fixture-core-bundle",
+      "version": "1.0.0",
+      "status": "active",
+      "lifecycle": "development",
+      "visibility": "private",
+      "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "catalog": "fixture-catalog",
+      "components": [
+        {
+          "type": "module",
+          "ref": "module:required-provider",
+          "role": "core",
+          "requirement": "required",
+          "version": "1.0.0",
+          "provides": [
+            "function.required",
+            "function.shared"
+          ],
+          "consumes": [
+            "function.consumed-only"
+          ],
+          "desired_status": "configured"
+        },
+        {
+          "type": "skill",
+          "ref": {
+            "ref": "skill:recommended-provider",
+            "version": "1.0.0"
+          },
+          "role": "guidance",
+          "requirement": "recommended",
+          "version": "1.0.0",
+          "provides": [
+            "function.recommended"
+          ],
+          "consumes": [],
+          "desired_status": "available"
+        },
+        {
+          "type": "software_app",
+          "ref": "software:optional-provider",
+          "role": "optional-client",
+          "requirement": "optional",
+          "version": "1.0.0",
+          "provides": [
+            "function.optional",
+            "function.shared"
+          ],
+          "consumes": [],
+          "desired_status": "available"
+        },
+        {
+          "type": "skill",
+          "ref": "skill:empty-provider",
+          "role": "context-only",
+          "requirement": "optional",
+          "version": "1.0.0",
+          "provides": [],
+          "consumes": [
+            "function.required"
+          ],
+          "desired_status": "available"
+        },
+        {
+          "type": "software_app",
+          "ref": "software:unavailable-provider",
+          "role": "unavailable-client",
+          "requirement": "optional",
+          "version": "1.0.0",
+          "provides": [
+            "function.unavailable"
+          ],
+          "consumes": [],
+          "desired_status": "unavailable"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    "function.optional",
+    "function.recommended",
+    "function.required",
+    "function.shared"
+  ],
+  "output_bindings": [],
+  "runtime_actions": [],
+  "target_mutations": [],
+  "warnings": [],
+  "content_hash": "08822c2459c5b79e673bf0777e891977f897724a756709bd59074c267c4015e2"
+}

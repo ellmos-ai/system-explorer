@@ -3,6 +3,45 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-07-30: Resolutionen werden als typisierte Desired-Evidenz projiziert
+
+### Kontext
+
+Die V4-Auflösung kennt die vollständige Bundle-/Komponentenzusammensetzung,
+während ältere manuelle Desired-Spezifikationen nur einen kleinen
+Funktionsausschnitt enthalten können. Die Auflösung selbst war bislang nicht
+mit der Coverage-Engine verdrahtet.
+
+### Entscheidung
+
+Eine read-only Brücke importiert `system-explorer.resolution.v1` in den
+lokalen Evidence Store. Kollisionssicher gehashte Carrier-IDs entstehen aus
+Resolution-Scope und `component.ref`; ausschließlich bekannte aktive
+`desired_status`-Werte und deren `provides` erzeugen
+Desired-Kanten. Eine neuere Resolution ersetzt die aktive Projektion
+desselben Scopes, ohne andere Instanzen zu verdrängen. Die Generation wird
+monoton aus effektiver Zeit und mtime des einmalig geöffneten Quellsnapshots
+geordnet; stale Importe sind No-ops, gleiche Generationen mit anderem Hash
+Konflikte. Prüfung und Austausch erfolgen gemeinsam in einer
+`BEGIN IMMEDIATE`-Transaktion; bereits vorhandene Mehrfachhashes derselben
+Maximalgeneration werden fail-closed erkannt. Requirement,
+`desired_status`, Bundle-Provenienz, Quellschema und Content-Hash bleiben
+erhalten. Coverage weist Required-, Recommended- und Optional-Gaps
+scopeweise getrennt aus und zeigt gewünschte Mehrfachprovider als Overlap.
+Assessment und Proposal dürfen dafür kein global nivelliertes
+Funktionsurteil verwenden. Beobachtete Deckung muss außerdem über
+`component_ref` oder `stable_ref` einem gewünschten Provider zugeordnet sein;
+ein bloß hostgleicher Fremdprovider wird als Carrier-Mismatch ausgewiesen.
+Hostgebundene Instanzen dürfen dabei nicht über ihre gemeinsame logische
+System-ID nivelliert werden.
+
+### Grenze
+
+Die Brücke entdeckt oder aktiviert keine Runtime. `consumes` ist keine
+Leistungsbehauptung. Nichtleere `runtime_actions` oder `target_mutations`
+werden abgewiesen. Ein erfolgreicher Import belegt nur den Sollvertrag, nicht
+die tatsächliche Deckung einer Workstation oder eines anderen Hosts.
+
 ## 2026-07-30: Scans checkpointen pro Root und behaupten kein Resume
 
 ### Kontext

@@ -204,6 +204,44 @@ Fallback-/Abhängigkeitszyklen und Test-Suppressions. Sie materialisiert nur
 eine deterministische Projektion; `runtime_actions`, `target_mutations` und
 Test-Writeback bleiben leer beziehungsweise `false`.
 
+### Resolution-zu-Desired-Brücke
+
+`system-explorer.resolution.v1` ist eine deterministische Sollprojektion, aber
+noch keine Coverage-Evidenz. Der Resolution-Importer materialisiert deshalb
+nur folgende read-only Abbildung im lokalen Evidence Store:
+
+```text
+resolution-scope + component.ref ──Hash-ID──> carrier
+component.provides[] ────────> desired carries ──> function
+component.consumes[] ────────> Carrier-Metadaten, keine carries-Kante
+```
+
+Die Kante bewahrt Requirement, Desired-Status, Bundlequelle,
+Resolution-Schema und Content-Hash über Metadaten und Evidenzreferenz.
+Provider derselben Funktion bleiben pro Systeminstanz als getrennte Kanten
+sichtbar. Eine neue Resolution desselben Scopes ersetzt dessen aktive ältere
+Projektion; eine stale Generation wird nicht erneut aktiviert, und
+gleichzeitige Generationen mit verschiedenen Hashes sind ein Konflikt. Parse,
+SHA-256 und mtime werden aus einem einzigen geöffneten Quellsnapshot
+abgeleitet. Vergleich, Evidenzeintrag und Projektionstausch sind pro
+SQLite-Write-Transaktion atomar serialisiert; ein bereits widersprüchlicher
+Maximalstand wird fail-closed abgewiesen. Andere Instanzen bleiben parallel
+erhalten. `unavailable`
+materialisiert keine Leistungszusage. Coverage aggregiert Requirements
+scopeweise: `required` erzeugt harte, `recommended` beratende und `optional`
+optionale Gaps. Discovery-Gesamtzahlen und Desired-only-Zahlen werden
+getrennt ausgegeben. Assessment und Change-Proposal konsumieren die
+scopeweisen Urteile und tragen den betroffenen Scope im Finding
+beziehungsweise im strukturierten Gap. Für Resolution-Projektionen gilt die
+Provideridentität fail-closed: Nur ein beobachteter Carrier mit passendem
+`component_ref` oder `stable_ref` deckt die Desired-Kante. Ein anderer Carrier
+im selben Hostscope erzeugt `wrong-provider`/`carrier-mismatch`; ausdrücklich
+deklarierte Mehrfachprovider und Fallbacks bleiben zulässig und sichtbar. Für
+eine Instanzresolution wird der Actual-Host ausschließlich gegen Host-ID oder
+Instanzscope geprüft, nie gegen die von mehreren Hosts geteilte System-ID.
+Nichtleere Runtime-Aktionen oder Target-Mutationen verletzen den
+Importer-Vertrag und werden fail-closed abgewiesen.
+
 Output-Bindings trennen einmalige Berichte, Entscheidungen,
 Automationssynthesen, native Runtime-Logs und Governance-Receipts. Rohlogs
 bleiben hostlokal beim Producer. Explorer darf ihre Metadaten und Health
