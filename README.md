@@ -1,59 +1,61 @@
 # system-explorer
 
-`system-explorer` erstellt evidenzgestützte Karten eines modularen Agenten- und
-Softwaresystems. Das Werkzeug trennt dabei zwei Ebenen:
+[English](README.md) | [Deutsch](README_de.md)
 
-1. **Sollfunktionen** – was das Gesamtsystem leisten soll.
-2. **Funktionsträger** – Skills, Repositories/Module, MCP-Schnittstellen,
-   Stacks, Akteure, Befehle oder andere Komponenten, die diese Funktionen
-   tatsächlich oder geplant tragen.
+`system-explorer` creates evidence-based maps of a modular agent and software
+system. The tool separates two layers:
 
-Aus dieser Zuordnung erkennt es Voll-, Unter-, Nicht-, Mehrfach- und
-Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
-„unbekannt“, sondern eine sichtbare Systemlücke.
+1. **Desired functions** – what the overall system is intended to provide.
+2. **Function carriers** – skills, repositories/modules, MCP interfaces,
+   stacks, actors, commands, or other components that actually or
+   prospectively provide these functions.
 
-## Eigenschaften
+This mapping reveals full, partial, absent, overlapping, and negative
+coverage. A function without an evidenced carrier is not merely "unknown";
+it is a visible system gap.
 
-- begrenzter Scanner für Manifeste, Skills, Einstiegspunkte und Dokumentlinks
-- typisierte Steuerkarten für `AGENTS.md`, `CLAUDE.md`, `README.md`, Policies,
-  Decisions, frei konfigurierte Steuerdateien und Eintrittsverzeichnisse
-- Registry-, Datenbank- und Cloudkarten mit Tabellen, Ist-/Soll-Datenakteuren,
-  Transferwegen und reinen Credential-Referenzen
-- lokales SQLite-Evidenzregister mit URI, Locator, Hash und Zeitbezug statt
-  kopierter Quelldaten
-- Sollspezifikation für Funktionen, Träger, Deckung und Struktur
-- Transcript-Adapter für Codex, Claude Code, Claude Desktop, Gemini/agy, Kimi
-  und generisches JSONL
-- Actual-, Desired-, Diff- und Coverage-Karten als JSON, ASCII, Mermaid und HTML
-- föderierte Kartenimporte/-exporte mit identischen Ansichten je Gerät,
-  Systemgrenzen sowie Gesamtebenenanalyse
-- Privat-/Teiloffen-Servercheck, Schutzdeckung, Kosten-/Lokalvergleich und
-  Zweckprüfung einzelner Module oder Repositories
-- LLM-Spuren- und LLM-Handlungskarten für Sessions, CLI-, API-, Tool- und
-  Systemverbindungswege
-- Funktionspfadkarten von Entrypoints und Akteuren über Träger zu Funktionen,
-  Outputs und systemübergreifenden Übergaben
-- kristallisierte Randressourcen für installierte Software, Fremdmodule,
-  Repositories, Skripte und Skills mit LLM-Steuerweg, Flexibilität und
-  belegpflichtigem Tokenersparnispotenzial
-- additive V4-Kompositionsverträge für Bundles, Kataloge, Systeme,
-  gewünschte Instanzen, Resolutionstests und Flotten
-- deterministische, gepinnte Read-only-Auflösung mit Profilen,
-  Suppressions, Root-Containment und kanonischen Content-Hashes
-- typisierte Read-only-Brücke von `system-explorer.resolution.v1` in
-  Desired-/Coverage-Evidenz mit Requirement-Schwere und Provider-Overlap
-- explizite, gehashte Function-Equivalence-Verträge zwischen abweichenden
-  Desired- und Actual-Funktions-IDs; ohne Namens- oder Ergebnisheuristik
-- optionale ApiProber-Evidenzaufnahme für autorisierte passive REST-Prüfungen
-- `ai-media-editor`-Connector für erklärvideo-taugliche Storyboards,
-  Sprechertexte und Mermaid-Schaltpläne aus analysierten Systemkarten
-- sichere, idempotente Repo-/Bundle-Schaltplanpflege mit Dry-Run,
-  Lock-/Dirty-Gates, atomarem Readback sowie optionalem Commit und Push
-- lokale grafische Oberfläche mit belegbezogenen Details
-- schreibgeschützte, promptgestützte Änderungsentwürfe mit Pflichtgates
-- Trampelpfad-Probepläne für externe, budgetierte Schwarmtests
+## Features
 
-## Schnellstart
+- bounded scanner for manifests, skills, entry points, and document links
+- typed control maps for `AGENTS.md`, `CLAUDE.md`, `README.md`, policies,
+  decisions, freely configured control files, and entry directories
+- registry, database, and cloud maps with tables, actual/desired data actors,
+  transfer paths, and credential references only
+- local SQLite evidence registry containing URI, locator, hash, and temporal
+  context instead of copied source data
+- desired specification for functions, carriers, coverage, and structure
+- transcript adapters for Codex, Claude Code, Claude Desktop, Gemini/agy, Kimi,
+  and generic JSONL
+- actual, desired, diff, and coverage maps as JSON, ASCII, Mermaid, and HTML
+- federated map imports/exports with identical views per device, system
+  boundaries, and whole-system analysis
+- private/partially open server checks, protection coverage, cost/locality
+  comparisons, and purpose checks for individual modules or repositories
+- LLM trace and LLM action maps for sessions and CLI, API, tool, and system
+  connection paths
+- function-path maps from entry points and actors through carriers to
+  functions, outputs, and cross-system handoffs
+- crystallized peripheral resources for installed software, external modules,
+  repositories, scripts, and skills, including LLM control paths,
+  flexibility, and evidence-required token-saving potential
+- additive V4 composition contracts for bundles, catalogs, systems, desired
+  instances, resolution tests, and fleets
+- deterministic pinned read-only resolution with profiles, suppressions, root
+  containment, and canonical content hashes
+- typed read-only bridge from `system-explorer.resolution.v1` into desired and
+  coverage evidence with requirement severity and provider overlap
+- explicit hashed function-equivalence contracts between differing desired
+  and actual function IDs, without name or outcome heuristics
+- optional ApiProber evidence intake for authorized passive REST checks
+- `ai-media-editor` connector for explainer-video-ready storyboards, narration
+  scripts, and Mermaid diagrams derived from analyzed system maps
+- safe idempotent repository/bundle diagram maintenance with dry run,
+  lock/dirty gates, atomic readback, and optional commit and push
+- local graphical interface with evidence-related details
+- read-only, prompt-assisted change proposals with mandatory gates
+- path-probing plans for external, budgeted swarm tests
+
+## Quick start
 
 ```powershell
 python -m venv .venv
@@ -90,20 +92,18 @@ system-explorer test-resolve system-test.v1.json --catalog bundles.catalog.v1.js
 system-explorer serve --config explorer.json
 ```
 
-Die Oberfläche bindet standardmäßig nur an `127.0.0.1:8765`.
+By default, the interface binds only to `127.0.0.1:8765`.
 
-### Begrenzte Scans und Fortschritt
+### Bounded scans and progress
 
-`scan` und der Scan-Anteil von `ingest` besitzen über die CLI standardmäßig
-ein Zeitbudget von 300 Sekunden. Jeder Root wird als eigener
-Transaktions-Checkpoint verarbeitet. Liegt der Fehler vor dem Commit, wird
-die offene Root-Transaktion zurückgerollt; bereits abgeschlossene Roots
-bleiben konsistent gespeichert. Tritt ein Fehler genau an einer nicht mehr
-offenen Commit-Grenze auf, meldet die Telemetrie
-`root_commit_state_uncertain`, statt fälschlich einen Rollback zu behaupten.
-Bei aktivem JSONL-Modus erscheinen Fortschritt und CLI-Fehler ausschließlich
-als JSONL auf `stderr`, das abschließende Ergebnis ausschließlich auf
-`stdout`.
+`scan` and the scan phase of `ingest` have a default CLI time budget of 300
+seconds. Each root is processed as a separate transactional checkpoint. If an
+error occurs before the commit, the open root transaction is rolled back;
+already completed roots remain consistently stored. If an error occurs
+exactly at a commit boundary that is no longer open, telemetry reports
+`root_commit_state_uncertain` instead of falsely claiming a rollback. In JSONL
+mode, progress and CLI errors are written exclusively as JSONL to `stderr`,
+while the final result is written exclusively to `stdout`.
 
 ```powershell
 python -m system_explorer.cli scan `
@@ -113,18 +113,16 @@ python -m system_explorer.cli scan `
   --progress-interval-seconds 5
 ```
 
-`--progress off` deaktiviert die Telemetrie. `--time-budget-seconds 0`
-deaktiviert die Deadline ausdrücklich; das ist bei unbeaufsichtigten Läufen
-nicht empfohlen. `Ctrl+C` beendet mit Exitcode 130 und rollt eine noch offene
-Transaktion zurück. Ein Resume-Cursor existiert noch nicht: Der nächste Lauf
-scannt die Roots erneut und nutzt die idempotenten Upserts. Ein hartes Beenden
-des Prozesses kann weiterhin SQLite-Recovery-Artefakte erzeugen und ist kein
-kontrollierter Abbruch.
+`--progress off` disables telemetry. `--time-budget-seconds 0` explicitly
+disables the deadline; this is not recommended for unattended runs. `Ctrl+C`
+exits with code 130 and rolls back an open transaction. A resume cursor does
+not yet exist: the next run scans the roots again and uses idempotent upserts.
+Hard process termination can still create SQLite recovery artifacts and is
+not a controlled shutdown.
 
-In einem zusätzlichen Git-Worktree kann ein globales Editable-Install noch
-auf einen anderen Clone zeigen. Für einen belegbar richtigen Testlauf daher
-entweder eine isolierte virtuelle Umgebung im Worktree verwenden oder die
-Source explizit voranstellen:
+In an additional Git worktree, a global editable install may still point to a
+different clone. For a verifiably correct test run, either use an isolated
+virtual environment in the worktree or explicitly place its source first:
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path .\src).Path
@@ -132,76 +130,72 @@ python -m unittest discover -s tests -v
 python -m ruff check src tests
 ```
 
-Eigene Steuerdateien werden über `control_documents` (Glob, Rolle,
-Entry-Flag), Eintrittsordner über `entry_directories` konfiguriert. Die
-Control- und Tree-Ansichten zeigen aufgelöste und fehlende Pointer samt
-Quellzeile. Auch über CLI und lokale UI lassen sich zusätzliche Dokumente
-interaktiv registrieren und wiederfinden.
+Custom control files are configured through `control_documents` (glob, role,
+entry flag), and entry directories through `entry_directories`. The control
+and tree views show resolved and missing pointers together with their source
+line. Additional documents can also be registered and rediscovered
+interactively through the CLI and local UI.
 
-Die Data-Ansicht erkennt JSON-Registries und SQLite-Schemata automatisch.
-Weitere Registries, Datenbanken, Tabellenzwecke, Writer/Reader,
-Cloudverbindungen, direkte oder indirekte Mirrors und Credential-Referenzen
-werden neutral über die Konfiguration beschrieben; siehe
-[`examples/data-cloud.json`](examples/data-cloud.json). Credential-Werte
-werden nie gelesen oder gespeichert.
+The data view automatically recognizes JSON registries and SQLite schemas.
+Additional registries, databases, table purposes, writers/readers, cloud
+connections, direct or indirect mirrors, and credential references are
+described neutrally through configuration; see
+[`examples/data-cloud.json`](examples/data-cloud.json). Credential values are
+never read or stored.
 
-Die Systemidentität steht unter `system`; `map_imports`, `connections` und
-`handoffs` bilden Fremdkarten, SSH/Tailscale-Verbindungen sowie asynchrone
-`.SYNC`-Übergaben ab. Jede fachliche Ansicht kann in CLI und UI auf ein
-Herkunftssystem eingeschränkt oder über alle vorliegenden Karten kombiniert
-werden. Siehe
-[`docs/FEDERATED-MAPS.md`](docs/FEDERATED-MAPS.md) und
+System identity is defined under `system`; `map_imports`, `connections`, and
+`handoffs` represent external maps, SSH/Tailscale connections, and
+asynchronous `.SYNC` handoffs. Every domain view can be restricted to an
+origin system in the CLI and UI, or combined across all available maps. See
+[`docs/FEDERATED-MAPS.md`](docs/FEDERATED-MAPS.md) and
 [`examples/deployment-federation.json`](examples/deployment-federation.json).
 
-Server- und Repozwecke werden als Kriterien statt als bloße Labels geprüft.
-Die Regeln für Privatserver, teiloffene Dienste, ApiProber und Kostenvergleich
-stehen in
-[`docs/DEPLOYMENT-PURPOSE-MODEL.md`](docs/DEPLOYMENT-PURPOSE-MODEL.md);
-eine datierte Anbieterbaseline steht in
+Server and repository purposes are evaluated as criteria rather than mere
+labels. Rules for private servers, partially open services, ApiProber, and
+cost comparisons are documented in
+[`docs/DEPLOYMENT-PURPOSE-MODEL.md`](docs/DEPLOYMENT-PURPOSE-MODEL.md); a dated
+provider baseline is available in
 [`docs/CLOUD-SERVER-BASELINE_2026-07-29.md`](docs/CLOUD-SERVER-BASELINE_2026-07-29.md).
 
-Installierte Software wird nicht automatisch mit LLM-Nutzbarkeit
-gleichgesetzt. `software_resources` und eine begrenzte
-`software_discovery.commands`-Allowlist registrieren Ressource, Funktion und
-Steuerweg. `◆`, `◇`, `△`, `○` und `?` kennzeichnen native, direkte,
-indirekte, rein referenzielle und unbelegte LLM-Bereitschaft. Die Regeln und
-Wahrheitsgrenzen stehen in
-[`docs/CRYSTALLIZED-RESOURCES.md`](docs/CRYSTALLIZED-RESOURCES.md); eine
-neutrale Konfiguration in
+Installed software is not automatically equated with LLM usability.
+`software_resources` and a bounded `software_discovery.commands` allowlist
+register the resource, function, and control path. `◆`, `◇`, `△`, `○`, and `?`
+denote native, direct, indirect, reference-only, and unevidenced LLM readiness.
+The rules and truth boundaries are documented in
+[`docs/CRYSTALLIZED-RESOURCES.md`](docs/CRYSTALLIZED-RESOURCES.md); a neutral
+configuration is available in
 [`examples/software-resources.json`](examples/software-resources.json).
 
-Die V4-Verträge, Hashregeln, Output-/Log-Bindings und CLI-Grenzen stehen in
+The V4 contracts, hash rules, output/log bindings, and CLI boundaries are
+documented in
 [`docs/V4-COMPOSITION-CONTRACTS.md`](docs/V4-COMPOSITION-CONTRACTS.md).
-`manifest-validate` prüft wahlweise eine Datei oder einen ganzen Repo-Baum.
-`component-registry-check` validiert typisierte Bundle-Refs gegen exakt
-gehashte native Quellen und berechnet `declared_only`-Gates
-vorkommensbezogen. `system-resolve --registry-bindings` konsumiert genau
-diese kanonische Logik; ein zweiter Resolver im Manifest-Repository ist nicht
-erforderlich. Hostbezug und Beobachtungszeit gehören nur in explizit erzeugte
-Receipts, nicht in das hostneutrale Binding-Manifest.
-Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
-Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
+`manifest-validate` checks either a single file or an entire repository tree.
+`component-registry-check` validates typed bundle references against exactly
+hashed native sources and calculates occurrence-based `declared_only` gates.
+`system-resolve --registry-bindings` consumes this exact canonical logic; a
+second resolver in the manifest repository is unnecessary. Host context and
+observation time belong only in explicitly generated receipts, not in the
+host-neutral binding manifest. Resolver output is written atomically only
+with an explicit `--output`; runtime actions and target-system mutations
+remain excluded.
 
-### Actual-self Search Routing
+### Actual-self search routing
 
-`import-actual-self` nimmt eine gehashte und Ed25519-signierte
-`ellmos.actual-self-component-receipt.v1` aus einer nativen
-Laufzeitabfrage auf. Stable Ref, Registry-Hash, Source-/Record-ID,
-Hostscope, Ablaufzeit und exakte Funktions-IDs müssen mit einer bereits
-source-verifizierten Resolution übereinstimmen. Der Producer – zum Beispiel
-`access_surface:controlcenter` – bleibt Evidenzursprung und wird nicht zum
-Funktionsprovider umgedeutet. `declared`, `inferred`, fremde Hosts,
-abgelaufene Receipts und Namensähnlichkeit erzeugen keine Verfügbarkeit.
-Zulässiger Signer, Host, Adapter, Receipt-Schema und maximale TTL stammen aus
-dem lokalen, content-gehashten
-`system-explorer.receipt-trust-store.v1`; die Query kann keinen eigenen
-Trust-Key mitbringen. Zusätzlich muss `receipt_trust_store_sha256` in der
-lokalen Explorer-Konfiguration den SHA-256 der Trust-Store-Datei separat
-pinnen; der im Store selbst stehende Content-Hash ist kein Root of Trust.
-Jeder Signereintrag pinnt zusätzlich den SHA-256 der referenzierten
-Public-Key-Datei. Dieser Key-Pin wird bei jeder Verifikation erneut geprüft,
-damit ein ausgetauschtes PEM nicht durch einen unveränderten Trust Store
-autorisiert wird.
+`import-actual-self` accepts a hashed and Ed25519-signed
+`ellmos.actual-self-component-receipt.v1` from a native runtime query. Stable
+reference, registry hash, source/record ID, host scope, expiry, and exact
+function IDs must match an already source-verified resolution. The producer –
+for example `access_surface:controlcenter` – remains the evidence source and
+is not reinterpreted as a function provider. `declared`, `inferred`, external
+hosts, expired receipts, and name similarity provide no availability.
+Permitted signer, host, adapter, receipt schema, and maximum TTL come from the
+local content-hashed `system-explorer.receipt-trust-store.v1`; the query cannot
+supply its own trust key. In addition, `receipt_trust_store_sha256` in the
+local Explorer configuration must pin the SHA-256 of the trust-store file
+separately; the content hash stored inside the store is not a root of trust.
+Each signer record additionally pins the SHA-256 of the referenced public-key
+file. This key pin is rechecked during every verification so that a replaced
+PEM cannot be authorized by an unchanged trust store.
 
 ```powershell
 system-explorer search-route search-query.json `
@@ -212,56 +206,54 @@ system-explorer search-route search-query.json `
   --output search-receipt.json
 ```
 
-`search-route` akzeptiert keine Freitextsuche. Exakte Kandidaten,
-semantisches Ranking und ControlCenter-Lexikalsuche dürfen ausschließlich
-typisierte Stable Refs liefern. System Explorer filtert diese anschließend
-gegen Registry-Identität, actual-self-Evidenz und scopeweise Coverage.
-Scorewerte werden nur innerhalb ihres ausdrücklich benannten
-`score_domain` verglichen. Mehrdeutigkeit bleibt fail-closed.
+`search-route` does not accept free-text search. Exact candidates, semantic
+ranking, and ControlCenter lexical search may supply only typed stable
+references. System Explorer then filters them against registry identity,
+actual-self evidence, and scope-specific coverage. Scores are compared only
+within their explicitly named `score_domain`. Ambiguity remains fail-closed.
 
-Die erzeugte `ellmos.search-routing-receipt.v1` ist standardmäßig read-only
-und führt kein Tool aus. Eine ausdrücklich angeforderte ausführbare Auswahl
-braucht zusätzlich passende, separat signierte
-`ellmos.search-authority-receipt.v1`-Referenzen. Die Query enthält nur deren
-Stable Refs; eingebettete oder selbstbehauptete Authority-Felder sind
-unzulässig. Eine
-`delegated-avatar-decision` ist nur innerhalb ihrer Komponenten-,
-Capability-, Query-, Host- und Systemscopes gültig und benötigt
-Delegationsreferenz, Evidenzreferenzen, Mindest-Confidence, Frische und
-Konfliktfreiheit. Die Signer-Policy muss die Delegationsreferenz ausdrücklich
-erlauben. Der Receipt-Issuer und `scope.host_ids` müssen dem Host der aktuell
-aufgelösten Systeminstanz entsprechen; ein Multi-Host-Signer erlaubt keinen
-Foreign-Host-Replay. Eine rohe TOM_lm-Prognose allein ist keine Authority. Gespeicherte
-Actual-/Authority-Receipts werden bei jeder Suche erneut kryptografisch
-geprüft; ein manipulierter SQLite-Metadateneintrag reicht nicht.
+The generated `ellmos.search-routing-receipt.v1` is read-only by default and
+does not execute a tool. An explicitly requested executable selection also
+requires matching, separately signed
+`ellmos.search-authority-receipt.v1` references. The query contains only their
+stable references; embedded or self-asserted authority fields are invalid. A
+`delegated-avatar-decision` is valid only within its component, capability,
+query, host, and system scopes, and requires a delegation reference, evidence
+references, minimum confidence, freshness, and freedom from conflicts. The
+signer policy must explicitly permit the delegation reference. The receipt
+issuer and `scope.host_ids` must match the host of the currently resolved
+system instance; a multi-host signer does not permit foreign-host replay. A
+raw TOM_lm prediction alone is not an authority. Stored actual/authority
+receipts are cryptographically verified again for every search; a manipulated
+SQLite metadata record is insufficient.
 
-Der `ai-media-editor`-Connector materialisiert aus ausgewählten Karten ein
-UC6-Handoff mit Storyboard, deutschem Sprechertext und Mermaid-Visuals. Er
-rendert nicht still selbst und kopiert keine Rohevidenz. Der getrennte
-Repo-Schaltplanadapter schreibt ausschließlich eine markierte generierte
-Dokumentdatei in ausdrücklich benannte Git-Roots; Dry-Run ist Standard.
-Vertrag und Sicherheitsgates stehen in
+The `ai-media-editor` connector materializes a UC6 handoff with a storyboard,
+German narration, and Mermaid visuals from selected maps. It does not silently
+render media itself or copy raw evidence. The separate repository diagram
+adapter writes only a marked generated documentation file into explicitly
+named Git roots; dry run is the default. Its contract and security gates are
+documented in
 [`docs/CONNECTOR-ADAPTERS.md`](docs/CONNECTOR-ADAPTERS.md).
 
-## Sicherheits- und Wahrheitsgrenzen
+## Security and truth boundaries
 
-- Quellen bleiben an ihrem Ort; gespeichert werden Referenzen und Prüfsummen.
-- Prompt- und Transcript-Inhalte werden nicht gespeichert.
-- Eine Manifestdeklaration beweist keine tatsächliche Nutzung.
-- Ein Toolaufruf beweist erst zusammen mit Ergebnis, Readback oder Test einen
-  erfolgreichen Funktionsvollzug.
-- Das Modul erzeugt Vorschläge, führt aber keine Zielsystemänderungen aus.
-- Neuere Evidenz gewinnt nur innerhalb derselben Beziehung; negative Evidenz
-  wird nicht durch ältere positive Evidenz verdeckt.
+- Sources remain in place; only references and checksums are stored.
+- Prompt and transcript content is not stored.
+- A manifest declaration does not prove actual use.
+- A tool call proves successful function execution only together with a
+  result, readback, or test.
+- The module produces proposals but does not modify target systems.
+- Newer evidence wins only within the same relationship; older positive
+  evidence cannot obscure negative evidence.
 
-Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), die Datenregeln in
-[`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und die Adaptergrenzen in
+Details are available in [ARCHITECTURE.md](ARCHITECTURE.md), data rules in
+[`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md), and adapter boundaries in
 [`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).
 
-## Resolution als Desired-Evidenz
+## Resolution as desired evidence
 
-Ein gespeicherter `system-explorer.resolution.v1`-Output lässt sich direkt als
-Desired-Evidenz importieren:
+A stored `system-explorer.resolution.v1` output can be imported directly as
+desired evidence:
 
 ```powershell
 system-explorer coverage `
@@ -269,101 +261,96 @@ system-explorer coverage `
   --resolution resolved-system.json
 ```
 
-Alternativ nimmt `desired_resolution_sources` in der Explorer-Konfiguration
-einen oder mehrere Resolution-Pfade auf; `coverage` und `ingest` importieren
-sie relativ zum Konfigurationsordner. Scope und `component.ref` bestimmen eine
-kollisionssicher gehashte Carrier-ID; beide lesbaren Werte bleiben in den
-Metadaten erhalten. Nur bekannte aktive `desired_status`-Werte und deren
-`provides` erzeugen
-Desired-Funktionskanten; `unavailable` bleibt als Carrierstatus sichtbar,
-trägt aber keine Funktion. `consumes` bleibt beschreibende
-Carrier-Metadaten. `required`, `recommended`, `optional` und
-`desired_status` bleiben an den Kanten erhalten. Eine neuere Resolution
-derselben Instanz ersetzt deren ältere aktive Desired-Projektion. Ältere
-Generationen werden bei späterem Import als `stale-ignored` protokolliert und
-dürfen den aktiven Stand nicht zurückdrehen; gleiche Generationen mit
-abweichendem Content-Hash werden als Konflikt abgewiesen. Parse, Quellhash und
-Dateimetadaten stammen aus demselben geöffneten Byte-Snapshot. Zustandsprüfung
-und Projektionstausch laufen gemeinsam unter einer SQLite-
-`BEGIN IMMEDIATE`-Grenze, sodass parallele Importe desselben Scopes seriell
-entschieden werden.
+Alternatively, `desired_resolution_sources` in the Explorer configuration
+accepts one or more resolution paths; `coverage` and `ingest` import them
+relative to the configuration directory. Scope and `component.ref` determine
+a collision-safe hashed carrier ID; both readable values remain in metadata.
+Only known active `desired_status` values and their `provides` create desired
+function edges; `unavailable` remains visible as carrier status but provides
+no function. `consumes` remains descriptive carrier metadata. `required`,
+`recommended`, `optional`, and `desired_status` remain attached to the edges.
+A newer resolution for the same instance replaces its older active desired
+projection. Older generations are recorded as `stale-ignored` during later
+imports and cannot roll back active state; equal generations with different
+content hashes are rejected as conflicts. Parsing, source hash, and file
+metadata come from the same opened byte snapshot. State validation and
+projection replacement run together within a SQLite `BEGIN IMMEDIATE`
+boundary so concurrent imports of the same scope are decided serially.
 
-Die Coverage-Ausgabe trennt `discovery_summary` von `desired_summary` und
-weist mehrere Resolution-Scopes einzeln aus: Nur `required` wird als harter
-Gap gezählt, während empfohlene und optionale Lücken separat sichtbar
-bleiben. Mehrere gewünschte Provider innerhalb desselben Scopes erscheinen
-als `desired_overlap`; gleiche Provider auf unterschiedlichen Hosts werden
-nicht zu einem künstlichen Overlap vermischt. `assess` und `propose`
-übernehmen diese Scope-Grenze; ein erfüllter Host kann daher die Lücke eines
-anderen Hosts nicht verdecken. Tatsächliche Deckung verlangt zusätzlich eine
-typisierte Übereinstimmung von `component_ref` oder `stable_ref`. Ein anderer
-beobachteter Provider desselben Hosts wird als `wrong-provider` und
-`carrier-mismatch` ausgewiesen, nicht als erfüllte Sollfunktion. Ein in der
-Resolution ausdrücklich als zweiter Provider deklarierter Fallback bleibt
-dagegen deckungsfähig. Bei hostgebundenen Instanzen zählt ausschließlich die
-explizite Host-ID; weder Instanzscope noch gemeinsame logische System-ID
-dürfen mehrere Hosts gleichzeitig erfüllen.
+Coverage output separates `discovery_summary` from `desired_summary` and
+reports multiple resolution scopes individually: only `required` counts as a
+hard gap, while recommended and optional gaps remain separately visible.
+Multiple desired providers within the same scope appear as `desired_overlap`;
+the same providers on different hosts are not merged into an artificial
+overlap. `assess` and `propose` preserve this scope boundary, so a satisfied
+host cannot conceal another host's gap. Actual coverage additionally requires
+a typed match of `component_ref` or `stable_ref`. A different observed
+provider on the same host is reported as `wrong-provider` and
+`carrier-mismatch`, not as satisfying the desired function. A fallback that
+the resolution explicitly declares as a second provider remains eligible for
+coverage. For host-bound instances, only the explicit host ID counts; neither
+the instance scope nor a shared logical system ID may satisfy multiple hosts
+at once.
 
-Der Scanner propagiert reale Komponentenidentität ohne Namensheuristik:
-Valide `ellmos.module.v2`-Manifeste liefern exakt `module:<id>`, Skills nur
-einen ausdrücklich deklarierten `component_ref`. Doppelte Quellclaims sind
-ein fail-closed Konflikt; ungetaggte Carrier sowie bloße Name-, Case-, Pfad-,
-Tag-, Package- oder Command-Ähnlichkeit bleiben nicht deckungsfähig.
-Software-Resources werden erst gebunden, wenn auch ihre kanonische
-Konfigurationsdeklaration als gehashte Evidenz vorliegt.
+The scanner propagates real component identity without name heuristics: valid
+`ellmos.module.v2` manifests provide exactly `module:<id>`, and skills provide
+only an explicitly declared `component_ref`. Duplicate source claims are a
+fail-closed conflict; untagged carriers and mere name, case, path, tag,
+package, or command similarity remain ineligible for coverage. Software
+resources are bound only when their canonical configuration declaration is
+also present as hashed evidence.
 
-Der Import schreibt ausschließlich in das lokale Explorer-Evidenzregister.
-Resolutionen mit nichtleeren `runtime_actions` oder `target_mutations` werden
-abgewiesen; Quelle und Zielsystem werden nicht verändert.
+The import writes exclusively to the local Explorer evidence registry.
+Resolutions with non-empty `runtime_actions` or `target_mutations` are
+rejected; neither source nor target system is changed.
 
-## Explizite Funktionsäquivalenz
+## Explicit function equivalence
 
-Abweichende Desired- und Actual-Funktions-IDs werden niemals aus Namen,
-Groß-/Kleinschreibung, Pfaden, Tags oder einem ähnlich beschriebenen Ergebnis
-gleichgesetzt. Eine positive Abbildung benötigt stattdessen einen
-`system-explorer.function-equivalence.v1`-Vertrag mit:
+Differing desired and actual function IDs are never equated based on names,
+capitalization, paths, tags, or a similarly described outcome. A positive
+mapping instead requires a `system-explorer.function-equivalence.v1` contract
+with:
 
-- typisiertem `component_ref`;
-- exakten Schema-, Versions- und Content-Hash-Pins für Desired- und
-  Actual-Vertrag;
-- einer typisierten Decision- oder Policy-Autorität;
-- bereits im Evidence Store vorhandener, URI- und SHA-256-identischer
-  Decision-/Policy-Evidenz, die dieselbe konkrete `authority_ref` trägt;
-- einem verifizierten Actual-Carrier auf exakt demselben Host;
-- positiver nativer Actual-Evidenz mit zugelassener Readback-/Probe-Quellart
-  und SHA-256. `declared` und `inferred` reichen nicht.
+- a typed `component_ref`;
+- exact schema, version, and content-hash pins for desired and actual
+  contracts;
+- a typed decision or policy authority;
+- decision/policy evidence already present in the evidence store, with an
+  identical URI and SHA-256 and carrying the same concrete `authority_ref`;
+- a verified actual carrier on exactly the same host;
+- positive native actual evidence with a permitted readback/probe source type
+  and SHA-256. `declared` and `inferred` are insufficient.
 
-Template-Verträge gelten hostneutral; echte Hostabweichungen benötigen einen
-expliziten `host-override` mit Host-ID und Begründung. Mehrere anwendbare
-Autoritäten für dasselbe Ziel sind ein Konflikt und materialisieren keine
-Coverage. Contract- oder Scanner-Hashdrift entzieht die Deckung, bis eine
-erneuerte Zuordnung vorliegt. Die synthetische Kante übernimmt den nativen
-Actual-Status und kann ihn nicht aufwerten; `observed` bleibt daher
-Teilabdeckung.
+Template contracts are host-neutral; actual host deviations require an
+explicit `host-override` with host ID and rationale. Multiple applicable
+authorities for the same target constitute a conflict and materialize no
+coverage. Contract or scanner hash drift withdraws coverage until a renewed
+mapping exists. The synthetic edge inherits the native actual status and
+cannot upgrade it; `observed` therefore remains partial coverage.
 
-Die V4-Bestandsprüfung fand 68 eindeutige Desired-Funktions-IDs und 886
-Actual-Funktions-IDs ohne exakte Schnittmenge. Dieses Release liefert deshalb
-bewusst nur Registry, Importer und synthetische Tests, aber keine reale
-Äquivalenzzuordnung. Reale Paare werden erst nach explizitem
-Capability-Vertrag und Decision-/Policy-Provenienz aufgenommen.
+The V4 inventory found 68 unique desired function IDs and 886 actual function
+IDs with no exact intersection. This release therefore deliberately provides
+only the registry, importer, and synthetic tests, but no real equivalence
+mapping. Real pairs are added only after an explicit capability contract and
+decision/policy provenance exist.
 
-## Bundles und Partner
+## Bundles and partners
 
-`system-explorer` bleibt einzeln nutzbar. In einer V4-Komposition ist es der
-erforderliche Discovery-, Karten- und Deckungsprüfer des
-`ellmos-core-discovery-bundle`. Direkte Partner sind `ellmos-core` als
-Orchestrierungsaufrufer sowie der empfohlene Komponenten-Resolver und
-semantische Routing-Partner.
+`system-explorer` remains usable on its own. In a V4 composition, it is the
+required discovery, mapping, and coverage checker for the
+`ellmos-core-discovery-bundle`. Direct partners are `ellmos-core` as the
+orchestration caller and the recommended component resolver and semantic
+routing partner.
 
-Das Modul kann außerdem zwei Grenzen lesend unterstützen:
+The module can also provide read-only support at two boundaries:
 
-- `ellmos-governance-assurance-bundle`: optionale Kartierung von
-  Entscheidungsdokumenten, Policies und Referenzen. Entscheidungen und
-  Policies bleiben bei ihren Fachautoritäten.
-- `ellmos-sync-federation-bundle`: empfohlene, cloud-sichere Kartenprojektion.
-  Föderation und Transfer bleiben bei ihren dafür vorgesehenen Trägern.
+- `ellmos-governance-assurance-bundle`: optional mapping of decision
+  documents, policies, and references. Decisions and policies remain with
+  their domain authorities.
+- `ellmos-sync-federation-bundle`: recommended cloud-safe map projection.
+  Federation and transfer remain with their designated carriers.
 
-MCP-Server wie ControlCenter sind Zugangsflächen, keine Funktionsowner dieses
-Moduls. Die verbindliche Mitgliedschaft, Versionen, Profile und privaten
-Zusammensetzungsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest;
-diese öffentliche Übersicht ist nur eine sichere Discovery-Hilfe.
+MCP servers such as ControlCenter are access surfaces, not function owners of
+this module. Authoritative membership, versions, profiles, and private
+composition recipes are defined exclusively in the respective bundle
+manifest; this public overview is only a safe discovery aid.
