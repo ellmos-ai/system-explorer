@@ -1,6 +1,15 @@
 # system-explorer
 
+[![Pytest](https://img.shields.io/badge/Pytest-127%20passed-brightgreen.svg)](tests)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
+[![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
+
 [English](README.md) | [Deutsch](README_de.md)
+
+> [!NOTE]
+> Für einen LLM-optimierten Index und Referenzübersicht siehe [`llms.txt`](file:///C:/_Local_DEV/repos/system-explorer/llms.txt).
 
 `system-explorer` erstellt evidenzgestützte Karten eines modularen Agenten- und
 Softwaresystems. Das Werkzeug trennt dabei zwei Ebenen:

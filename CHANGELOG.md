@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Maintainer-Verifikation & Technische Hygiene (2026-08-04)
+- 127 Pytest-Tests (100% grün), `ruff check` (clean) & `llms.txt` (Last-checked: 2026-08-04) verifiziert.
+- Shields.io Badges (Pytest, Python 3.10+, MIT, ellmos-ai, open-bricks) und GFM-Callouts in `README.md` & `README_de.md` ergänzt.
+
 ### Hinzugefügt
 
 - kanonischer `ellmos.component-registry-bindings.v1`-Vertrag mit
