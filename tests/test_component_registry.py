@@ -4,10 +4,12 @@ import hashlib
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from copy import deepcopy
+from io import StringIO
 from pathlib import Path
 
-from system_explorer.cli import main
+from system_explorer.cli import _activation_enforcement_status, main
 from system_explorer.component_registry import inspect_component_registry
 from system_explorer.contracts import (
     canonical_content_hash,
@@ -350,6 +352,116 @@ class ComponentRegistryTest(unittest.TestCase):
                 [catalog_path],
                 registry_bindings_path=registry_path,
             )
+
+    def test_blocked_evidence_view_quarantines_the_entire_bundle(
+        self,
+    ) -> None:
+        bundle_path, catalog_path, _, instance_path = self._system_fixture(
+            "required"
+        )
+        bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+        bundle["components"].append(
+            self._component("module", "module:native", "required")
+        )
+        self._write(bundle_path, with_content_hash(bundle))
+        registry_path = self.root / "bindings.json"
+        self._write(
+            registry_path,
+            self._registry(
+                bindings={
+                    "module": {
+                        "module:native": {
+                            "source": "registry:modules",
+                            "record_id": "native-module",
+                        }
+                    }
+                },
+                declared_only={
+                    "module:planned": {
+                        "component_type": "module",
+                        "reason": "not registered yet",
+                    }
+                },
+            ),
+        )
+
+        result = resolve_system(
+            instance_path,
+            [catalog_path],
+            registry_bindings_path=registry_path,
+            registry_source_paths={"registry:modules": self.module_source},
+            emit_blocked_resolution=True,
+        )
+
+        components = {
+            item["ref"]["ref"]: item
+            for item in result["bundles"][0]["components"]
+        }
+        registry = result["component_registry"]
+        self.assertEqual(components["module:planned"]["desired_status"], "unavailable")
+        self.assertEqual(components["module:native"]["desired_status"], "unavailable")
+        self.assertEqual(components["module:native"]["provides"], [])
+        quarantine = components["module:native"]["activation_quarantine"]
+        self.assertEqual(quarantine["declared_desired_status"], "configured")
+        self.assertEqual(quarantine["declared_provides"], ["function.module:native"])
+        self.assertEqual(result["functions"], [])
+        self.assertEqual(
+            registry["activation"]["fixture-bundle"]["state"],
+            "blocked",
+        )
+        self.assertTrue(
+            registry["activation"]["fixture-bundle"]["quarantined"]
+        )
+        self.assertEqual(
+            registry["activation_enforcement"],
+            "blocked-evidence-only",
+        )
+        self.assertEqual(registry["source_verification"], "verified")
+        self.assertTrue(
+            any("operational resolution" in warning for warning in result["warnings"])
+        )
+
+        output = self.root / "preserved-resolution.json"
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            code = main(
+                [
+                    "system-resolve",
+                    str(instance_path),
+                    "--catalog",
+                    str(catalog_path),
+                    "--registry-bindings",
+                    str(registry_path),
+                    "--registry-source-path",
+                    f"registry:modules={self.module_source}",
+                    "--emit-blocked-resolution",
+                    "--output",
+                    str(output),
+                ]
+            )
+        self.assertEqual(code, 0)
+        summary = json.loads(stdout.getvalue())
+        self.assertEqual(summary["activation_status"], "blocked-evidence-only")
+        written = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(written["content_hash"], result["content_hash"])
+
+        child_only = {
+            "component_registry": {"source_verification": "verified"},
+            "subsystems": [
+                {
+                    "resolution": {
+                        "component_registry": {
+                            "activation_enforcement": "blocked-evidence-only"
+                        },
+                        "subsystems": [],
+                    }
+                }
+            ],
+        }
+        self.assertEqual(
+            _activation_enforcement_status(child_only),
+            "blocked-evidence-only",
+        )
 
     def test_system_resolver_requires_native_source_record_readback(self) -> None:
         _, catalog_path, _, instance_path = self._system_fixture(

@@ -51,6 +51,21 @@ from .transcripts import SUPPORTED_PROVIDERS, import_transcripts
 from .util import expand_path
 
 
+def _activation_enforcement_status(value: dict[str, Any]) -> str | None:
+    registry = value.get("component_registry")
+    if isinstance(registry, dict):
+        status = registry.get("activation_enforcement")
+        if isinstance(status, str) and status:
+            return status
+    for subsystem in value.get("subsystems", []):
+        resolution = subsystem.get("resolution") if isinstance(subsystem, dict) else None
+        if isinstance(resolution, dict):
+            status = _activation_enforcement_status(resolution)
+            if status:
+                return status
+    return None
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="system-explorer",
@@ -169,6 +184,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     search_route.add_argument("--config", type=Path, required=True)
     search_route.add_argument("--output", type=Path)
+    for command_parser in (resolution, actual_self, search_authority, search_route):
+        command_parser.add_argument(
+            "--root-only-resolution",
+            action="store_true",
+            help=(
+                "Explicitly project only the root system when the resolution "
+                "contains nested subsystems; omitted subsystem count is recorded."
+            ),
+        )
 
     equivalence = sub.add_parser(
         "import-function-equivalence",
@@ -421,6 +445,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         metavar="SOURCE_ID=PATH",
     )
+    system_resolve.add_argument(
+        "--emit-blocked-resolution",
+        action="store_true",
+        help=(
+            "Emit a source-verified evidence view while quarantining every component "
+            "of bundles blocked by required declared-only entries."
+        ),
+    )
     system_resolve.add_argument("--output", type=Path)
 
     test_resolve = sub.add_parser(
@@ -540,19 +572,24 @@ def _run(args: argparse.Namespace) -> int:
                 registry_source_paths=parse_source_path_arguments(
                     args.registry_source_path
                 ),
+                emit_blocked_resolution=args.emit_blocked_resolution,
             )
             if args.command == "system-resolve"
             else resolve_test(args.test, args.catalogs)
         )
         if args.output:
             _write_json_atomic(args.output, value)
+            summary = {
+                "output": str(args.output),
+                "schema": value["schema"],
+                "content_hash": value["content_hash"],
+            }
+            activation_status = _activation_enforcement_status(value)
+            if activation_status:
+                summary["activation_status"] = activation_status
             print(
                 json.dumps(
-                    {
-                        "output": str(args.output),
-                        "schema": value["schema"],
-                        "content_hash": value["content_hash"],
-                    },
+                    summary,
                     ensure_ascii=False,
                     indent=2,
                 )
@@ -573,10 +610,18 @@ def _run(args: argparse.Namespace) -> int:
             value = import_spec(args.path, store)
             tag_current_system(config, store)
         elif args.command == "import-resolution":
-            value = import_resolution(args.path, store)
+            value = import_resolution(
+                args.path,
+                store,
+                root_only=args.root_only_resolution,
+            )
         elif args.command == "import-actual-self":
             resolution_value = _read_json_object(args.resolution)
-            import_resolution(args.resolution, store)
+            import_resolution(
+                args.resolution,
+                store,
+                root_only=args.root_only_resolution,
+            )
             trust_store = load_receipt_trust_store(config)
             value = import_actual_self_receipt(
                 args.path,
@@ -587,7 +632,11 @@ def _run(args: argparse.Namespace) -> int:
             )
         elif args.command == "import-search-authority":
             resolution_value = _read_json_object(args.resolution)
-            import_resolution(args.resolution, store)
+            import_resolution(
+                args.resolution,
+                store,
+                root_only=args.root_only_resolution,
+            )
             trust_store = load_receipt_trust_store(config)
             value = import_search_authority_receipt(
                 args.path,
@@ -598,7 +647,11 @@ def _run(args: argparse.Namespace) -> int:
             )
         elif args.command == "search-route":
             resolution_value = _read_json_object(args.resolution)
-            import_resolution(args.resolution, store)
+            import_resolution(
+                args.resolution,
+                store,
+                root_only=args.root_only_resolution,
+            )
             query_value = _read_json_object(args.query)
             trust_store = load_receipt_trust_store(config)
             for path in args.actual_self_receipts:

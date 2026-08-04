@@ -106,6 +106,7 @@ def resolve_system(
     *,
     registry_bindings_path: Path | None = None,
     registry_source_paths: dict[str, Path] | None = None,
+    emit_blocked_resolution: bool = False,
 ) -> dict[str, Any]:
     instance_path = instance_path.resolve()
     catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
@@ -147,6 +148,7 @@ def resolve_system(
             registry_bindings_path,
             resolution_root=resolution_root,
             source_paths=registry_source_paths,
+            emit_blocked_resolution=emit_blocked_resolution,
         )
     return resolution
 
