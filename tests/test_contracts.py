@@ -487,6 +487,76 @@ class ContractTest(unittest.TestCase):
         self.assertFalse(result["writeback_to_base"])
         self.assertEqual(self._read(paths["instance"]), instance)
 
+    def test_test_overlay_accounts_for_and_suppresses_subsystem_functions(self) -> None:
+        paths = self._write_fixture(suppress_optional=False)
+        bundle = self._read(paths["bundle"])
+        child = self._system(
+            bundle_refs=[{"ref": bundle["id"], "version": bundle["version"]}],
+            profiles={
+                "default": {
+                    "include": [bundle["id"]],
+                    "exclude": [],
+                    "overrides": {},
+                }
+            },
+        )
+        child["id"] = "child-system"
+        child = with_content_hash(child)
+        child_path = self.root / "child-system.json"
+        self._write(child_path, child)
+        system = self._read(paths["system"])
+        system["subsystem_refs"] = [
+            {
+                "path": child_path.name,
+                "content_hash": child["content_hash"],
+                "profile": "default",
+                "role": "child-service",
+            }
+        ]
+        self._write(paths["system"], with_content_hash(system))
+        instance = self._read(paths["instance"])
+        test = self._common("ellmos.system-test.v1", "subsystem-negative-test")
+        test.update(
+            {
+                "base_system_ref": {
+                    "path": paths["instance"].name,
+                    "content_hash": instance["content_hash"],
+                },
+                "base_hash": instance["content_hash"],
+                "mode": "resolution-only",
+                "suppressions": [],
+                "expected_functions": ["system.map"],
+                "expected_absent_functions": ["system.ui"],
+                "tolerated_gaps": [],
+                "writeback_to_base": False,
+            }
+        )
+        test_path = self.root / "subsystem-test.json"
+        self._write(test_path, with_content_hash(test))
+
+        with self.assertRaisesRegex(ValueError, "expected-absent functions"):
+            resolve_test(test_path, [paths["catalog"]])
+
+        test["suppressions"] = [
+            {"ref": "module:optional-ui", "reason": "negative child path"}
+        ]
+        self._write(test_path, with_content_hash(test))
+        result = resolve_test(test_path, [paths["catalog"]])
+        self.assertNotIn("system.ui", result["functions"])
+        self.assertNotIn(
+            "module:optional-ui",
+            {
+                (
+                    component["ref"]
+                    if isinstance(component["ref"], str)
+                    else component["ref"]["ref"]
+                )
+                for subsystem in result["subsystems"]
+                for bundle in subsystem["resolution"]["bundles"]
+                for component in bundle["components"]
+            },
+        )
+
     def test_cli_writes_only_to_explicit_output_atomically(self) -> None:
         paths = self._write_fixture()
         output = self.root / "out" / "resolution.json"
@@ -541,6 +611,171 @@ class ContractTest(unittest.TestCase):
             ValueError,
             "referenced manifest content_hash does not match canonical content",
         ):
+            resolve_system(paths["instance"], [paths["catalog"]])
+
+    def test_subsystem_refs_require_pinned_path_profile_role_and_unique_path(self) -> None:
+        valid_ref = {
+            "path": "systems/child.json",
+            "version": "1.0.0",
+            "profile": "default",
+            "role": "llm-core-system",
+        }
+        self.assertEqual(
+            validate_contract(self._system(subsystem_refs=[valid_ref])),
+            [],
+        )
+
+        candidates = (
+            ({key: value for key, value in valid_ref.items() if key != "profile"}, "profile is required"),
+            ({key: value for key, value in valid_ref.items() if key != "role"}, "role is required"),
+            ({key: value for key, value in valid_ref.items() if key != "version"}, "requires a version"),
+            ({**valid_ref, "path": "../outside.json"}, "may not escape"),
+            ({**valid_ref, "id": "not-a-path-only-ref"}, "id is unsupported"),
+        )
+        for subsystem_ref, expected in candidates:
+            errors = validate_contract(self._system(subsystem_refs=[subsystem_ref]))
+            self.assertTrue(any(expected in error for error in errors), errors)
+
+        duplicate = self._system(
+            subsystem_refs=[valid_ref, {**valid_ref, "path": "systems\\child.json"}]
+        )
+        self.assertTrue(
+            any("duplicate paths" in error for error in validate_contract(duplicate))
+        )
+
+    def test_resolver_keeps_recursive_subsystems_non_flattened_and_pinned(self) -> None:
+        paths = self._write_fixture()
+        bundle = self._read(paths["bundle"])
+        bundle_ref = {"ref": bundle["id"], "version": bundle["version"]}
+
+        grandchild = self._system(
+            bundle_refs=[],
+            profiles={
+                "default": {"include": [], "exclude": [], "overrides": {}}
+            },
+        )
+        grandchild["id"] = "grandchild-system"
+        grandchild = with_content_hash(grandchild)
+        grandchild_path = self.root / "grandchild-system.json"
+        self._write(grandchild_path, grandchild)
+
+        child = self._system(
+            bundle_refs=[bundle_ref],
+            subsystem_refs=[
+                {
+                    "path": grandchild_path.name,
+                    "content_hash": grandchild["content_hash"],
+                    "profile": "default",
+                    "role": "nested-service",
+                }
+            ],
+        )
+        child["id"] = "child-system"
+        child = with_content_hash(child)
+        child_path = self.root / "child-system.json"
+        self._write(child_path, child)
+
+        parent = self._read(paths["system"])
+        parent["subsystem_refs"] = [
+            {
+                "path": child_path.name,
+                "content_hash": child["content_hash"],
+                "profile": "default",
+                "role": "llm-core-system",
+            }
+        ]
+        self._write(paths["system"], with_content_hash(parent))
+
+        result = resolve_system(paths["instance"], [paths["catalog"]])
+        child_result = result["subsystems"][0]["resolution"]
+        grandchild_result = child_result["subsystems"][0]["resolution"]
+        self.assertEqual(result["functions"], ["system.map"])
+        self.assertEqual(child_result["functions"], ["system.map"])
+        self.assertEqual(grandchild_result["functions"], [])
+        self.assertEqual([item["id"] for item in result["bundles"]], [bundle["id"]])
+        self.assertEqual([item["id"] for item in child_result["bundles"]], [bundle["id"]])
+        self.assertEqual(grandchild_result["bundles"], [])
+        self.assertNotIn("instance", child_result)
+        self.assertEqual(result["subsystems"][0]["role"], "llm-core-system")
+        self.assertEqual(child_result["content_hash"], canonical_content_hash(child_result))
+        self.assertEqual(result["content_hash"], canonical_content_hash(result))
+
+        stale = self._read(paths["system"])
+        stale["subsystem_refs"][0]["content_hash"] = "0" * 64
+        self._write(paths["system"], with_content_hash(stale))
+        with self.assertRaisesRegex(ValueError, "content_hash pin"):
+            resolve_system(paths["instance"], [paths["catalog"]])
+
+    def test_resolver_rejects_subsystem_cycles_and_duplicate_system_identities(self) -> None:
+        paths = self._write_fixture()
+        parent = self._read(paths["system"])
+        child = self._system(
+            subsystem_refs=[
+                {
+                    "path": paths["system"].name,
+                    "version": parent["version"],
+                    "profile": "default",
+                    "role": "cycle-back",
+                }
+            ]
+        )
+        child["id"] = "child-system"
+        child = with_content_hash(child)
+        child_path = self.root / "child-cycle.json"
+        self._write(child_path, child)
+        parent["subsystem_refs"] = [
+            {
+                "path": child_path.name,
+                "version": child["version"],
+                "profile": "default",
+                "role": "child",
+            }
+        ]
+        self._write(paths["system"], with_content_hash(parent))
+        with self.assertRaisesRegex(ValueError, "subsystem reference cycle"):
+            resolve_system(paths["instance"], [paths["catalog"]])
+
+        paths = self._write_fixture()
+        first = self._system()
+        first["id"] = "duplicate-child"
+        first = with_content_hash(first)
+        second = deepcopy(first)
+        first_path = self.root / "first-child.json"
+        second_path = self.root / "second-child.json"
+        self._write(first_path, first)
+        self._write(second_path, second)
+        parent = self._read(paths["system"])
+        parent["subsystem_refs"] = [
+            {
+                "path": item.name,
+                "content_hash": first["content_hash"],
+                "profile": "default",
+                "role": role,
+            }
+            for item, role in ((first_path, "first"), (second_path, "second"))
+        ]
+        self._write(paths["system"], with_content_hash(parent))
+        with self.assertRaisesRegex(ValueError, "duplicate resolved subsystem id"):
+            resolve_system(paths["instance"], [paths["catalog"]])
+
+    def test_output_bindings_dedupe_exact_policy_and_reject_conflicts(self) -> None:
+        paths = self._write_fixture()
+        instance = self._read(paths["instance"])
+        runtime_binding = deepcopy(instance["output_bindings"][0])
+        system = self._read(paths["system"])
+        system["output_bindings"].append(runtime_binding)
+        self._write(paths["system"], with_content_hash(system))
+
+        result = resolve_system(paths["instance"], [paths["catalog"]])
+        self.assertEqual(len(result["output_bindings"]), 2)
+        self.assertEqual(
+            sum(item["kind"] == "runtime_log" for item in result["output_bindings"]),
+            1,
+        )
+
+        system["output_bindings"][-1]["retention"] = "P7D"
+        self._write(paths["system"], with_content_hash(system))
+        with self.assertRaisesRegex(ValueError, "conflicting output binding policy"):
             resolve_system(paths["instance"], [paths["catalog"]])
 
     def _write_fixture(

@@ -36,6 +36,10 @@
     },
     "bundle_refs": {"type": "array", "items": {"$ref": "#/$defs/pinned_ref"}},
     "stack_refs": {"type": "array", "items": {"$ref": "#/$defs/pinned_ref"}},
+    "subsystem_refs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/subsystem_ref"}
+    },
     "profiles": {
       "type": "object",
       "additionalProperties": {"$ref": "#/$defs/profile"}
@@ -102,6 +106,24 @@
           ]
         }
       ]
+    },
+    "subsystem_ref": {
+      "type": "object",
+      "required": ["path", "profile", "role"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "commit": {"type": "string", "minLength": 1},
+        "content_hash": {"$ref": "#/$defs/hash"},
+        "profile": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1}
+      },
+      "anyOf": [
+        {"required": ["version"]},
+        {"required": ["commit"]},
+        {"required": ["content_hash"]}
+      ],
+      "additionalProperties": false
     },
     "profile": {
       "type": "object",

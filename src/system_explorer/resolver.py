@@ -211,15 +211,7 @@ def resolve_test(test_path: Path, catalog_paths: Iterable[Path]) -> dict[str, An
         )
 
     suppressed = _apply_test_suppressions(resolution, test["suppressions"])
-    functions = sorted(
-        {
-            function
-            for bundle in suppressed["bundles"]
-            for component in bundle["components"]
-            for function in component.get("provides", [])
-            if component.get("desired_status") not in {"suppressed", "unavailable"}
-        }
-    )
+    functions = _resolution_functions(suppressed)
     expected = set(test["expected_functions"])
     tolerated = set(test["tolerated_gaps"])
     missing = sorted(expected - set(functions))
@@ -250,6 +242,7 @@ def resolve_test(test_path: Path, catalog_paths: Iterable[Path]) -> dict[str, An
             "desired_profile": suppressed["desired_profile"],
             "bundles": suppressed["bundles"],
             "functions": functions,
+            "subsystems": suppressed.get("subsystems", []),
             "suppressions": sorted(
                 test["suppressions"], key=lambda item: _ref_name(item["ref"])
             ),
@@ -273,7 +266,21 @@ def _resolve_system_document(
     component_states: dict[str, Any],
     instance: dict[str, Any] | None,
     resolution_root: Path,
+    ancestry_paths: tuple[Path, ...] = (),
+    ancestry_system_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
+    system_path = system_path.resolve()
+    if system_path in ancestry_paths:
+        cycle = (*ancestry_paths[ancestry_paths.index(system_path) :], system_path)
+        raise ValueError(
+            "subsystem reference cycle: "
+            + " -> ".join(path.as_posix() for path in cycle)
+        )
+    if system["id"] in ancestry_system_ids:
+        cycle = (*ancestry_system_ids[ancestry_system_ids.index(system["id"]) :], system["id"])
+        raise ValueError("subsystem identity cycle: " + " -> ".join(cycle))
+    child_ancestry_paths = (*ancestry_paths, system_path)
+    child_ancestry_system_ids = (*ancestry_system_ids, system["id"])
     if system["status"] not in RESOLVABLE_STATUSES:
         raise ValueError(
             f"system {system['id']!r} has non-resolvable status {system['status']!r}"
@@ -396,9 +403,46 @@ def _resolve_system_document(
             if component.get("desired_status") not in {"suppressed", "unavailable"}
         }
     )
-    output_bindings = list(system.get("output_bindings", []))
-    if instance:
-        output_bindings.extend(instance.get("output_bindings", []))
+    output_bindings = _merge_output_bindings(
+        system.get("output_bindings", []),
+        instance.get("output_bindings", []) if instance else [],
+    )
+
+    subsystems: list[dict[str, Any]] = []
+    seen_subsystem_ids: set[str] = set()
+    for index, subsystem_ref in enumerate(system.get("subsystem_refs", [])):
+        label = f"$.subsystem_refs[{index}]"
+        child_path = _resolve_contained_ref(subsystem_ref, resolution_root, label)
+        child_system = _load_contract(child_path, "ellmos.system.v1")
+        _verify_pin(subsystem_ref, child_system, label)
+        child_id = child_system["id"]
+        if child_id in seen_subsystem_ids:
+            raise ValueError(f"duplicate resolved subsystem id: {child_id}")
+        seen_subsystem_ids.add(child_id)
+        child_resolution = _resolve_system_document(
+            child_system,
+            child_path,
+            catalogs,
+            desired_profile=subsystem_ref["profile"],
+            component_states={},
+            instance=None,
+            resolution_root=resolution_root,
+            ancestry_paths=child_ancestry_paths,
+            ancestry_system_ids=child_ancestry_system_ids,
+        )
+        source_ref = {
+            field: subsystem_ref[field]
+            for field in ("path", "version", "commit", "content_hash")
+            if field in subsystem_ref
+        }
+        subsystems.append(
+            {
+                "role": subsystem_ref["role"],
+                "profile": subsystem_ref["profile"],
+                "source_ref": source_ref,
+                "resolution": child_resolution,
+            }
+        )
 
     result: dict[str, Any] = {
         "schema": "system-explorer.resolution.v1",
@@ -413,12 +457,13 @@ def _resolve_system_document(
         "stacks": sorted(stack_summaries, key=lambda item: item["id"]),
         "bundles": sorted(bundles, key=lambda item: item["id"]),
         "functions": functions,
-        "output_bindings": sorted(
-            output_bindings,
+        "output_bindings": output_bindings,
+        "subsystems": sorted(
+            subsystems,
             key=lambda item: (
-                item.get("kind", ""),
-                item.get("owner_ref", ""),
-                item.get("storage_uri", ""),
+                item["resolution"]["system"]["id"],
+                item["role"],
+                item["profile"],
             ),
         ),
         "runtime_actions": [],
@@ -439,6 +484,41 @@ def _resolve_system_document(
             "content_hash": instance["content_hash"],
         }
     return with_content_hash(result)
+
+
+def _merge_output_bindings(*groups: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    exact: dict[str, dict[str, Any]] = {}
+    policies: dict[tuple[str, str, str], str] = {}
+    for binding in (item for group in groups for item in group):
+        canonical = json.dumps(
+            binding,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        policy_key = (
+            str(binding.get("kind", "")),
+            str(binding.get("owner_ref", "")),
+            str(binding.get("storage_uri", "")),
+        )
+        previous = policies.get(policy_key)
+        if previous is not None and previous != canonical:
+            raise ValueError(
+                "conflicting output binding policy for "
+                f"kind={policy_key[0]!r}, owner_ref={policy_key[1]!r}, "
+                f"storage_uri={policy_key[2]!r}"
+            )
+        policies[policy_key] = canonical
+        exact.setdefault(canonical, deepcopy(binding))
+    return sorted(
+        exact.values(),
+        key=lambda item: (
+            item.get("kind", ""),
+            item.get("owner_ref", ""),
+            item.get("storage_uri", ""),
+            json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        ),
+    )
 
 
 def _resolved_components(
@@ -608,9 +688,16 @@ def _apply_test_suppressions(
                 result["instance"]["instance_id"],
             }
         )
-    for bundle in result["bundles"]:
-        available.add(bundle["id"])
-        available.update(_ref_name(item["ref"]) for item in bundle["components"])
+    def collect_available(node: dict[str, Any]) -> None:
+        for bundle in node["bundles"]:
+            available.add(bundle["id"])
+            available.update(
+                _ref_name(item["ref"]) for item in bundle["components"]
+            )
+        for subsystem in node.get("subsystems", []):
+            collect_available(subsystem["resolution"])
+
+    collect_available(result)
     requested = {_ref_name(item["ref"]) for item in suppressions}
     unknown = sorted(requested - available)
     if unknown:
@@ -626,19 +713,41 @@ def _apply_test_suppressions(
         & requested
     ):
         raise ValueError("a system-test may not suppress its base system or instance")
-    bundles: list[dict[str, Any]] = []
-    for bundle in result["bundles"]:
-        if bundle["id"] in requested:
-            continue
-        item = deepcopy(bundle)
-        item["components"] = [
-            component
-            for component in item["components"]
-            if _ref_name(component["ref"]) not in requested
-        ]
-        bundles.append(item)
-    result["bundles"] = bundles
+    def suppress_node(node: dict[str, Any]) -> None:
+        bundles: list[dict[str, Any]] = []
+        for bundle in node["bundles"]:
+            if bundle["id"] in requested:
+                continue
+            item = deepcopy(bundle)
+            item["components"] = [
+                component
+                for component in item["components"]
+                if _ref_name(component["ref"]) not in requested
+            ]
+            bundles.append(item)
+        node["bundles"] = bundles
+        node["functions"] = _resolution_functions(node, include_subsystems=False)
+        for subsystem in node.get("subsystems", []):
+            suppress_node(subsystem["resolution"])
+
+    suppress_node(result)
     return result
+
+
+def _resolution_functions(
+    resolution: dict[str, Any], *, include_subsystems: bool = True
+) -> list[str]:
+    functions = {
+        function
+        for bundle in resolution["bundles"]
+        for component in bundle["components"]
+        for function in component.get("provides", [])
+        if component.get("desired_status") not in {"suppressed", "unavailable"}
+    }
+    if include_subsystems:
+        for subsystem in resolution.get("subsystems", []):
+            functions.update(_resolution_functions(subsystem["resolution"]))
+    return sorted(functions)
 
 
 def _check_ref_dependency_cycles(items: list[Any], label: str) -> None:

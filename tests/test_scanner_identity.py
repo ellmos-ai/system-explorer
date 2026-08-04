@@ -368,3 +368,134 @@ class ScannerIdentityTest(unittest.TestCase):
             if row["function"]["name"] == "function.other"
         )
         self.assertEqual(other["desired_by_scope"][0]["verdict"], "uncovered")
+
+    def test_subsystem_composition_scans_outside_git_with_verified_pin(self) -> None:
+        child = self._system_manifest("child-system")
+        child_path = (
+            self.scan_root / "systems" / "products" / "child" / "system.v1.json"
+        )
+        child_path.parent.mkdir(parents=True)
+        child_path.write_text(json.dumps(child), encoding="utf-8")
+        parent = self._system_manifest(
+            "parent-system",
+            subsystem_refs=[
+                {
+                    "path": "systems/products/child/system.v1.json",
+                    "content_hash": child["content_hash"],
+                    "profile": "default",
+                    "role": "child-service",
+                }
+            ],
+        )
+        parent_path = (
+            self.scan_root / "systems" / "products" / "parent" / "system.v1.json"
+        )
+        parent_path.parent.mkdir(parents=True)
+        parent_path.write_text(json.dumps(parent), encoding="utf-8")
+
+        with Store(self.db) as store:
+            scan(self._config(), store)
+            edges = store.db.execute(
+                "SELECT status, metadata_json FROM edges WHERE relation = 'composes'"
+            ).fetchall()
+
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(edges[0]["status"], "declared")
+        self.assertTrue(json.loads(edges[0]["metadata_json"])["pin_verified"])
+
+    def test_subsystem_scanner_does_not_trust_unpinned_or_invalid_targets(self) -> None:
+        child = self._system_manifest("child-system")
+        child_path = self.scan_root / "child.json"
+        child_path.write_text(json.dumps(child), encoding="utf-8")
+        unpinned = self._system_manifest(
+            "unpinned-parent",
+            subsystem_refs=[
+                {
+                    "path": "child.json",
+                    "profile": "default",
+                    "role": "child-service",
+                }
+            ],
+        )
+        (self.scan_root / "unpinned.json").write_text(
+            json.dumps(unpinned), encoding="utf-8"
+        )
+        wrong_pin = self._system_manifest(
+            "wrong-pin-parent",
+            subsystem_refs=[
+                {
+                    "path": "child.json",
+                    "content_hash": "0" * 64,
+                    "profile": "default",
+                    "role": "child-service",
+                }
+            ],
+        )
+        (self.scan_root / "wrong-pin.json").write_text(
+            json.dumps(wrong_pin), encoding="utf-8"
+        )
+        child["content_hash"] = "f" * 64
+        child_path.write_text(json.dumps(child), encoding="utf-8")
+
+        with Store(self.db) as store:
+            scan(self._config(), store)
+            edges = store.db.execute(
+                "SELECT status FROM edges WHERE relation = 'composes'"
+            ).fetchall()
+
+        self.assertEqual(edges, [])
+
+    def test_subsystem_scanner_marks_wrong_pin_unproven(self) -> None:
+        child = self._system_manifest("child-system")
+        (self.scan_root / "child.json").write_text(
+            json.dumps(child), encoding="utf-8"
+        )
+        parent = self._system_manifest(
+            "parent-system",
+            subsystem_refs=[
+                {
+                    "path": "child.json",
+                    "content_hash": "0" * 64,
+                    "profile": "default",
+                    "role": "child-service",
+                }
+            ],
+        )
+        (self.scan_root / "parent.json").write_text(
+            json.dumps(parent), encoding="utf-8"
+        )
+
+        with Store(self.db) as store:
+            scan(self._config(), store)
+            edges = store.db.execute(
+                "SELECT status, metadata_json FROM edges WHERE relation = 'composes'"
+            ).fetchall()
+
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(edges[0]["status"], "unproven")
+        self.assertFalse(json.loads(edges[0]["metadata_json"])["pin_verified"])
+
+    def _system_manifest(
+        self, system_id: str, **overrides: object
+    ) -> dict[str, object]:
+        value: dict[str, object] = {
+            "schema": "ellmos.system.v1",
+            "id": system_id,
+            "version": "1.0.0",
+            "status": "active",
+            "lifecycle": "active",
+            "authority": {"owner": "test"},
+            "provenance": {"source": "unit-test"},
+            "purpose": ["Test subsystem scan"],
+            "bundle_refs": [],
+            "stack_refs": [],
+            "profiles": {
+                "default": {"include": [], "exclude": [], "overrides": {}}
+            },
+            "bindings": [],
+            "output_bindings": [],
+            "assurance_contract": "assurance://test",
+        }
+        value.update(overrides)
+        value["content_hash"] = canonical_content_hash(value)
+        return value
