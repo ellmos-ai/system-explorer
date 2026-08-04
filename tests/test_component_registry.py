@@ -9,7 +9,11 @@ from pathlib import Path
 
 from system_explorer.cli import main
 from system_explorer.component_registry import inspect_component_registry
-from system_explorer.contracts import validate_contract, with_content_hash
+from system_explorer.contracts import (
+    canonical_content_hash,
+    validate_contract,
+    with_content_hash,
+)
 from system_explorer.resolver import resolve_system
 
 
@@ -418,6 +422,63 @@ class ComponentRegistryTest(unittest.TestCase):
                 registry_bindings_path=registry_path,
                 registry_source_paths={"registry:modules": self.module_source},
             )
+
+    def test_system_resolver_applies_registry_gate_to_nested_subsystems(self) -> None:
+        _, catalog_path, system_path, instance_path = self._system_fixture(
+            "required",
+            component_ref="module:native",
+        )
+        parent = json.loads(system_path.read_text(encoding="utf-8"))
+        child = deepcopy(parent)
+        child["id"] = "fixture-child-system"
+        child = with_content_hash(child)
+        child_path = self.root / "child-system.json"
+        self._write(child_path, child)
+        parent["subsystem_refs"] = [
+            {
+                "path": child_path.name,
+                "content_hash": child["content_hash"],
+                "profile": "default",
+                "role": "child-service",
+            }
+        ]
+        self._write(system_path, with_content_hash(parent))
+        registry_path = self.root / "bindings.json"
+        self._write(
+            registry_path,
+            self._registry(
+                bindings={
+                    "module": {
+                        "module:native": {
+                            "source": "registry:modules",
+                            "record_id": "native-module",
+                        }
+                    }
+                }
+            ),
+        )
+
+        result = resolve_system(
+            instance_path,
+            [catalog_path],
+            registry_bindings_path=registry_path,
+            registry_source_paths={"registry:modules": self.module_source},
+        )
+        child_result = result["subsystems"][0]["resolution"]
+        self.assertEqual(
+            child_result["bundles"][0]["components"][0]["registry_resolution"][
+                "class"
+            ],
+            "native-binding",
+        )
+        self.assertEqual(
+            child_result["component_registry"]["source_verification"],
+            "verified",
+        )
+        self.assertEqual(
+            child_result["content_hash"],
+            canonical_content_hash(child_result),
+        )
 
     def _registry(
         self,

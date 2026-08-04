@@ -264,6 +264,14 @@ Details are available in [ARCHITECTURE.md](ARCHITECTURE.md), data rules in
 A stored `system-explorer.resolution.v1` output can be imported directly as
 desired evidence:
 
+`ellmos.system.v1` may compose pinned `subsystem_refs`. The resolver validates
+their role and profile, rejects path/identity cycles, and keeps every child as
+an independently hashed nested resolution; child bundles and functions are
+never flattened into the parent. Identical system/instance output bindings
+are deduplicated, while conflicting policies for the same target fail closed.
+Until scoped subsystem projection exists, the resolution importer rejects a
+non-empty subsystem tree explicitly instead of silently dropping it.
+
 ```powershell
 system-explorer coverage `
   --config explorer.json `

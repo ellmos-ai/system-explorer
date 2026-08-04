@@ -375,6 +375,14 @@ def _validate_resolution(value: Any) -> None:
                 raise ValueError(f"resolution instance requires non-empty {field}")
     if not isinstance(value.get("bundles"), list):
         raise ValueError("resolution bundles must be an array")
+    subsystems = value.get("subsystems", [])
+    if not isinstance(subsystems, list):
+        raise ValueError("resolution subsystems must be an array")
+    if subsystems:
+        raise ValueError(
+            "resolution subsystems are not importable until scoped subsystem "
+            "projection is implemented"
+        )
     if not isinstance(value.get("functions"), list) or not all(
         isinstance(function, str) and function for function in value["functions"]
     ):

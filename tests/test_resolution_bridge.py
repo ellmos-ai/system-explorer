@@ -209,6 +209,30 @@ class ResolutionBridgeTest(unittest.TestCase):
             proposal["relevant_function_gaps"],
         )
 
+    def test_resolution_bridge_rejects_nonempty_subsystems_until_scoped_import(self) -> None:
+        value = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        child = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        child.pop("instance", None)
+        child["system"]["id"] = "child-system"
+        child["subsystems"] = []
+        child["content_hash"] = canonical_content_hash(child)
+        value["subsystems"] = [
+            {
+                "role": "child-service",
+                "profile": "default",
+                "source_ref": {"path": "systems/child.json", "version": "1.0.0"},
+                "resolution": child,
+            }
+        ]
+        path = self.root / "nested-resolution.json"
+        self._write_resolution(path, value)
+
+        with Store(self.db) as store, self.assertRaisesRegex(
+            ValueError,
+            "not importable until scoped subsystem projection",
+        ):
+            import_resolution(path, store)
+
     def test_resolution_instances_remain_isolated_in_coverage(self) -> None:
         first = json.loads(FIXTURE.read_text(encoding="utf-8"))
         second = json.loads(FIXTURE.read_text(encoding="utf-8"))

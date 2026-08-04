@@ -170,6 +170,14 @@ OUTPUT_BINDING_FIELDS = {
     "desktop_shortcut",
     "materialization",
 }
+SUBSYSTEM_REF_FIELDS = {
+    "path",
+    "version",
+    "commit",
+    "content_hash",
+    "profile",
+    "role",
+}
 
 
 def canonical_json_bytes(value: dict[str, Any]) -> bytes:
@@ -660,6 +668,7 @@ def _validate_system(value: dict[str, Any], errors: list[str]) -> None:
     _string_list(value.get("purpose"), "$.purpose", errors, nonempty=True)
     _validate_ref_list(value.get("bundle_refs"), "$.bundle_refs", errors, pinned=True)
     _validate_ref_list(value.get("stack_refs"), "$.stack_refs", errors, pinned=True)
+    _validate_subsystem_refs(value.get("subsystem_refs", []), errors)
     _validate_profiles(value.get("profiles"), "$.profiles", errors)
     if not isinstance(value.get("bindings"), list):
         errors.append("$.bindings must be an array")
@@ -670,6 +679,32 @@ def _validate_system(value: dict[str, Any], errors: list[str]) -> None:
         errors,
         pinned=False,
     )
+
+
+def _validate_subsystem_refs(value: Any, errors: list[str]) -> None:
+    path = "$.subsystem_refs"
+    if not isinstance(value, list):
+        errors.append(f"{path} must be an array")
+        return
+    seen: set[str] = set()
+    for index, item in enumerate(value):
+        item_path = f"{path}[{index}]"
+        if not isinstance(item, dict):
+            errors.append(f"{item_path} must be an object")
+            continue
+        _require(item, {"path", "profile", "role"}, item_path, errors)
+        for field in sorted(set(item) - SUBSYSTEM_REF_FIELDS):
+            errors.append(f"{item_path}.{field} is unsupported")
+        _relative_path(item.get("path"), f"{item_path}.path", errors)
+        _nonempty_string(item.get("profile"), f"{item_path}.profile", errors)
+        _nonempty_string(item.get("role"), f"{item_path}.role", errors)
+        _validate_ref(item, item_path, errors, pinned=True)
+        ref_path = item.get("path")
+        if isinstance(ref_path, str) and ref_path:
+            normalized = ref_path.replace("\\", "/").casefold()
+            if normalized in seen:
+                errors.append(f"{path} contains duplicate paths")
+            seen.add(normalized)
 
 
 def _validate_instance(value: dict[str, Any], errors: list[str]) -> None:

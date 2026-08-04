@@ -202,69 +202,97 @@ def apply_component_registry_gate(
     declared_only = bindings["declared_only"]
     used_sources: set[str] = set()
     gated = deepcopy(resolution)
-    activation: dict[str, Any] = {}
+    activation_by_node: dict[int, dict[str, Any]] = {}
+    blocked: list[tuple[str, str, list[str]]] = []
 
-    for bundle in gated["bundles"]:
-        unresolved_by_requirement = {
-            "required": [],
-            "recommended": [],
-            "optional": [],
-        }
-        for component in bundle["components"]:
-            ref = _ref_name(component["ref"])
-            binding = binding_index.get(ref)
-            declared = declared_only.get(ref)
-            if binding is None and declared is None:
-                raise ValueError(
-                    f"component {ref!r} has no exact registry binding or "
-                    "declared-only entry"
-                )
-            if binding is not None:
-                if binding["component_type"] != component["type"]:
+    def gate_node(node: dict[str, Any], scope: str) -> None:
+        activation: dict[str, Any] = {}
+        bundles = node.get("bundles")
+        if not isinstance(bundles, list):
+            raise ValueError(f"{scope}.bundles must be an array")
+        for bundle in bundles:
+            unresolved_by_requirement = {
+                "required": [],
+                "recommended": [],
+                "optional": [],
+            }
+            for component in bundle["components"]:
+                ref = _ref_name(component["ref"])
+                binding = binding_index.get(ref)
+                declared = declared_only.get(ref)
+                if binding is None and declared is None:
+                    raise ValueError(
+                        f"component {ref!r} has no exact registry binding or "
+                        "declared-only entry"
+                    )
+                if binding is not None:
+                    if binding["component_type"] != component["type"]:
+                        raise ValueError(
+                            f"component {ref!r} type {component['type']!r} does not "
+                            f"match registry type {binding['component_type']!r}"
+                        )
+                    used_sources.add(binding["source"])
+                    if binding.get("crosswalk_source"):
+                        used_sources.add(binding["crosswalk_source"])
+                    component["registry_resolution"] = {
+                        key: binding[key]
+                        for key in (
+                            "source",
+                            "record_id",
+                            "profile",
+                            "crosswalk_source",
+                            "crosswalk_record_id",
+                        )
+                        if key in binding
+                    }
+                    component["registry_resolution"]["class"] = "native-binding"
+                    continue
+                if declared["component_type"] != component["type"]:
                     raise ValueError(
                         f"component {ref!r} type {component['type']!r} does not "
-                        f"match registry type {binding['component_type']!r}"
+                        f"match declared-only type {declared['component_type']!r}"
                     )
-                used_sources.add(binding["source"])
-                if binding.get("crosswalk_source"):
-                    used_sources.add(binding["crosswalk_source"])
+                requirement = component["requirement"]
+                unresolved_by_requirement[requirement].append(ref)
                 component["registry_resolution"] = {
-                    key: binding[key]
-                    for key in (
-                        "source",
-                        "record_id",
-                        "profile",
-                        "crosswalk_source",
-                        "crosswalk_record_id",
-                    )
-                    if key in binding
+                    "class": "declared-only",
+                    "reason": declared["reason"],
+                    "runtime_authority": False,
+                    "may_satisfy_actual_coverage": False,
                 }
-                component["registry_resolution"]["class"] = "native-binding"
-                continue
-            if declared["component_type"] != component["type"]:
-                raise ValueError(
-                    f"component {ref!r} type {component['type']!r} does not "
-                    f"match declared-only type {declared['component_type']!r}"
-                )
-            requirement = component["requirement"]
-            unresolved_by_requirement[requirement].append(ref)
-            component["registry_resolution"] = {
-                "class": "declared-only",
-                "reason": declared["reason"],
-                "runtime_authority": False,
-                "may_satisfy_actual_coverage": False,
-            }
-            component["desired_status"] = "unavailable"
+                component["desired_status"] = "unavailable"
 
-        for refs in unresolved_by_requirement.values():
-            refs.sort()
-        state = _activation_state(unresolved_by_requirement)
-        activation[bundle["id"]] = {
-            "state": state,
-            "required_unresolved": unresolved_by_requirement["required"],
-            "recommended_unresolved": unresolved_by_requirement["recommended"],
-            "optional_unresolved": unresolved_by_requirement["optional"],
-        }
+            for refs in unresolved_by_requirement.values():
+                refs.sort()
+            state = _activation_state(unresolved_by_requirement)
+            activation[bundle["id"]] = {
+                "state": state,
+                "required_unresolved": unresolved_by_requirement["required"],
+                "recommended_unresolved": unresolved_by_requirement["recommended"],
+                "optional_unresolved": unresolved_by_requirement["optional"],
+            }
+            if state == "blocked":
+                blocked.append(
+                    (scope, bundle["id"], unresolved_by_requirement["required"])
+                )
+        activation_by_node[id(node)] = activation
+
+        subsystems = node.get("subsystems", [])
+        if not isinstance(subsystems, list):
+            raise ValueError(f"{scope}.subsystems must be an array")
+        for index, subsystem in enumerate(subsystems):
+            if not isinstance(subsystem, dict) or not isinstance(
+                subsystem.get("resolution"), dict
+            ):
+                raise ValueError(
+                    f"{scope}.subsystems[{index}].resolution must be an object"
+                )
+            child = subsystem["resolution"]
+            child_id = child.get("system", {}).get("id", str(index))
+            gate_node(child, f"{scope}.subsystems[{child_id}]")
+
+    root_id = gated.get("system", {}).get("id", "root")
+    gate_node(gated, f"resolution[{root_id}]")
 
     repository_root = _repository_root(bindings_path)
     resolved, _, failures = _verify_sources(
@@ -283,40 +311,41 @@ def apply_component_registry_gate(
             + "; ".join(sorted(set(failures)))
         )
 
-    blocked = {
-        bundle_id: item["required_unresolved"]
-        for bundle_id, item in activation.items()
-        if item["state"] == "blocked"
-    }
     if blocked:
         details = "; ".join(
-            f"{bundle_id}: {', '.join(refs)}"
-            for bundle_id, refs in sorted(blocked.items())
+            f"{scope}/{bundle_id}: {', '.join(refs)}"
+            for scope, bundle_id, refs in sorted(blocked)
         )
         raise ValueError(
             "component registry activation blocked by required declared-only "
             f"components: {details}"
         )
 
-    gated["component_registry"] = {
-        "schema": bindings["schema"],
-        "id": bindings["id"],
-        "version": bindings["version"],
-        "content_hash": bindings["content_hash"],
-        "activation": activation,
-        "source_verification": "verified",
-    }
-    gated["functions"] = sorted(
-        {
-            function
-            for bundle in gated["bundles"]
-            for component in bundle["components"]
-            for function in component.get("provides", [])
-            if component.get("desired_status") not in {"suppressed", "unavailable"}
+    def finalize(node: dict[str, Any]) -> dict[str, Any]:
+        for subsystem in node.get("subsystems", []):
+            subsystem["resolution"] = finalize(subsystem["resolution"])
+        node["component_registry"] = {
+            "schema": bindings["schema"],
+            "id": bindings["id"],
+            "version": bindings["version"],
+            "content_hash": bindings["content_hash"],
+            "activation": activation_by_node[id(node)],
+            "source_verification": "verified",
         }
-    )
-    gated.pop("content_hash", None)
-    return with_content_hash(gated)
+        node["functions"] = sorted(
+            {
+                function
+                for bundle in node["bundles"]
+                for component in bundle["components"]
+                for function in component.get("provides", [])
+                if component.get("desired_status")
+                not in {"suppressed", "unavailable"}
+            }
+        )
+        node.pop("content_hash", None)
+        return with_content_hash(node)
+
+    return finalize(gated)
 
 
 def parse_source_path_arguments(values: Iterable[str]) -> dict[str, Path]:

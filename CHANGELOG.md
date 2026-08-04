@@ -8,6 +8,13 @@
 
 ### Hinzugefügt
 
+- gepinnte, rekursive und nicht-flattenende `subsystem_refs` für
+  `ellmos.system.v1`, einschließlich Pfad-/Identitätszyklen,
+  Registry-Gates und `composes`-Graphkanten
+- konfliktprüfende Deduplizierung identischer Output-Bindings über System und
+  Instanz; widersprüchliche Policies am gleichen Ziel brechen fail-closed ab
+- Resolution-Bridge lehnt verschachtelte Systeme bis zur namespaced
+  Importprojektion ausdrücklich ab, statt sie still zu verlieren
 - kanonischer `ellmos.component-registry-bindings.v1`-Vertrag mit
   typisierten, SHA-256-gepinnten Quellen und exakten Record-IDs
 - separat gehashte Skill-Crosswalk-Quellen sowie fail-closed Prüfung von

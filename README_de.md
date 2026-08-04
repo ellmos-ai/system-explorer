@@ -271,6 +271,15 @@ Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), die Datenregeln in
 
 ## Resolution als Desired-Evidenz
 
+`ellmos.system.v1` kann gepinnte `subsystem_refs` zusammensetzen. Der Resolver
+validiert Rolle und Profil, weist Pfad- und Identitätszyklen zurück und hält
+jedes Kind als eigenständig gehashte verschachtelte Resolution; Bundle und
+Funktionen des Kindes werden nicht in den Parent abgeflacht. Identische
+Output-Bindings aus System und Instanz werden dedupliziert, widersprüchliche
+Policies für dasselbe Ziel brechen fail-closed ab. Bis eine scope-getrennte
+Subsystemprojektion existiert, lehnt der Resolution-Importer nichtleere
+Subsystembäume ausdrücklich ab, statt sie still zu verlieren.
+
 Ein gespeicherter `system-explorer.resolution.v1`-Output lässt sich direkt als
 Desired-Evidenz importieren:
 

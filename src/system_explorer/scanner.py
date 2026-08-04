@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .contracts import canonical_content_hash, validate_contract
 from .deployment import register_deployment
 from .federation import register_federation
 from .infrastructure import (
@@ -672,7 +673,7 @@ def _scan_file(
     stats["edges"] += 1
 
     if path.name in MANIFEST_NAMES or _is_schema_manifest(path):
-        _scan_manifest(path, root_id, evidence_id, store, stats)
+        _scan_manifest(path, root, root_id, evidence_id, store, stats)
     registry_stats = register_registry_file(
         path, artifact_id, evidence_id, config, store
     )
@@ -718,7 +719,12 @@ def _scan_file(
 
 
 def _scan_manifest(
-    path: Path, root_id: str, evidence_id: str, store: Store, stats: dict[str, int]
+    path: Path,
+    scan_root: Path,
+    root_id: str,
+    evidence_id: str,
+    store: Store,
+    stats: dict[str, int],
 ) -> None:
     value = load_manifest(path)
     schema = value.get("schema", "")
@@ -755,6 +761,16 @@ def _scan_manifest(
     store.add_edge(root_id, "contains", carrier_id, evidence_id=evidence_id)
     stats["nodes"] += 1
     stats["edges"] += 1
+    if schema == "ellmos.system.v1" and not validate_contract(value):
+        _scan_subsystem_composition(
+            path,
+            scan_root,
+            value,
+            carrier_id,
+            evidence_id,
+            store,
+            stats,
+        )
     manifest_id = value.get("id")
     if (
         schema == "ellmos.module.v2"
@@ -900,6 +916,109 @@ def _scan_manifest(
         )
         stats["nodes"] += 1
         stats["edges"] += 1
+
+
+def _scan_subsystem_composition(
+    path: Path,
+    scan_root: Path,
+    value: dict[str, Any],
+    carrier_id: str,
+    evidence_id: str,
+    store: Store,
+    stats: dict[str, int],
+) -> None:
+    scan_root = scan_root.resolve()
+    for subsystem_ref in value.get("subsystem_refs", []):
+        if not isinstance(subsystem_ref, dict):
+            continue
+        relative = subsystem_ref.get("path")
+        if not isinstance(relative, str) or not relative:
+            continue
+        try:
+            target_path = _resolve_scanned_subsystem_path(
+                path, scan_root, relative
+            )
+            if target_path is None:
+                continue
+            target = load_manifest(target_path)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if target.get("schema") != "ellmos.system.v1" or validate_contract(target):
+            continue
+        target_id = target.get("id")
+        if not isinstance(target_id, str) or not target_id:
+            continue
+        actual_commit = target.get("commit")
+        if not actual_commit and isinstance(target.get("provenance"), dict):
+            actual_commit = target["provenance"].get("commit")
+        pin_verified = all(
+            expected is None or expected == actual
+            for expected, actual in (
+                (subsystem_ref.get("version"), target.get("version")),
+                (subsystem_ref.get("commit"), actual_commit),
+                (subsystem_ref.get("content_hash"), canonical_content_hash(target)),
+            )
+        )
+        target_carrier = store.add_node(
+            "carrier",
+            target_id,
+            node_id=f"carrier:{target_id}",
+            scope=str(target_path.parent),
+            metadata={
+                "carrier_kind": "system",
+                "manifest_schema": "ellmos.system.v1",
+                "manifest_version": target.get("version"),
+                "reference_only": True,
+            },
+        )
+        store.add_edge(
+            carrier_id,
+            "composes",
+            target_carrier,
+            status="declared" if pin_verified else "unproven",
+            evidence_id=evidence_id,
+            metadata={
+                "role": subsystem_ref.get("role"),
+                "profile": subsystem_ref.get("profile"),
+                "path": relative.replace("\\", "/"),
+                "pin_verified": pin_verified,
+            },
+        )
+        stats["nodes"] += 1
+        stats["edges"] += 1
+
+
+def _resolve_scanned_subsystem_path(
+    manifest_path: Path, scan_root: Path, relative: str
+) -> Path | None:
+    relative_path = Path(relative.replace("\\", "/"))
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        return None
+    anchors: list[Path] = []
+    current = manifest_path.parent.resolve()
+    while current == scan_root or scan_root in current.parents:
+        anchors.append(current)
+        if current == scan_root:
+            break
+        current = current.parent
+    candidates: list[Path] = []
+    for anchor in anchors:
+        candidates.append((anchor / relative_path).resolve())
+        if (
+            relative_path.parts
+            and anchor.name.lstrip(".").casefold()
+            == relative_path.parts[0].casefold()
+        ):
+            candidates.append((anchor.joinpath(*relative_path.parts[1:])).resolve())
+    existing: list[Path] = []
+    for candidate in candidates:
+        try:
+            candidate.relative_to(scan_root)
+        except ValueError:
+            continue
+        if candidate.is_file() and candidate not in existing:
+            existing.append(candidate)
+    return existing[0] if len(existing) == 1 else None
 
 
 def _declared_carrier(name: str, store: Store) -> str:
