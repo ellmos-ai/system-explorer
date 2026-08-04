@@ -188,6 +188,15 @@ host-neutral binding manifest. Resolver output is written atomically only
 with an explicit `--output`; runtime actions and target-system mutations
 remain excluded.
 
+The default remains fail-closed when a required component is only declared.
+For a full development-system inventory that intentionally contains planned,
+inactive bundles, `--emit-blocked-resolution` may emit a source-verified
+resolution for read-only identity and evidence checks. Every affected bundle
+stays `blocked`; all of its components and functions are quarantined as
+`unavailable`, while their declared state remains evidence metadata. The
+output is marked `blocked-evidence-only`; the flag never grants runtime
+activation or an executable provider.
+
 ### Actual-self search routing
 
 `import-actual-self` accepts a hashed and Ed25519-signed
@@ -271,6 +280,13 @@ never flattened into the parent. Identical system/instance output bindings
 are deduplicated, while conflicting policies for the same target fail closed.
 Until scoped subsystem projection exists, the resolution importer rejects a
 non-empty subsystem tree explicitly instead of silently dropping it.
+
+When a caller needs evidence for a component in the root system before child
+projection is available, `--root-only-resolution` is an explicit scoped
+fallback for `import-resolution`, `import-actual-self`,
+`import-search-authority`, and `search-route`. It imports only root carriers,
+records `projection_scope: root-only` and the exact omitted subsystem count,
+and never treats children as absent or verified.
 
 ```powershell
 system-explorer coverage `

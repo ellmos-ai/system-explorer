@@ -195,6 +195,7 @@ def apply_component_registry_gate(
     *,
     resolution_root: Path,
     source_paths: Mapping[str, Path] | None = None,
+    emit_blocked_resolution: bool = False,
 ) -> dict[str, Any]:
     bindings_path = Path(bindings_path).resolve()
     bindings = _load_registry(bindings_path, _repository_root(bindings_path))
@@ -265,12 +266,23 @@ def apply_component_registry_gate(
             for refs in unresolved_by_requirement.values():
                 refs.sort()
             state = _activation_state(unresolved_by_requirement)
+            if state == "blocked" and emit_blocked_resolution:
+                for component in bundle["components"]:
+                    component["activation_quarantine"] = {
+                        "reason": "bundle-has-required-declared-only-components",
+                        "declared_desired_status": component["desired_status"],
+                        "declared_provides": list(component.get("provides", [])),
+                    }
+                    component["desired_status"] = "unavailable"
+                    component["provides"] = []
             activation[bundle["id"]] = {
                 "state": state,
                 "required_unresolved": unresolved_by_requirement["required"],
                 "recommended_unresolved": unresolved_by_requirement["recommended"],
                 "optional_unresolved": unresolved_by_requirement["optional"],
             }
+            if state == "blocked" and emit_blocked_resolution:
+                activation[bundle["id"]]["quarantined"] = True
             if state == "blocked":
                 blocked.append(
                     (scope, bundle["id"], unresolved_by_requirement["required"])
@@ -311,7 +323,7 @@ def apply_component_registry_gate(
             + "; ".join(sorted(set(failures)))
         )
 
-    if blocked:
+    if blocked and not emit_blocked_resolution:
         details = "; ".join(
             f"{scope}/{bundle_id}: {', '.join(refs)}"
             for scope, bundle_id, refs in sorted(blocked)
@@ -324,7 +336,7 @@ def apply_component_registry_gate(
     def finalize(node: dict[str, Any]) -> dict[str, Any]:
         for subsystem in node.get("subsystems", []):
             subsystem["resolution"] = finalize(subsystem["resolution"])
-        node["component_registry"] = {
+        component_registry = {
             "schema": bindings["schema"],
             "id": bindings["id"],
             "version": bindings["version"],
@@ -332,6 +344,14 @@ def apply_component_registry_gate(
             "activation": activation_by_node[id(node)],
             "source_verification": "verified",
         }
+        if emit_blocked_resolution and any(
+            item["state"] == "blocked"
+            for item in activation_by_node[id(node)].values()
+        ):
+            component_registry["activation_enforcement"] = (
+                "blocked-evidence-only"
+            )
+        node["component_registry"] = component_registry
         node["functions"] = sorted(
             {
                 function
@@ -345,6 +365,11 @@ def apply_component_registry_gate(
         node.pop("content_hash", None)
         return with_content_hash(node)
 
+    if blocked and emit_blocked_resolution:
+        gated.setdefault("warnings", []).append(
+            "Bundles with required declared-only component gaps remain blocked and "
+            "all of their components are quarantined from operational resolution."
+        )
     return finalize(gated)
 
 

@@ -8,6 +8,12 @@
 
 ### Hinzugefügt
 
+- opt-in `system-resolve --emit-blocked-resolution` für source-verifizierte,
+  rein lesende Vollsystem-Evidenz; Bundles mit required `declared_only`-Lücken
+  bleiben blockiert und werden vollständig operativ quarantänisiert
+- explizite `--root-only-resolution`-Projektion für Root-Evidenzimporte bei
+  vorhandenen Subsystemen; ausgelassene Children werden gezählt und niemals
+  still als importiert oder verifiziert behandelt
 - gepinnte, rekursive und nicht-flattenende `subsystem_refs` für
   `ellmos.system.v1`, einschließlich Pfad-/Identitätszyklen,
   Registry-Gates und `composes`-Graphkanten

@@ -193,6 +193,17 @@ Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
+Der Standard bleibt fail-closed, wenn eine erforderliche Komponente nur
+deklariert ist. Für das Vollinventar eines Entwicklungssystems, das bewusst
+geplante und inaktive Bundles enthält, kann
+`--emit-blocked-resolution` eine source-verifizierte Resolution für
+rein lesende Identitäts- und Evidenzprüfungen ausgeben. Jedes betroffene
+Bundle bleibt `blocked`; alle seine Komponenten und Funktionen werden als
+`unavailable` operativ quarantänisiert, während ihr deklarierter Zustand als
+Evidenzmetadatum erhalten bleibt. Die Ausgabe wird als
+`blocked-evidence-only` markiert; der Schalter erteilt weder eine
+Runtime-Aktivierung noch einen ausführbaren Provider.
+
 ### Actual-self Search Routing
 
 `import-actual-self` nimmt eine gehashte und Ed25519-signierte
@@ -279,6 +290,13 @@ Output-Bindings aus System und Instanz werden dedupliziert, widersprüchliche
 Policies für dasselbe Ziel brechen fail-closed ab. Bis eine scope-getrennte
 Subsystemprojektion existiert, lehnt der Resolution-Importer nichtleere
 Subsystembäume ausdrücklich ab, statt sie still zu verlieren.
+
+Wenn vor der Child-Projektion Evidenz für eine Komponente des Root-Systems
+benötigt wird, ist `--root-only-resolution` ein expliziter Scope-Fallback für
+`import-resolution`, `import-actual-self`, `import-search-authority` und
+`search-route`. Er importiert nur Root-Carrier, hält
+`projection_scope: root-only` sowie die exakte Zahl ausgelassener Subsysteme
+fest und behandelt Children weder als abwesend noch als verifiziert.
 
 Ein gespeicherter `system-explorer.resolution.v1`-Output lässt sich direkt als
 Desired-Evidenz importieren:

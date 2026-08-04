@@ -552,6 +552,14 @@ def _components(resolution: dict[str, Any]) -> dict[str, dict[str, Any]]:
             current["provides"] = sorted(
                 set(current.get("provides", [])) | set(component.get("provides", []))
             )
+            if current.get("desired_status") in {
+                "suppressed",
+                "unavailable",
+            } and component.get("desired_status") not in {
+                "suppressed",
+                "unavailable",
+            }:
+                current["desired_status"] = component["desired_status"]
             if (
                 current.get("registry_resolution")
                 != component.get("registry_resolution")
