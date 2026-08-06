@@ -1,6 +1,8 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-127%20passed-brightgreen.svg)](tests)
+<img src="assets/banner.png" width="100%" alt="System-Explorer-Banner">
+
+[![Pytest](https://img.shields.io/badge/Pytest-139%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)

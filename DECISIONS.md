@@ -3,6 +3,43 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-08-07: Fleet-Auflösung wird neu gebaut statt aus PR #2 gemergt
+
+### Kontext
+
+PR #2 (`codex/fleet-resolution`, Juli 2026) hat ein `fleet-resolve` gebaut:
+Fleet-Manifeste zu aufgelösten Systemen, mit stabilen Fleet-IDs getrennt von
+relativen Manifestpfaden, erhaltenen `host`/`ref`-Hostbindungen, begründeten
+Desired-Abweichungen und Ausweis blockierender Pflichtlücken. Diese Fähigkeit
+fehlt bis heute: `schemas/ellmos.fleet.v1.schema.json` und die
+Fleet-Behandlung in `contracts.py` sind da, aber es gibt weder ein
+`fleet-resolve` in `cli.py` noch eine Fleet-Auflösung in `resolver.py`.
+
+Der Branch ist seither stehengeblieben, während `main` 37 Commits
+weitergelaufen ist — darunter #13 (verschachtelte Systeme nicht-flattenend und
+zyklensicher auflösen) und #14 (fail-closed Vollsystem-Evidenz mit
+Root-only-Projektion).
+
+### Entscheidung
+
+PR #2 wird geschlossen, nicht gemergt, und die Fähigkeit als Neubau in
+`TODO.md` geführt. Ein Merge hätte 29 Dateien und rund 15.700 Zeilen späterer
+Arbeit gelöscht — unter anderem `actual_self.py`, `component_registry.py`,
+`function_equivalence.py`, `media_connector.py`, `receipt_trust.py`,
+`repo_diagrams.py`, `resolution_bridge.py`, `search_authority.py`,
+`search_routing.py`, acht Schemata, sieben Testmodule und `README_de.md`.
+
+Ein Rebase wäre ebenfalls der falsche Weg: #13/#14 haben das Auflösungsmodell
+selbst geändert. Die Fleet-Auflösung muss auf dem heutigen fail-closed-Modell
+aufsetzen, nicht auf dem Modell, gegen das #2 geschrieben wurde. Der Branch
+bleibt als Vorlage lesbar.
+
+### Grenze
+
+Die Entscheidung sagt nichts darüber, ob Fleet-Auflösung gebraucht wird —
+sie wird gebraucht und steht deshalb in `TODO.md`. Sie sagt nur, dass der
+vorhandene Branch nicht der Weg dorthin ist.
+
 ## 2026-07-30: Resolutionen werden als typisierte Desired-Evidenz projiziert
 
 ### Kontext
