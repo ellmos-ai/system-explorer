@@ -1,5 +1,7 @@
 # system-explorer
 
+<img src="assets/banner.png" width="100%" alt="System Explorer banner">
+
 `system-explorer` erstellt evidenzgestützte Karten eines modularen Agenten- und
 Softwaresystems. Das Werkzeug trennt dabei zwei Ebenen:
 
