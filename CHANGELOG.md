@@ -8,6 +8,22 @@
 
 ### Hinzugefügt
 
+- `fleet-resolve`: löst ein gepinntes Fleet-Manifest (`ellmos.fleet.v1`) zu
+  seinen Mitgliedssystemen auf. Stabile Fleet-IDs bleiben von relativen
+  Manifestpfaden getrennt, `host`/`ref`-Hostbindungen werden erhalten und
+  gegen die tatsächliche Instanz geprüft, begründete Desired-Abweichungen
+  laufen über `host_overrides` (`host_id`, `reason`, `component_states`,
+  `desired_profile`, `tolerated_gaps`). Ausgewiesen werden blockierende
+  Pflichtlücken getrennt von tolerierten Abweichungen, fleet-weite
+  Funktionsdeckung inklusive Einzelanbieter-Markierung sowie aufgelöste
+  Rollen, Handoffs und Abhängigkeiten. Keine Runtime-Aktionen, keine
+  Zielmutationen, kein Writeback.
+- Fleet-Deckung baut auf dem heutigen Auflösungsmodell auf statt auf dem
+  Stand vor der verschachtelten Komposition: Mitgliedsfunktionen schließen
+  Subsystemfunktionen ein (`functions`), die Root-only-Projektion bleibt
+  daneben als `root_functions` sichtbar, und ein durch das
+  Component-Registry-Gate quarantänisiertes Bundle zählt als blockierende
+  Lücke statt als gedeckt.
 - opt-in `system-resolve --emit-blocked-resolution` für source-verifizierte,
   rein lesende Vollsystem-Evidenz; Bundles mit required `declared_only`-Lücken
   bleiben blockiert und werden vollständig operativ quarantänisiert
@@ -94,6 +110,16 @@
   lokaler Secret-Pfade; logische `secret_ref`-Werte bleiben zulässig
 - begrenzte Percent-Decodierung bis zum Fixpunkt für URI-Zielprüfungen;
   ungültige oder nicht stabil dekodierbare URIs werden fail-closed abgewiesen
+
+### Behoben
+
+- `component_states` mit `status: "suppressed"` brach die Auflösung ab. Der
+  Status entfernt seine eigene Komponente aus dem aufgelösten Satz; geprüft
+  wurde anschließend gegen die Überlebenden, sodass genau der Eintrag, der
+  unterdrückt hat, als „unresolved" gemeldet wurde. Bewusstes Weglassen einer
+  Komponente pro Instanz oder Host war dadurch unmöglich. Geprüft wird jetzt
+  gegen alle Komponenten, die das Profil angeboten hat. Aufgefallen beim Bau
+  von `fleet-resolve`, betrifft aber `system-resolve` genauso.
 
 ### Geplant
 

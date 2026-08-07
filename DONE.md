@@ -1,5 +1,22 @@
 # Erledigt
 
+## 2026-08-07
+
+- [x] `fleet-resolve` auf dem aktuellen Auflösungsmodell neu gebaut statt aus
+      PR #2 gemergt: Fleet-Manifeste zu Mitgliedssystemen, stabile Fleet-IDs
+      getrennt von relativen Manifestpfaden, erhaltene und gegen die Instanz
+      geprüfte Hostbindungen, begründete Desired-Abweichungen über
+      `host_overrides`, blockierende Pflichtlücken getrennt von tolerierten
+      Abweichungen, fleet-weite Funktionsdeckung mit Einzelanbieter-Markierung
+- [x] Fleet-Deckung an die verschachtelte Komposition angeschlossen:
+      Mitgliedsfunktionen schließen Subsysteme ein, die Root-only-Projektion
+      bleibt als `root_functions` daneben sichtbar
+- [x] Quarantänisierte Bundles zählen als blockierende Lücke statt als gedeckt;
+      gemessen wird gegen die deklarierten `provides`, nicht gegen die nach der
+      Quarantäne verbliebenen
+- [x] `component_states` mit `status: "suppressed"` repariert — bewusstes
+      Weglassen einer Komponente pro Instanz oder Host war zuvor unmöglich
+
 ## 2026-07-29
 
 - [x] Architektur und vorhandene Wiederverwendungskomponenten inventarisiert

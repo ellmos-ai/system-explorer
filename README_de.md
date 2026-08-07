@@ -2,7 +2,7 @@
 
 <img src="assets/banner.png" width="100%" alt="System-Explorer-Banner">
 
-[![Pytest](https://img.shields.io/badge/Pytest-139%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-144%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -53,6 +53,9 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
   gewünschte Instanzen, Resolutionstests und Flotten
 - deterministische, gepinnte Read-only-Auflösung mit Profilen,
   Suppressions, Root-Containment und kanonischen Content-Hashes
+- Fleet-Auflösung über Hosts hinweg: stabile Fleet-IDs getrennt von relativen
+  Manifestpfaden, erhaltene Hostbindungen, begründete Desired-Abweichungen und
+  blockierende Pflichtlücken getrennt von tolerierten Abweichungen
 - typisierte Read-only-Brücke von `system-explorer.resolution.v1` in
   Desired-/Coverage-Evidenz mit Requirement-Schwere und Provider-Overlap
 - explizite, gehashte Function-Equivalence-Verträge zwischen abweichenden
@@ -95,6 +98,7 @@ system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commi
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 system-explorer component-registry-check component.registry.bindings.v1.json --bundle-root bundles
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json --registry-bindings component.registry.bindings.v1.json
+system-explorer fleet-resolve fleet.v1.json --catalog bundles.catalog.v1.json
 system-explorer coverage --config explorer.json --resolution resolved-system.json
 system-explorer coverage --config explorer.json --equivalence function-equivalence.json
 system-explorer import-resolution resolved-system.json --config explorer.json

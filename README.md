@@ -2,7 +2,7 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer banner">
 
-[![Pytest](https://img.shields.io/badge/Pytest-139%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-144%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -53,6 +53,9 @@ it is a visible system gap.
   instances, resolution tests, and fleets
 - deterministic pinned read-only resolution with profiles, suppressions, root
   containment, and canonical content hashes
+- fleet resolution across hosts: stable fleet ids kept apart from relative
+  manifest paths, preserved host bindings, justified desired deviations, and
+  blocking gaps reported separately from tolerated ones
 - typed read-only bridge from `system-explorer.resolution.v1` into desired and
   coverage evidence with requirement severity and provider overlap
 - explicit hashed function-equivalence contracts between differing desired
@@ -95,6 +98,7 @@ system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commi
 system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
 system-explorer component-registry-check component.registry.bindings.v1.json --bundle-root bundles
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json --registry-bindings component.registry.bindings.v1.json
+system-explorer fleet-resolve fleet.v1.json --catalog bundles.catalog.v1.json
 system-explorer coverage --config explorer.json --resolution resolved-system.json
 system-explorer coverage --config explorer.json --equivalence function-equivalence.json
 system-explorer import-resolution resolved-system.json --config explorer.json

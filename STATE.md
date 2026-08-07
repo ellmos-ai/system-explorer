@@ -1,11 +1,11 @@
 ---
 name: "system-explorer-state"
 type: state-snapshot
-version: 0.4.0
-updated: "2026-07-30"
-updated_by: "codex"
+version: 0.5.0
+updated: "2026-08-07"
+updated_by: "claude-code"
 current_phase: "MVP release"
-last_verified: "2026-07-30"
+last_verified: "2026-08-07"
 description: |
   Current-state snapshot for fast session-start orientation in system-explorer.
 ---
@@ -21,6 +21,9 @@ description: |
 - V4-Komposition: additive Bundle-/System-/Instanz-/Test-/Fleet- und
   Komponentenregistry-Verträge, deterministische Read-only-Auflösung sowie
   fail-closed `declared_only`-Activation-Gates
+- Fleet-Auflösung: `fleet-resolve` löst gepinnte Fleet-Manifeste zu ihren
+  Mitgliedssystemen auf, erhält Hostbindungen, führt begründete
+  Desired-Abweichungen und trennt blockierende Pflichtlücken von tolerierten
 - Medien-Connector: UC6-Handoff aus analysierten Karten; echter Render bleibt
   expliziter `ai-media-editor`-Schritt
 - Repo-Schaltpläne: Dry-Run, atomarer Apply, optionaler Commit/Push und

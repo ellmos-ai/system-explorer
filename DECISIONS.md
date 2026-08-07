@@ -37,8 +37,24 @@ bleibt als Vorlage lesbar.
 ### Grenze
 
 Die Entscheidung sagt nichts darüber, ob Fleet-Auflösung gebraucht wird —
-sie wird gebraucht und steht deshalb in `TODO.md`. Sie sagt nur, dass der
-vorhandene Branch nicht der Weg dorthin ist.
+sie wird gebraucht. Sie sagt nur, dass der vorhandene Branch nicht der Weg
+dorthin ist.
+
+### Vollzug (2026-08-07)
+
+Der Neubau ist erfolgt und hat die Entscheidung im Nachhinein bestätigt: die
+alte Gap-Berechnung hätte auf dem heutigen Modell falsch gerechnet. Sie las
+`component.provides`, um Pflichtfunktionen zu bestimmen — die Quarantäne aus
+dem `declared_only`-Gate leert genau dieses Feld. Ein vollständig blockiertes
+Mitglied hätte damit als gedeckt gegolten, weil es nichts mehr verspricht.
+Gemessen wird jetzt gegen die deklarierten Werte aus
+`activation_quarantine.declared_provides`.
+
+Zweite Abweichung derselben Art: Mitgliedsfunktionen schließen jetzt
+Subsystemfunktionen ein. `resolution["functions"]` ist seit der
+Root-only-Projektion bewusst wurzelbeschränkt; für eine Flotte ist die Frage
+aber, was ein Mitglied insgesamt trägt. Beide Sichten stehen nebeneinander
+(`functions`, `root_functions`), statt eine gegen die andere auszutauschen.
 
 ## 2026-07-30: Resolutionen werden als typisierte Desired-Evidenz projiziert
 

@@ -39,7 +39,12 @@ from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
 from .receipt_trust import load_receipt_trust_store
 from .resolution_bridge import import_resolution
-from .resolver import resolve_system, resolve_test, validate_manifest_target
+from .resolver import (
+    resolve_fleet,
+    resolve_system,
+    resolve_test,
+    validate_manifest_target,
+)
 from .resources import resource_report
 from .scanner import ProgressCallback, scan
 from .search_authority import import_search_authority_receipt
@@ -59,6 +64,12 @@ def _activation_enforcement_status(value: dict[str, Any]) -> str | None:
             return status
     for subsystem in value.get("subsystems", []):
         resolution = subsystem.get("resolution") if isinstance(subsystem, dict) else None
+        if isinstance(resolution, dict):
+            status = _activation_enforcement_status(resolution)
+            if status:
+                return status
+    for member in value.get("members", []):
+        resolution = member.get("resolution") if isinstance(member, dict) else None
         if isinstance(resolution, dict):
             status = _activation_enforcement_status(resolution)
             if status:
@@ -455,6 +466,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     system_resolve.add_argument("--output", type=Path)
 
+    fleet_resolve = sub.add_parser(
+        "fleet-resolve",
+        help=(
+            "Resolve a pinned fleet manifest into its member systems without "
+            "runtime actions."
+        ),
+    )
+    fleet_resolve.add_argument("fleet", type=Path)
+    fleet_resolve.add_argument(
+        "--catalog",
+        type=Path,
+        action="append",
+        required=True,
+        dest="catalogs",
+    )
+    fleet_resolve.add_argument("--registry-bindings", type=Path)
+    fleet_resolve.add_argument(
+        "--registry-source-path",
+        action="append",
+        default=[],
+        metavar="SOURCE_ID=PATH",
+    )
+    fleet_resolve.add_argument(
+        "--emit-blocked-resolution",
+        action="store_true",
+        help=(
+            "Emit a source-verified evidence view while quarantining every component "
+            "of bundles blocked by required declared-only entries. Quarantined "
+            "members still count as blocking fleet gaps."
+        ),
+    )
+    fleet_resolve.add_argument("--output", type=Path)
+
     test_resolve = sub.add_parser(
         "test-resolve",
         help="Resolve a read-only system-test overlay.",
@@ -563,9 +607,9 @@ def _run(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(value, ensure_ascii=False, indent=2))
         return exit_code
-    if args.command in {"system-resolve", "test-resolve"}:
-        value = (
-            resolve_system(
+    if args.command in {"system-resolve", "fleet-resolve", "test-resolve"}:
+        if args.command == "system-resolve":
+            value = resolve_system(
                 args.instance,
                 args.catalogs,
                 registry_bindings_path=args.registry_bindings,
@@ -574,9 +618,18 @@ def _run(args: argparse.Namespace) -> int:
                 ),
                 emit_blocked_resolution=args.emit_blocked_resolution,
             )
-            if args.command == "system-resolve"
-            else resolve_test(args.test, args.catalogs)
-        )
+        elif args.command == "fleet-resolve":
+            value = resolve_fleet(
+                args.fleet,
+                args.catalogs,
+                registry_bindings_path=args.registry_bindings,
+                registry_source_paths=parse_source_path_arguments(
+                    args.registry_source_path
+                ),
+                emit_blocked_resolution=args.emit_blocked_resolution,
+            )
+        else:
+            value = resolve_test(args.test, args.catalogs)
         if args.output:
             _write_json_atomic(args.output, value)
             summary = {
