@@ -345,7 +345,7 @@ class ContractTest(unittest.TestCase):
         self.assertFalse((self.root / "unexpected-output.json").exists())
 
     def test_resolver_preserves_complete_component_states_for_equal_hosts(self) -> None:
-        for host, slot in (("WORKSTATION-LG", "workstation"), ("ASUS-GEI", "laptop")):
+        for host, slot in (("host-a", "workstation"), ("host-b", "laptop")):
             component_states = {
                 "module:mapper": {
                     "status": "registered",

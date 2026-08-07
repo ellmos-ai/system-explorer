@@ -35,7 +35,7 @@ description: |
 Steuerdokumentkarten für modulare Agenten- und Softwaresysteme.
 
 **Pfad:** `C:\_Local_DEV\repos\system-explorer`
-**Repository:** `github.com/ellmos-ai/system-explorer` (privat)
+**Repository:** `github.com/ellmos-ai/system-explorer` (öffentlich)
 **Sprache/Stack:** Python 3.10+, SQLite, Vanilla HTML/CSS/JavaScript
 
 ## Rolle & Stil

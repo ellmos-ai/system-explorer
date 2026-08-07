@@ -11,7 +11,7 @@
 [English](README.md) | [Deutsch](README_de.md)
 
 > [!NOTE]
-> For LLM-optimized index and quick reference, see [`llms.txt`](file:///C:/_Local_DEV/repos/system-explorer/llms.txt).
+> For LLM-optimized index and quick reference, see [`llms.txt`](llms.txt).
 
 `system-explorer` creates evidence-based maps of a modular agent and software
 system. The tool separates two layers:
@@ -95,7 +95,7 @@ system-explorer map --config software-resources.json --view resources
 system-explorer explain-video --config explorer.json --output explainer-package --media-editor ..\ai-media-editor --probe
 system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
 system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
-system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
+system-explorer manifest-validate C:\path\to\a-system-repo
 system-explorer component-registry-check component.registry.bindings.v1.json --bundle-root bundles
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json --registry-bindings component.registry.bindings.v1.json
 system-explorer fleet-resolve fleet.v1.json --catalog bundles.catalog.v1.json
