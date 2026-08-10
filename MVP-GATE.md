@@ -2,9 +2,8 @@
 
 Stand: 2026-08-10. Die Funktionsgates wurden auf dem lokalen
 Source-of-Truth-Commit `ea22747f442d87d2825f530ed29eebb05d7868f8` geprüft;
-dieser Gate-Bericht liegt als Dokumentations-Commit
-`e613beb3f504fbab783890e146cdcc3104b12da3` in
-`C:\_Local_DEV\repos\system-explorer`.
+dieser Gate-Bericht ist in den nachfolgenden lokalen
+Dokumentations-Commits versioniert.
 
 ## Entscheidung
 
@@ -48,8 +47,9 @@ Produktionsabdeckung abgeleitet.
 
 - Lokaler Branch zum Funktions-Readback: `main`,
   `HEAD=ea22747f442d87d2825f530ed29eebb05d7868f8`, Status `ahead 3, behind 6`
-  gegenüber `origin/main=6915688`; der aktuelle Dokumentations-HEAD ist
-  `e613beb3f504fbab783890e146cdcc3104b12da3` (`ahead 4, behind 6`).
+  gegenüber `origin/main=6915688`; die nachfolgenden Dokumentations-Commits
+  sind ausschließlich lokaler Gate-Readback und ändern den geprüften Code
+  nicht.
 - Mirror-Pointer:
   `C:\Users\lukas\OneDrive\.TOPICS\.AI\.MODULES\.CONTROL\system-explorer\REPO.pointer.json`
   meldet Source-of-Truth `C:\_Local_DEV\repos\system-explorer`, aber den alten
