@@ -3,6 +3,30 @@
 Neueste Entscheidungen stehen oben. Ersetzte Entscheidungen bleiben mit
 Verweis erhalten.
 
+## 2026-08-10: Projektversion 0.4.0 bleibt Development
+
+`pyproject.toml` ist die kanonische Packaging-Quelle. Runtime, Modulmanifest,
+Steuerdokumente und Changelog führen exakt `0.4.0`; der Manifeststatus bleibt
+`development`. Eine fremde oder veraltete `importlib.metadata`-/`egg-info`-
+Auflösung darf diesen Stand nicht überschreiben und wird als begründeter
+Test-Fallback dokumentiert. Diese Entscheidung autorisiert kein Release, Tag,
+Upload oder Push.
+
+## 2026-08-10: Authority benötigt lokale, erlaubte Evidenz
+
+Signatur und Trust Store beweisen nur die Herkunft eines Authority-Receipts.
+Vor Import und bei jeder Resolver-Nutzung werden alle `evidence`- und
+`conflicts`-Referenzen eindeutig gegen den lokalen Evidence Store, die exakte
+SHA-256 und die erlaubten Quellen `document:decision`/`document:policy`
+geprüft. Externe/read-only oder mehrdeutige Belege erzeugen keine Authority.
+
+## 2026-08-10: Ein gemeinsamer Validator schützt Receipt- und Resolution-Grenzen
+
+Stable Refs, SHA-256, Zeitstempel und exakte Objektfelder verwenden einen
+gemeinsamen fail-closed Kern. Resolution-Komponenten mit demselben Ref dürfen
+Typ, Registry-Binding oder `provides` nicht widersprüchlich wiederholen; die
+Prüfung läuft vor jeder Store-Transaktion.
+
 ## 2026-07-30: Resolutionen werden als typisierte Desired-Evidenz projiziert
 
 ### Kontext

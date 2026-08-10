@@ -25,4 +25,8 @@ description: |
   expliziter `ai-media-editor`-Schritt
 - Repo-Schaltpläne: Dry-Run, atomarer Apply, optionaler Commit/Push und
   Upstream-Readback für einzelne Repos oder pfadbasierte Bundles
+- TASKPLAN-Readback (2026-08-10): lokaler `HEAD` mit 144 Pytest-Tests/20
+  Subtests, Ruff, Compileall, CLI-Hilfe und `doc-lint` erfolgreich.
+  `origin/main` (`6915688`) liegt sechs Commits voraus; der direkte Push
+  wurde `non-fast-forward` abgelehnt. Kein Pull, Merge oder Force-Push.
 - Nächster Freigabepunkt: Test-, UI- und Mirror-Readback

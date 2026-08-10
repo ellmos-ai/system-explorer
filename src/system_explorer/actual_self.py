@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -10,6 +9,14 @@ from urllib.parse import quote
 from .receipt_trust import ReceiptTrustStore, verify_signed_receipt
 from .store import Store
 from .util import stable_id
+from .validation import (
+    exact_string_object as _object_with_fields,
+    nonempty_string as _nonempty_string,
+    sha256 as _sha256,
+    stable_ref as _stable_ref,
+    timestamp as _timestamp,
+    validate_resolution_components,
+)
 
 
 RECEIPT_SCHEMA = "ellmos.actual-self-component-receipt.v1"
@@ -207,7 +214,7 @@ def validate_actual_self_receipt(
     if receipt["schema"] != RECEIPT_SCHEMA:
         raise ValueError(f"actual-self receipt must use {RECEIPT_SCHEMA}")
     _nonempty_string(receipt["receipt_id"], "receipt_id")
-    _nonempty_string(receipt["component_ref"], "component_ref")
+    _stable_ref(receipt["component_ref"], "component_ref")
     if receipt["component_type"] not in COMPONENT_TYPES:
         raise ValueError("actual-self receipt component_type is unsupported")
 
@@ -245,6 +252,7 @@ def validate_actual_self_receipt(
         "registry_binding",
         {"registry_content_hash", "source", "record_id"},
     )
+    _sha256(binding["registry_content_hash"], "registry_binding.registry_content_hash")
     if binding["registry_content_hash"] != registry.get("content_hash"):
         raise ValueError("actual-self receipt registry_content_hash mismatch")
 
@@ -269,6 +277,7 @@ def validate_actual_self_receipt(
         {"ref", "adapter_id", "signer_id", "host_id", "probe_kind"},
     )
     _stable_ref(producer["ref"], "producer.ref")
+    _stable_ref(producer["signer_id"], "producer.signer_id")
     _nonempty_string(producer["adapter_id"], "producer.adapter_id")
     _nonempty_string(producer["signer_id"], "producer.signer_id")
     if producer["host_id"] != scope["host_id"]:
@@ -314,6 +323,7 @@ def validate_actual_self_receipt(
 def _resolution_component(
     resolution: dict[str, Any], component_ref: str
 ) -> dict[str, Any] | None:
+    validate_resolution_components(resolution)
     matches = []
     for bundle in resolution.get("bundles", []):
         for component in bundle.get("components", []):
@@ -324,54 +334,4 @@ def _resolution_component(
     if not matches:
         return None
     first = matches[0]
-    for component in matches[1:]:
-        if component["type"] != first["type"]:
-            raise ValueError("component_ref has conflicting types in resolution")
     return first
-
-
-def _object_with_fields(value: Any, path: str, fields: set[str]) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise ValueError(f"{path} must be an object")
-    unknown = sorted(set(value) - fields)
-    missing = sorted(fields - set(value))
-    if unknown:
-        raise ValueError(f"{path} has unknown fields: " + ", ".join(unknown))
-    if missing:
-        raise ValueError(f"{path} is missing fields: " + ", ".join(missing))
-    for field in fields:
-        _nonempty_string(value[field], f"{path}.{field}")
-    return value
-
-
-def _stable_ref(value: Any, path: str) -> str:
-    value = _nonempty_string(value, path)
-    if ":" not in value or value.startswith(":") or value.endswith(":"):
-        raise ValueError(f"{path} must be a stable typed reference")
-    if any(character.isspace() for character in value):
-        raise ValueError(f"{path} must not contain whitespace")
-    return value
-
-
-def _nonempty_string(value: Any, path: str) -> str:
-    if not isinstance(value, str) or not value or value != value.strip():
-        raise ValueError(f"{path} must be a non-empty trimmed string")
-    return value
-
-
-def _sha256(value: Any, path: str) -> str:
-    value = _nonempty_string(value, path)
-    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
-        raise ValueError(f"{path} must be a lowercase SHA-256 digest")
-    return value
-
-
-def _timestamp(value: Any, path: str) -> datetime:
-    value = _nonempty_string(value, path)
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise ValueError(f"{path} must be an ISO-8601 timestamp") from error
-    if parsed.tzinfo is None:
-        raise ValueError(f"{path} must include a timezone")
-    return parsed.astimezone(timezone.utc)

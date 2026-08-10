@@ -11,6 +11,7 @@ from typing import Any
 from .contracts import OPERATIONAL_STATUSES, canonical_content_hash
 from .store import Store
 from .util import file_effective_date, stable_id
+from .validation import validate_resolution_components
 
 
 REQUIREMENTS = ("required", "recommended", "optional")
@@ -416,6 +417,7 @@ def _validate_resolution(value: Any) -> None:
                     raise ValueError(
                         f"{location} {field} must be an array of non-empty strings"
                     )
+    validate_resolution_components(value)
 
 
 def _carrier_id(scope: str, ref: str) -> str:

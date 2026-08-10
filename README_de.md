@@ -1,6 +1,6 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-137%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-144%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -244,7 +244,12 @@ erlauben. Der Receipt-Issuer und `scope.host_ids` müssen dem Host der aktuell
 aufgelösten Systeminstanz entsprechen; ein Multi-Host-Signer erlaubt keinen
 Foreign-Host-Replay. Eine rohe TOM_lm-Prognose allein ist keine Authority. Gespeicherte
 Actual-/Authority-Receipts werden bei jeder Suche erneut kryptografisch
-geprüft; ein manipulierter SQLite-Metadateneintrag reicht nicht.
+geprüft; ein manipulierter SQLite-Metadateneintrag reicht nicht. Jede
+`evidence`- und `conflicts`-Referenz muss außerdem eindeutig im lokalen
+Evidence Store mit exakt derselben SHA-256-Prüfsumme und einer autorisierenden
+Quelle `document:decision` oder `document:policy` vorhanden sein. Externe oder
+read-only Belege sowie fehlende, gelöschte, mehrdeutige oder hashabweichende
+Einträge blockieren die ausführbare Authority.
 
 Der `ai-media-editor`-Connector materialisiert aus ausgewählten Karten ein
 UC6-Handoff mit Storyboard, deutschem Sprechertext und Mermaid-Visuals. Er

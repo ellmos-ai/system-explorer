@@ -12,7 +12,10 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from jsonschema import Draft202012Validator
 
-from system_explorer.actual_self import import_actual_self_receipt
+from system_explorer.actual_self import (
+    import_actual_self_receipt,
+    validate_actual_self_receipt,
+)
 from system_explorer.cli import main
 from system_explorer.contracts import with_content_hash
 from system_explorer.receipt_trust import (
@@ -21,7 +24,10 @@ from system_explorer.receipt_trust import (
     signed_payload_bytes,
 )
 from system_explorer.resolution_bridge import import_resolution
-from system_explorer.search_authority import import_search_authority_receipt
+from system_explorer.search_authority import (
+    import_search_authority_receipt,
+    resolve_authority_receipts,
+)
 from system_explorer.search_routing import resolve_search_route
 from system_explorer.store import Store
 
@@ -239,6 +245,45 @@ class SearchRoutingTests(unittest.TestCase):
                 wrong_registry_path,
                 self.resolution,
                 self.store,
+                evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
+            )
+
+    def test_shared_receipt_validator_rejects_untyped_refs_and_uppercase_hashes(self) -> None:
+        untyped = self._receipt_value(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+        )
+        untyped["component_ref"] = "required-provider"
+        untyped = self._sign(
+            untyped,
+            self.producer_key,
+            "signer:controlcenter-test-host",
+        )
+        with self.assertRaisesRegex(ValueError, "stable typed reference"):
+            validate_actual_self_receipt(
+                untyped,
+                self.resolution,
+                evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
+            )
+
+        uppercase = self._receipt_value(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+        )
+        uppercase["registry_binding"]["registry_content_hash"] = "A" * 64
+        uppercase = self._sign(
+            uppercase,
+            self.producer_key,
+            "signer:controlcenter-test-host",
+        )
+        with self.assertRaisesRegex(ValueError, "lowercase SHA-256"):
+            validate_actual_self_receipt(
+                uppercase,
+                self.resolution,
                 evaluated_at=OBSERVED_AT,
                 trust_store=self.trust_store,
             )
@@ -705,6 +750,90 @@ class SearchRoutingTests(unittest.TestCase):
             "decision:avatar-routing-001",
         )
 
+    def test_authority_evidence_requires_local_hash_source_and_no_partial_import(self) -> None:
+        cases = ("missing", "hash-mismatch", "external")
+        for case in cases:
+            with self.subTest(case=case):
+                authority_path, _ = self._authority_receipt(
+                    suffix=f"-evidence-{case}"
+                )
+                value = json.loads(authority_path.read_text(encoding="utf-8"))
+                ref = value["evidence"][0]["ref"]
+                if case == "missing":
+                    self.store.db.execute(
+                        "DELETE FROM evidence WHERE uri = ?", (ref,)
+                    )
+                    self.store.commit()
+                elif case == "hash-mismatch":
+                    value["evidence"][0]["sha256"] = "9" * 64
+                    authority_path = self._write(
+                        f"authority-evidence-{case}.json",
+                        self._sign(value, self.authority_key, value["issuer"]["signer_id"]),
+                    )
+                else:
+                    row = self.store.db.execute(
+                        "SELECT id, metadata_json FROM evidence WHERE uri = ?",
+                        (ref,),
+                    ).fetchone()
+                    metadata = json.loads(row["metadata_json"])
+                    metadata["external"] = True
+                    self.store.db.execute(
+                        "UPDATE evidence SET metadata_json = ? WHERE id = ?",
+                        (json.dumps(metadata), row["id"]),
+                    )
+                    self.store.commit()
+                before = self.store.evidence()
+                before_commits = self.store.commit_count
+                with self.assertRaisesRegex(ValueError, r"evidence\[0\]"):
+                    import_search_authority_receipt(
+                        authority_path,
+                        self.store,
+                        evaluated_at=OBSERVED_AT,
+                        expected_host_id="TEST-HOST",
+                        trust_store=self.trust_store,
+                    )
+                self.assertEqual(self.store.evidence(), before)
+                self.assertEqual(self.store.commit_count, before_commits)
+
+    def test_authority_resolver_rechecks_local_evidence_after_import(self) -> None:
+        self._import_receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+        )
+        authority_path, authority_ref = self._authority_receipt(
+            suffix="-reverification"
+        )
+        import_search_authority_receipt(
+            authority_path,
+            self.store,
+            evaluated_at=OBSERVED_AT,
+            expected_host_id="TEST-HOST",
+            trust_store=self.trust_store,
+        )
+        value = json.loads(authority_path.read_text(encoding="utf-8"))
+        self.store.db.execute(
+            "DELETE FROM evidence WHERE uri = ?",
+            (value["evidence"][0]["ref"],),
+        )
+        self.store.commit()
+        gates = resolve_authority_receipts(
+            self.store,
+            [authority_ref],
+            query_mode="tool-search",
+            scope=self.resolution["instance"]["instance_id"],
+            component_ref="module:required-provider",
+            capabilities=["function.required"],
+            observed_at=OBSERVED_AT,
+            trust_store=self.trust_store,
+            expected_host_id="TEST-HOST",
+        )
+        self.assertEqual(gates[0]["status"], "blocked")
+        self.assertEqual(
+            gates[0]["reasons"],
+            ["authority-receipt-reverification-failed"],
+        )
+
     def test_avatar_gate_fails_closed_on_low_confidence_conflict_or_scope(self) -> None:
         self._import_receipt(
             "module:required-provider",
@@ -917,6 +1046,22 @@ class SearchRoutingTests(unittest.TestCase):
             suffix="-cli",
         )
         authority_path, authority_ref = self._authority_receipt(suffix="-cli")
+        with Store(self.root / "cli.db") as cli_store:
+            authority_value = json.loads(
+                authority_path.read_text(encoding="utf-8")
+            )
+            for evidence in [
+                *authority_value["evidence"],
+                *authority_value["conflicts"],
+            ]:
+                cli_store.add_evidence(
+                    uri=evidence["ref"],
+                    source_kind="document:decision",
+                    sha256=evidence["sha256"],
+                    locator=evidence["ref"],
+                    metadata={"evidence_ref": evidence["ref"]},
+                )
+            cli_store.commit()
         query_path = self._write(
             "cli-query.json",
             self._query(
@@ -1252,6 +1397,15 @@ class SearchRoutingTests(unittest.TestCase):
             "expires_at": expires_at,
             "conflicts": conflicts or [],
         }
+        for evidence in [*value["evidence"], *value["conflicts"]]:
+            self.store.add_evidence(
+                uri=evidence["ref"],
+                source_kind="document:decision",
+                sha256=evidence["sha256"],
+                locator=evidence["ref"],
+                metadata={"evidence_ref": evidence["ref"]},
+            )
+        self.store.commit()
         path = self._write(
             "authority" + suffix + ".json",
             self._sign(value, private_key or self.authority_key, signer_id),

@@ -2,11 +2,19 @@
 
 ## [Unreleased]
 
+### Versionsstand (2026-08-10)
+- Packaging, Runtime, Manifest und Steuerdokumente sind auf den kanonischen
+  Development-Stand `0.4.0` synchronisiert; ein Release ist nicht autorisiert.
+- Der externe `importlib.metadata`-Fallback wird in `VERSIONING.md` und einem
+  Regressionstest ausdrücklich als umgebungsfremd behandelt.
+
 ### Maintainer-Verifikation & Technische Hygiene (2026-08-10)
-- 137 Pytest-Tests und 15 Subtests, `ruff check`, `compileall`, CLI-Hilfe und
+- 144 Pytest-Tests und 20 Subtests, `ruff check`, `compileall`, CLI-Hilfe und
   `doc-lint` lokal erfolgreich verifiziert.
 - Pytest-Badges in `README.md` und `README_de.md` sowie der Prüfzeitpunkt in
-  `llms.txt` auf diesen Readback aktualisiert. Kein Pull, Push oder Release.
+  `llms.txt` auf diesen Readback aktualisiert. Der direkte Push wurde wegen
+  des divergierten, vorausliegenden `origin/main` als `non-fast-forward`
+  abgelehnt; kein Pull, Merge, Force-Push oder Release.
 
 ### Maintainer-Verifikation & Technische Hygiene (2026-08-04)
 - 127 Pytest-Tests (100% grün), `ruff check` (clean) & `llms.txt` (Last-checked: 2026-08-04) verifiziert.

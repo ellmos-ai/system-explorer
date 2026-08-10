@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
 from .receipt_trust import ReceiptTrustStore, verify_signed_receipt
 from .store import Store
+from .validation import (
+    exact_string_object as _exact_object,
+    sha256 as _sha256,
+    stable_ref as _stable_ref,
+    timestamp as _timestamp,
+    unique_strings as _unique_strings,
+)
 
 
 RECEIPT_SCHEMA = "ellmos.search-authority-receipt.v1"
@@ -18,6 +24,12 @@ AUTHORITY_TYPES = {
     "delegated-avatar-decision",
 }
 QUERY_MODES = {"skill-search", "tool-search", "tool-overview"}
+AUTHORITY_EVIDENCE_SOURCE_KINDS = {"document:decision", "document:policy"}
+AUTHORITY_REQUIRED_SOURCE_KIND = {
+    "direct-user-decision": "document:decision",
+    "policy-decision": "document:policy",
+    "delegated-avatar-decision": "document:decision",
+}
 ROOT_FIELDS = {
     "schema",
     "receipt_ref",
@@ -55,6 +67,7 @@ def import_search_authority_receipt(
         expected_host_id=expected_host_id,
         trust_store=trust_store,
     )
+    verified_evidence = _verify_local_evidence(store, receipt)
     source_sha256 = hashlib.sha256(source_bytes).hexdigest()
     source_uri = (
         "search-authority://"
@@ -81,6 +94,7 @@ def import_search_authority_receipt(
         "issued_at": receipt["issued_at"],
         "expires_at": receipt["expires_at"],
         "conflicts": receipt["conflicts"],
+        "verified_evidence": verified_evidence,
         "signed_receipt": receipt,
         **trust_verification,
     }
@@ -166,6 +180,7 @@ def resolve_authority_receipts(
                     expected_host_id=expected_host_id,
                     trust_store=trust_store,
                 )
+                _verify_local_evidence(store, signed_receipt)
                 verified_matches.append((item, signed_receipt, issued))
             except (KeyError, TypeError, ValueError):
                 continue
@@ -285,6 +300,7 @@ def validate_search_authority_receipt(
         {"ref", "adapter_id", "signer_id", "host_id"},
     )
     _stable_ref(issuer["ref"], "issuer.ref")
+    _stable_ref(issuer["signer_id"], "issuer.signer_id")
     if issuer["host_id"] != expected_host_id:
         raise ValueError("search authority issuer host_id mismatch")
 
@@ -338,6 +354,69 @@ def validate_search_authority_receipt(
     )
 
 
+def _verify_local_evidence(
+    store: Store,
+    receipt: dict[str, Any],
+) -> list[dict[str, str]]:
+    """Bind every authority reference to one local, hashed decision artifact."""
+
+    required_kind = AUTHORITY_REQUIRED_SOURCE_KIND[receipt["authority_type"]]
+    verified: list[dict[str, str]] = []
+    required_kind_seen = False
+    local_evidence = store.evidence()
+    for field in ("evidence", "conflicts"):
+        for index, reference in enumerate(receipt[field]):
+            matches = []
+            for candidate in local_evidence:
+                metadata = candidate.get("metadata", {})
+                candidate_refs = {
+                    candidate.get("id"),
+                    candidate.get("uri"),
+                    candidate.get("locator"),
+                    metadata.get("evidence_ref"),
+                    metadata.get("ref"),
+                }
+                if reference["ref"] in candidate_refs:
+                    matches.append(candidate)
+            location = f"{field}[{index}]"
+            if len(matches) != 1:
+                raise ValueError(
+                    f"{location} reference {reference['ref']!r} is not uniquely "
+                    "present in the local evidence store"
+                )
+            candidate = matches[0]
+            if candidate.get("sha256") != reference["sha256"]:
+                raise ValueError(
+                    f"{location} reference {reference['ref']!r} SHA-256 mismatch"
+                )
+            source_kind = candidate.get("source_kind")
+            if source_kind not in AUTHORITY_EVIDENCE_SOURCE_KINDS:
+                raise ValueError(
+                    f"{location} reference {reference['ref']!r} has a non-authorizing "
+                    f"evidence kind: {source_kind!r}"
+                )
+            metadata = candidate.get("metadata", {})
+            if metadata.get("external") is True or metadata.get("read_only") is True:
+                raise ValueError(
+                    f"{location} reference {reference['ref']!r} is external/read-only"
+                )
+            required_kind_seen = required_kind_seen or source_kind == required_kind
+            verified.append(
+                {
+                    "ref": reference["ref"],
+                    "sha256": reference["sha256"],
+                    "source_kind": source_kind,
+                    "evidence_id": str(candidate["id"]),
+                    "source_uri": str(candidate["uri"]),
+                }
+            )
+    if not required_kind_seen:
+        raise ValueError(
+            f"authority receipt requires at least one {required_kind} evidence item"
+        )
+    return verified
+
+
 def _validate_evidence_items(items: list[Any], path: str) -> None:
     seen = set()
     for index, item in enumerate(items):
@@ -349,61 +428,7 @@ def _validate_evidence_items(items: list[Any], path: str) -> None:
         seen.add(ref)
 
 
-def _exact_object(value: Any, path: str, fields: set[str]) -> dict[str, Any]:
-    if not isinstance(value, dict) or set(value) != fields:
-        raise ValueError(f"{path} has invalid fields")
-    for field in fields:
-        if not isinstance(value[field], str) or not value[field]:
-            raise ValueError(f"{path}.{field} must be non-empty")
-    return value
-
-
-def _unique_strings(value: Any, path: str) -> None:
-    if not isinstance(value, list) or any(
-        not isinstance(item, str) or not item for item in value
-    ):
-        raise ValueError(f"{path} must contain strings")
-    if len(value) != len(set(value)):
-        raise ValueError(f"{path} contains duplicates")
-
-
 def _unique_refs(value: Any, path: str) -> None:
     _unique_strings(value, path)
     for item in value:
         _stable_ref(item, path)
-
-
-def _stable_ref(value: Any, path: str) -> str:
-    if (
-        not isinstance(value, str)
-        or not value
-        or value != value.strip()
-        or ":" not in value
-        or value.startswith(":")
-        or value.endswith(":")
-        or any(character.isspace() for character in value)
-    ):
-        raise ValueError(f"{path} must be a stable typed reference")
-    return value
-
-
-def _sha256(value: Any, path: str) -> str:
-    if (
-        not isinstance(value, str)
-        or len(value) != 64
-        or any(character not in "0123456789abcdef" for character in value)
-    ):
-        raise ValueError(f"{path} must be a lowercase SHA-256 digest")
-    return value
-
-
-def _timestamp(value: Any, path: str) -> datetime:
-    if not isinstance(value, str) or not value:
-        raise ValueError(f"{path} must be an ISO-8601 timestamp")
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise ValueError(f"{path} must be an ISO-8601 timestamp") from error
-    if parsed.tzinfo is None:
-        raise ValueError(f"{path} must include a timezone")
-    return parsed.astimezone(timezone.utc)

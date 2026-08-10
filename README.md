@@ -1,6 +1,6 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-137%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-144%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -234,7 +234,11 @@ issuer and `scope.host_ids` must match the host of the currently resolved
 system instance; a multi-host signer does not permit foreign-host replay. A
 raw TOM_lm prediction alone is not an authority. Stored actual/authority
 receipts are cryptographically verified again for every search; a manipulated
-SQLite metadata record is insufficient.
+SQLite metadata record is insufficient. Every authority `evidence` and
+`conflicts` ref must also resolve uniquely in the local Evidence Store with the
+exact declared SHA-256 and an authorizing `document:decision` or
+`document:policy` source kind. External/read-only evidence and missing,
+deleted, ambiguous, or hash-mismatched records block executable authority.
 
 The `ai-media-editor` connector materializes a UC6 handoff with a storyboard,
 German narration, and Mermaid visuals from selected maps. It does not silently

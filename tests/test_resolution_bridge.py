@@ -876,6 +876,44 @@ class ResolutionBridgeTest(unittest.TestCase):
                     self.assertEqual(store.nodes(), [])
                     self.assertEqual(store.evidence(), [])
 
+    def test_duplicate_component_provides_are_rejected_before_store_mutation(self) -> None:
+        candidate = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        duplicate = json.loads(
+            json.dumps(candidate["bundles"][0]["components"][0])
+        )
+        duplicate["provides"] = ["function.conflicting"]
+        candidate["bundles"][0]["components"].append(duplicate)
+        candidate["content_hash"] = canonical_content_hash(candidate)
+        path = self.root / "duplicate-provides.json"
+        path.write_text(json.dumps(candidate), encoding="utf-8")
+
+        with Store(self.root / "duplicate-provides.db") as store:
+            with self.assertRaisesRegex(ValueError, "conflicting provides"):
+                import_resolution(path, store)
+            self.assertEqual(store.nodes(), [])
+            self.assertEqual(store.evidence(), [])
+
+    def test_duplicate_component_type_and_registry_conflicts_are_rejected(self) -> None:
+        cases = {
+            "type": "software_app",
+            "registry_resolution": {"class": "native-binding", "source": "x"},
+        }
+        for field, conflicting in cases.items():
+            with self.subTest(field=field):
+                candidate = json.loads(FIXTURE.read_text(encoding="utf-8"))
+                duplicate = json.loads(
+                    json.dumps(candidate["bundles"][0]["components"][0])
+                )
+                duplicate[field] = conflicting
+                candidate["bundles"][0]["components"].append(duplicate)
+                candidate["content_hash"] = canonical_content_hash(candidate)
+                path = self.root / f"duplicate-{field}.json"
+                path.write_text(json.dumps(candidate), encoding="utf-8")
+                with Store(self.root / f"duplicate-{field}.db") as store:
+                    with self.assertRaisesRegex(ValueError, "conflicting"):
+                        import_resolution(path, store)
+                    self.assertEqual(store.evidence(), [])
+
     def test_import_provenance_is_bound_to_one_source_snapshot(self) -> None:
         path = self.root / "replace-during-import.json"
         original = json.loads(FIXTURE.read_text(encoding="utf-8"))

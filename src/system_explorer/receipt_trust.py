@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from .contracts import canonical_content_hash
 from .util import expand_path
+from .validation import nonempty_string, sha256, stable_ref
 
 
 TRUST_STORE_SCHEMA = "system-explorer.receipt-trust-store.v1"
@@ -41,14 +42,12 @@ def load_receipt_trust_store(
     source_bytes = path.read_bytes()
     file_sha256 = hashlib.sha256(source_bytes).hexdigest()
     expected_sha256 = config.get("receipt_trust_store_sha256")
-    if (
-        not isinstance(expected_sha256, str)
-        or len(expected_sha256) != 64
-        or any(character not in "0123456789abcdef" for character in expected_sha256)
-    ):
+    try:
+        sha256(expected_sha256, "config receipt_trust_store_sha256")
+    except ValueError as error:
         raise ValueError(
             "config receipt_trust_store_sha256 must pin a lowercase SHA-256"
-        )
+        ) from error
     if file_sha256 != expected_sha256:
         raise ValueError("receipt trust store does not match configured SHA-256 pin")
     value = json.loads(source_bytes.decode("utf-8"))
@@ -60,8 +59,7 @@ def load_receipt_trust_store(
         raise ValueError("receipt trust store content_hash mismatch")
     if set(value) != {"schema", "version", "signers", "content_hash"}:
         raise ValueError("receipt trust store has unsupported fields")
-    if not isinstance(value.get("version"), str) or not value["version"]:
-        raise ValueError("receipt trust store version is required")
+    nonempty_string(value.get("version"), "receipt trust store version")
     signers = value.get("signers")
     if not isinstance(signers, list) or not signers:
         raise ValueError("receipt trust store signers must be non-empty")
@@ -103,8 +101,7 @@ def verify_signed_receipt(
     if signature["algorithm"] != SIGNATURE_ALGORITHM:
         raise ValueError("signed receipt algorithm must be ed25519")
     signer_id = signature.get("signer_id")
-    if not isinstance(signer_id, str) or not signer_id:
-        raise ValueError("signed receipt signer_id is required")
+    stable_ref(signer_id, "signed receipt signer_id")
     if actor.get("signer_id") != signer_id:
         raise ValueError("receipt actor signer_id does not match signature")
     signer = trust_store.signers.get(signer_id)
@@ -203,21 +200,17 @@ def _validate_signer(
     }
     if not isinstance(signer, dict) or set(signer) != fields:
         raise ValueError(f"receipt trust signer {position} has invalid fields")
-    for field in ("signer_id", "public_key_path"):
-        if not isinstance(signer[field], str) or not signer[field].strip():
-            raise ValueError(f"receipt trust signer {position} requires {field}")
+    stable_ref(signer["signer_id"], f"receipt trust signer {position}.signer_id")
+    nonempty_string(
+        signer["public_key_path"],
+        f"receipt trust signer {position}.public_key_path",
+    )
     if signer["algorithm"] != SIGNATURE_ALGORITHM:
         raise ValueError("receipt trust signers must use ed25519")
-    public_key_sha256 = signer["public_key_sha256"]
-    if (
-        not isinstance(public_key_sha256, str)
-        or len(public_key_sha256) != 64
-        or any(
-            character not in "0123456789abcdef"
-            for character in public_key_sha256
-        )
-    ):
-        raise ValueError("receipt signer public_key_sha256 must be lowercase SHA-256")
+    sha256(
+        signer["public_key_sha256"],
+        f"receipt trust signer {position}.public_key_sha256",
+    )
     for field in (
         "allowed_receipt_schemas",
         "allowed_actor_refs",
@@ -233,6 +226,9 @@ def _validate_signer(
             raise ValueError(f"receipt trust signer {position} {field} is invalid")
         if len(values) != len(set(values)):
             raise ValueError(f"receipt trust signer {position} {field} has duplicates")
+    for field in ("allowed_actor_refs", "allowed_delegation_refs"):
+        for index, value in enumerate(signer[field]):
+            stable_ref(value, f"receipt trust signer {position}.{field}[{index}]")
     ttl = signer["max_ttl_seconds"]
     if isinstance(ttl, bool) or not isinstance(ttl, int) or ttl <= 0:
         raise ValueError("receipt trust signer max_ttl_seconds must be positive")

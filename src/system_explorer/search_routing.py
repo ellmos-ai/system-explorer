@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from .actual_self import validate_actual_self_receipt
@@ -9,6 +9,13 @@ from .coverage import coverage_report
 from .receipt_trust import ReceiptTrustStore
 from .search_authority import resolve_authority_receipts
 from .store import Store
+from .validation import (
+    nonempty_string as _nonempty_string,
+    stable_ref as _stable_ref,
+    timestamp as _timestamp,
+    unique_strings as _unique_strings,
+    validate_resolution_components,
+)
 
 
 QUERY_SCHEMA = "ellmos.search-routing-query.v1"
@@ -534,6 +541,7 @@ def _validate_query(query: Any, resolution: dict[str, Any]) -> None:
 
 
 def _components(resolution: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    validate_resolution_components(resolution)
     result: dict[str, dict[str, Any]] = {}
     for bundle in resolution["bundles"]:
         for component in bundle["components"]:
@@ -549,9 +557,8 @@ def _components(resolution: dict[str, Any]) -> dict[str, dict[str, Any]]:
                 continue
             if current["type"] != component["type"]:
                 raise ValueError(f"component {ref!r} has conflicting types")
-            current["provides"] = sorted(
-                set(current.get("provides", [])) | set(component.get("provides", []))
-            )
+            if set(current.get("provides", [])) != set(component.get("provides", [])):
+                raise ValueError(f"component {ref!r} has conflicting provides")
             if (
                 current.get("registry_resolution")
                 != component.get("registry_resolution")
@@ -562,41 +569,7 @@ def _components(resolution: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return result
 
 
-def _unique_strings(value: Any, path: str) -> None:
-    if not isinstance(value, list):
-        raise ValueError(f"{path} must be a list")
-    items = [_nonempty_string(item, path) for item in value]
-    if len(items) != len(set(items)):
-        raise ValueError(f"{path} must contain unique values")
-
-
 def _unique_stable_refs(value: Any, path: str) -> None:
     _unique_strings(value, path)
     for item in value:
         _stable_ref(item, path)
-
-
-def _stable_ref(value: Any, path: str) -> str:
-    value = _nonempty_string(value, path)
-    if ":" not in value or value.startswith(":") or value.endswith(":"):
-        raise ValueError(f"{path} must use a stable typed reference")
-    if any(character.isspace() for character in value):
-        raise ValueError(f"{path} must not contain whitespace")
-    return value
-
-
-def _nonempty_string(value: Any, path: str) -> str:
-    if not isinstance(value, str) or not value or value != value.strip():
-        raise ValueError(f"{path} must contain non-empty trimmed strings")
-    return value
-
-
-def _timestamp(value: Any, path: str) -> datetime:
-    value = _nonempty_string(value, path)
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise ValueError(f"{path} must be an ISO-8601 timestamp") from error
-    if parsed.tzinfo is None:
-        raise ValueError(f"{path} must include a timezone")
-    return parsed.astimezone(timezone.utc)
