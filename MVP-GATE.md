@@ -1,7 +1,9 @@
 # MVP-Gate-Readback
 
-Stand: 2026-08-10. Dieser Bericht bezieht sich auf den lokalen
-Source-of-Truth-Commit `ea22747f442d87d2825f530ed29eebb05d7868f8` in
+Stand: 2026-08-10. Die Funktionsgates wurden auf dem lokalen
+Source-of-Truth-Commit `ea22747f442d87d2825f530ed29eebb05d7868f8` geprüft;
+dieser Gate-Bericht liegt als Dokumentations-Commit
+`e613beb3f504fbab783890e146cdcc3104b12da3` in
 `C:\_Local_DEV\repos\system-explorer`.
 
 ## Entscheidung
@@ -44,8 +46,10 @@ Produktionsabdeckung abgeleitet.
 
 ### Local clone versus controlled mirror
 
-- Lokaler Branch: `main`, `HEAD=ea22747f442d87d2825f530ed29eebb05d7868f8`,
-  Status `ahead 3, behind 6` gegenüber `origin/main=6915688`.
+- Lokaler Branch zum Funktions-Readback: `main`,
+  `HEAD=ea22747f442d87d2825f530ed29eebb05d7868f8`, Status `ahead 3, behind 6`
+  gegenüber `origin/main=6915688`; der aktuelle Dokumentations-HEAD ist
+  `e613beb3f504fbab783890e146cdcc3104b12da3` (`ahead 4, behind 6`).
 - Mirror-Pointer:
   `C:\Users\lukas\OneDrive\.TOPICS\.AI\.MODULES\.CONTROL\system-explorer\REPO.pointer.json`
   meldet Source-of-Truth `C:\_Local_DEV\repos\system-explorer`, aber den alten

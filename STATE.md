@@ -25,8 +25,9 @@ description: |
   expliziter `ai-media-editor`-Schritt
 - Repo-Schaltpläne: Dry-Run, atomarer Apply, optionaler Commit/Push und
   Upstream-Readback für einzelne Repos oder pfadbasierte Bundles
-- TASKPLAN-Readback (2026-08-10): lokaler `HEAD` `ea22747` mit 150
-  Pytest-Tests/26 Subtests und 150 Unittest-Fällen, Ruff, Compileall,
+- TASKPLAN-Readback (2026-08-10): lokaler Funktions-HEAD `ea22747`, aktueller
+  Dokumentations-HEAD `e613beb`, mit 150 Pytest-Tests/26 Subtests und 150
+  Unittest-Fällen, Ruff, Compileall,
   CLI-Hilfe, Manifest-Validierung und `doc-lint` erfolgreich; Loopback-UI,
   Manifest und vier statische Assets mit HTTP 200 gelesen. Vollständige
   Trennung von PASS/NOT RUN/BLOCKED: [`MVP-GATE.md`](MVP-GATE.md).
