@@ -6,7 +6,7 @@ Purpose: map desired system functions to evidenced function carriers.
 Truth boundary: source systems remain authoritative; evidence is referenced.
 Safety boundary: proposals are read-only and never authorize target mutation.
 Key command: system-explorer --help
-Verification: 144 Pytest unit tests and 20 subtests, Ruff, compileall, CLI help, and `doc-lint` passed locally on 2026-08-10.
+Verification: 150 Pytest unit tests and 26 subtests, 150 unittest cases, Ruff, compileall, CLI help, manifest validation, and `doc-lint` passed locally on 2026-08-10 at commit `ea22747`.
 Architecture: ARCHITECTURE.md
 Evidence rules: docs/EVIDENCE-MODEL.md
 Data and cloud rules: docs/DATA-CLOUD-MODEL.md

@@ -8,6 +8,19 @@
 - Der externe `importlib.metadata`-Fallback wird in `VERSIONING.md` und einem
   Regressionstest ausdrücklich als umgebungsfremd behandelt.
 
+### TASKPLAN-Readback 1716–1718 (2026-08-10)
+- Commit `ea22747` bündelt Resolution-, Actual-Self- und Authority-Imports der
+  `search-route` in einer äußeren All-or-Nothing-Transaktion; ungültige spätere
+  Receipts lassen Store, Evidence, Identity und Edges unverändert.
+- 150 Pytest-Tests/26 Subtests sowie 150 Unittest-Fälle, Ruff, Compileall,
+  CLI-Hilfe, Manifest-Validierung und `doc-lint` sind lokal grün.
+- Loopback-UI, Manifest und vier statische PNG-Assets antworteten im Smoke mit
+  HTTP 200. Der reproduzierbare Gate-Bericht steht in [`MVP-GATE.md`](MVP-GATE.md).
+- Der kontrollierte OneDrive-Mirror ist wegen veraltetem Pointer, Hash-Deltas,
+  fehlender neuer Dateien, divergierendem Upstream und aktivem Cloud-Lock
+  BLOCKED; es gab keinen Pull, Merge, Force-Push oder Mirror-Write. Daher kein
+  Release- oder Live-Acceptance-Claim.
+
 ### Maintainer-Verifikation & Technische Hygiene (2026-08-10)
 - 144 Pytest-Tests und 20 Subtests, `ruff check`, `compileall`, CLI-Hilfe und
   `doc-lint` lokal erfolgreich verifiziert.
