@@ -35,6 +35,8 @@ it is a visible system gap.
 - desired specification for functions, carriers, coverage, and structure
 - transcript adapters for Codex, Claude Code, Claude Desktop, Gemini/agy, Kimi,
   and generic JSONL
+- an opt-in, disabled-by-default provider-native hook contract that stores only
+  redacted call/result/error metadata and source hashes
 - actual, desired, diff, and coverage maps as JSON, ASCII, Mermaid, and HTML
 - federated map imports/exports with identical views per device, system
   boundaries, and whole-system analysis

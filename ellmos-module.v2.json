@@ -95,6 +95,7 @@
     {"type": "cli-wrapper", "id": "gemini-sqlite"},
     {"type": "cli-wrapper", "id": "kimi-wire-jsonl"},
     {"type": "cli-wrapper", "id": "generic-jsonl"},
+    {"type": "provider-hook", "id": "provider-native-redacted-events"},
     {"type": "connector", "id": "ai-media-editor-uc6"},
     {"type": "repository-writer", "id": "generated-system-map"}
   ]

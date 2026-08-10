@@ -1119,6 +1119,147 @@ class SearchRoutingTests(unittest.TestCase):
             0,
         )
 
+        with Store(self.root / "cli.db") as cli_store:
+            before_repeat = {
+                "evidence": sorted(item["id"] for item in cli_store.evidence()),
+                "nodes": sorted(item["id"] for item in cli_store.nodes()),
+                "edges": [
+                    row[0]
+                    for row in cli_store.db.execute(
+                        "SELECT id FROM edges ORDER BY id"
+                    )
+                ],
+            }
+        self.assertEqual(result, 0)
+        self.assertEqual(
+            main(
+                [
+                    "search-route",
+                    str(query_path),
+                    "--resolution",
+                    str(self.resolution_path),
+                    "--actual-self",
+                    str(actual_path),
+                    "--authority-receipt",
+                    str(authority_path),
+                    "--config",
+                    str(config_path),
+                    "--output",
+                    str(output_path),
+                ]
+            ),
+            0,
+        )
+        with Store(self.root / "cli.db") as cli_store:
+            after_repeat = {
+                "evidence": sorted(item["id"] for item in cli_store.evidence()),
+                "nodes": sorted(item["id"] for item in cli_store.nodes()),
+                "edges": [
+                    row[0]
+                    for row in cli_store.db.execute(
+                        "SELECT id FROM edges ORDER BY id"
+                    )
+                ],
+            }
+        self.assertEqual(after_repeat, before_repeat)
+
+    def test_cli_search_route_rolls_back_all_prior_imports_on_later_failure(self) -> None:
+        config_path = self._write(
+            "cli-atomic-config.json",
+            {
+                "schema": "system-explorer.config.v1",
+                "database": str(self.root / "cli-atomic.db"),
+                "receipt_trust_store": self.trust_path.name,
+                "receipt_trust_store_sha256": self.trust_file_sha256,
+                "roots": [],
+            },
+        )
+        actual_path = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-atomic",
+        )
+        authority_path, authority_ref = self._authority_receipt(
+            suffix="-atomic-invalid",
+            delegation_ref="decision:FORGED",
+        )
+        authority_value = json.loads(authority_path.read_text(encoding="utf-8"))
+        with Store(self.root / "cli-atomic.db") as cli_store:
+            for evidence in [
+                *authority_value["evidence"],
+                *authority_value["conflicts"],
+            ]:
+                cli_store.add_evidence(
+                    uri=evidence["ref"],
+                    source_kind="document:decision",
+                    sha256=evidence["sha256"],
+                    locator=evidence["ref"],
+                    metadata={"evidence_ref": evidence["ref"]},
+                )
+            cli_store.commit()
+        query_path = self._write(
+            "cli-atomic-query.json",
+            self._query(
+                mode="tool-search",
+                capabilities=["function.required"],
+                exact_refs=["module:required-provider"],
+                authority_receipt_refs=[authority_ref],
+                execution_requested=True,
+            ),
+        )
+        output_path = self.root / "cli-atomic-search-receipt.json"
+        with Store(self.root / "cli-atomic.db") as cli_store:
+            before = {
+                table: [
+                    tuple(row)
+                    for row in cli_store.db.execute(
+                        f"SELECT * FROM {table} ORDER BY 1"
+                    )
+                ]
+                for table in (
+                    "evidence",
+                    "nodes",
+                    "edges",
+                    "component_identity_claims",
+                )
+            }
+
+        result = main(
+            [
+                "search-route",
+                str(query_path),
+                "--resolution",
+                str(self.resolution_path),
+                "--actual-self",
+                str(actual_path),
+                "--authority-receipt",
+                str(authority_path),
+                "--config",
+                str(config_path),
+                "--output",
+                str(output_path),
+            ]
+        )
+        self.assertNotEqual(result, 0)
+        self.assertFalse(output_path.exists())
+        with Store(self.root / "cli-atomic.db") as cli_store:
+            after = {
+                table: [
+                    tuple(row)
+                    for row in cli_store.db.execute(
+                        f"SELECT * FROM {table} ORDER BY 1"
+                    )
+                ]
+                for table in (
+                    "evidence",
+                    "nodes",
+                    "edges",
+                    "component_identity_claims",
+                )
+            }
+        self.assertEqual(after, before)
+
         forged_path, _ = self._authority_receipt(
             suffix="-cli-forged",
             delegation_ref="decision:FORGED",

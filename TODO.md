@@ -3,6 +3,7 @@
 ## Nach dem MVP
 
 - provider-native Live-Hooks ausschließlich als optionale Adapter anbinden
+  (redigierter Vertrag vorhanden; konkrete Provider-Auth bleibt extern)
 - Kardinalitäten aus externen Composition-Regeln bewerten
 - protobuf-spezifischen Gemini/agy-Decoder ergänzen
 - UI als optionales Panel in vorhandenen GUI-Host einbetten

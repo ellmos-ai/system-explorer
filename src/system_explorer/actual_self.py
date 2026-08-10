@@ -45,6 +45,7 @@ def import_actual_self_receipt(
     *,
     evaluated_at: str,
     trust_store: ReceiptTrustStore,
+    defer_commit: bool = False,
 ) -> dict[str, Any]:
     """Import one native, stable-ID-bound runtime readback.
 
@@ -54,6 +55,11 @@ def import_actual_self_receipt(
     written.
     """
 
+    owns_transaction = not store.in_transaction
+    if defer_commit and owns_transaction:
+        raise RuntimeError(
+            "defer_commit requires an active outer Store transaction"
+        )
     path = Path(path).resolve()
     source_bytes = path.read_bytes()
     receipt = json.loads(source_bytes.decode("utf-8"))
@@ -79,7 +85,8 @@ def import_actual_self_receipt(
         component_ref,
     )
 
-    store.begin_immediate()
+    if owns_transaction:
+        store.begin_immediate()
     try:
         evidence_id = store.add_evidence(
             uri=source_uri,
@@ -174,9 +181,10 @@ def import_actual_self_receipt(
                     },
                 )
             )
-        store.commit()
+        if owns_transaction:
+            store.commit()
     except BaseException:
-        if store.in_transaction:
+        if owns_transaction and store.in_transaction:
             store.rollback()
         raise
 

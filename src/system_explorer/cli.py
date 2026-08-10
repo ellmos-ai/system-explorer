@@ -598,31 +598,44 @@ def _run(args: argparse.Namespace) -> int:
             )
         elif args.command == "search-route":
             resolution_value = _read_json_object(args.resolution)
-            import_resolution(args.resolution, store)
             query_value = _read_json_object(args.query)
             trust_store = load_receipt_trust_store(config)
-            for path in args.actual_self_receipts:
-                import_actual_self_receipt(
-                    path,
+            store.begin_immediate()
+            try:
+                import_resolution(
+                    args.resolution,
+                    store,
+                    defer_commit=True,
+                )
+                for path in args.actual_self_receipts:
+                    import_actual_self_receipt(
+                        path,
+                        resolution_value,
+                        store,
+                        evaluated_at=query_value["observed_at"],
+                        trust_store=trust_store,
+                        defer_commit=True,
+                    )
+                for path in args.authority_receipts:
+                    import_search_authority_receipt(
+                        path,
+                        store,
+                        evaluated_at=query_value["observed_at"],
+                        expected_host_id=resolution_value["instance"]["host_id"],
+                        trust_store=trust_store,
+                        defer_commit=True,
+                    )
+                value = resolve_search_route(
+                    query_value,
                     resolution_value,
                     store,
-                    evaluated_at=query_value["observed_at"],
                     trust_store=trust_store,
                 )
-            for path in args.authority_receipts:
-                import_search_authority_receipt(
-                    path,
-                    store,
-                    evaluated_at=query_value["observed_at"],
-                    expected_host_id=resolution_value["instance"]["host_id"],
-                    trust_store=trust_store,
-                )
-            value = resolve_search_route(
-                query_value,
-                resolution_value,
-                store,
-                trust_store=trust_store,
-            )
+                store.commit()
+            except BaseException:
+                if store.in_transaction:
+                    store.rollback()
+                raise
             if args.output:
                 _write_json_atomic(args.output, value)
                 print(

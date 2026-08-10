@@ -57,7 +57,13 @@ def import_search_authority_receipt(
     evaluated_at: str,
     expected_host_id: str,
     trust_store: ReceiptTrustStore,
+    defer_commit: bool = False,
 ) -> dict[str, Any]:
+    owns_transaction = not store.in_transaction
+    if defer_commit and owns_transaction:
+        raise RuntimeError(
+            "defer_commit requires an active outer Store transaction"
+        )
     path = Path(path).resolve()
     source_bytes = path.read_bytes()
     receipt = json.loads(source_bytes.decode("utf-8"))
@@ -108,7 +114,8 @@ def import_search_authority_receipt(
         sensitivity="user-local",
         metadata=metadata,
     )
-    store.commit()
+    if owns_transaction:
+        store.commit()
     return {
         "schema": "system-explorer.search-authority-import.v1",
         "status": "imported",

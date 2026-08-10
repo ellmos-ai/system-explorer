@@ -35,6 +35,8 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
 - Sollspezifikation für Funktionen, Träger, Deckung und Struktur
 - Transcript-Adapter für Codex, Claude Code, Claude Desktop, Gemini/agy, Kimi
   und generisches JSONL
+- optionaler, standardmäßig deaktivierter Provider-native-Hook-Vertrag, der
+  nur redigierte Call-/Result-/Error-Metadaten und Source-Hashes speichert
 - Actual-, Desired-, Diff- und Coverage-Karten als JSON, ASCII, Mermaid und HTML
 - föderierte Kartenimporte/-exporte mit identischen Ansichten je Gerät,
   Systemgrenzen sowie Gesamtebenenanalyse

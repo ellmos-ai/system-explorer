@@ -17,7 +17,17 @@ from .validation import validate_resolution_components
 REQUIREMENTS = ("required", "recommended", "optional")
 
 
-def import_resolution(path: Path, store: Store) -> dict[str, Any]:
+def import_resolution(
+    path: Path,
+    store: Store,
+    *,
+    defer_commit: bool = False,
+) -> dict[str, Any]:
+    owns_transaction = not store.in_transaction
+    if defer_commit and owns_transaction:
+        raise RuntimeError(
+            "defer_commit requires an active outer Store transaction"
+        )
     source_bytes, source_stat = _read_resolution_snapshot(path)
     value = json.loads(source_bytes.decode("utf-8"))
     _validate_resolution(value)
@@ -93,7 +103,8 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             "resolution functions do not match active component provides"
         )
 
-    store.begin_immediate()
+    if owns_transaction:
+        store.begin_immediate()
     try:
         result = _import_resolution_locked(
             path=path,
@@ -113,12 +124,13 @@ def import_resolution(path: Path, store: Store) -> dict[str, Any]:
             function_requirements=function_requirements,
             empty_provides=empty_provides,
             inactive_provides=inactive_provides,
+            commit=owns_transaction,
         )
-        if store.in_transaction:
+        if owns_transaction and store.in_transaction:
             store.rollback()
         return result
     except BaseException:
-        if store.in_transaction:
+        if owns_transaction and store.in_transaction:
             store.rollback()
         raise
 
@@ -142,6 +154,7 @@ def _import_resolution_locked(
     function_requirements: dict[str, set[str]],
     empty_provides: int,
     inactive_provides: int,
+    commit: bool,
 ) -> dict[str, Any]:
     resolution_hash = value["content_hash"]
     active_projection = store.resolution_projection_state(projection_key)
@@ -273,7 +286,8 @@ def _import_resolution_locked(
             },
         )
 
-    store.commit()
+    if commit:
+        store.commit()
     return _import_result(
         value,
         source_digest=source_digest,
