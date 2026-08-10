@@ -2,8 +2,8 @@
 name: "system-explorer-start"
 type: session-bootstrap
 version: 0.1.0
-updated: "2026-07-29"
-last_verified: "2026-07-29"
+updated: "2026-08-10"
+last_verified: "2026-08-10"
 description: |
   Imperative bootstrap sequence for new sessions in system-explorer.
 ---

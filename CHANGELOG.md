@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Maintainer-Verifikation & Technische Hygiene (2026-08-10)
+- 137 Pytest-Tests und 15 Subtests, `ruff check`, `compileall`, CLI-Hilfe und
+  `doc-lint` lokal erfolgreich verifiziert.
+- Pytest-Badges in `README.md` und `README_de.md` sowie der Prüfzeitpunkt in
+  `llms.txt` auf diesen Readback aktualisiert. Kein Pull, Push oder Release.
+
 ### Maintainer-Verifikation & Technische Hygiene (2026-08-04)
 - 127 Pytest-Tests (100% grün), `ruff check` (clean) & `llms.txt` (Last-checked: 2026-08-04) verifiziert.
 - Shields.io Badges (Pytest, Python 3.10+, MIT, ellmos-ai, open-bricks) und GFM-Callouts in `README.md` & `README_de.md` ergänzt.

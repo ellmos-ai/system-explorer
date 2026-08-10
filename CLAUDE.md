@@ -4,9 +4,9 @@ type: project-docs
 profile: "FULL"
 version: 0.4.0
 created: "2026-07-29"
-updated: "2026-07-30"
-reason_last_change: "Kanonischen Komponentenregistry- und Activation-Gate-Vertrag ergänzt"
-last_verified: "2026-07-30"
+updated: "2026-08-10"
+reason_last_change: "Maintainer-Verifikation und aktuelle Test-/Doku-Readbacks"
+last_verified: "2026-08-10"
 author: "Lukas Geiger"
 anthropic_compatible: true
 description: |
