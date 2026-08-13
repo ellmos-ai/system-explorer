@@ -204,6 +204,18 @@ Fallback-/Abhängigkeitszyklen und Test-Suppressions. Sie materialisiert nur
 eine deterministische Projektion; `runtime_actions`, `target_mutations` und
 Test-Writeback bleiben leer beziehungsweise `false`.
 
+### Externe Autoritätsgrenzen
+
+`composition_rules.py` wertet gepinnte externe Cardinality-Regeln scopeweise
+aus. `proposals.py` übernimmt den Report als sichtbares Gate, ohne Regeln oder
+Probeergebnisse zu einer lokalen zweiten Autorität zu kopieren.
+`probe_receipts.py` importiert ausschließlich referenzielle Runner-Receipts;
+die SQLite-Evidence enthält Hashes, Identitäten und Metriknamen, nicht rohe
+Antworten. `stack_schema.py` prüft ein externes `ellmos.stack.v2`-Schema über
+Version/Scope/Quelle/Hash-Pin. `system-resolve --stack-schema-pin` blockiert
+bei fehlender, abgelaufener oder driftender Quelle; ohne Pin bleibt die
+Legacy-Warnung sichtbar.
+
 Die Komponentenregistry-Bindung gehört zu derselben Resolvergrenze. Sie
 bindet ein typisiertes Bundle-Ref ausschließlich an eine deklarierte,
 gehashte native Quelle und deren exakte Record-ID. `declared_only` bleibt

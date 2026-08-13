@@ -21,6 +21,8 @@ description: |
 - V4-Komposition: additive Bundle-/System-/Instanz-/Test-/Fleet- und
   Komponentenregistry-Verträge, deterministische Read-only-Auflösung sowie
   fail-closed `declared_only`-Activation-Gates
+- Externe Autoritätsgrenzen: scopeweise Cardinality-Regeln, referenzielle
+  Probe-Receipts und gepinnte `ellmos.stack.v2`-Schema-Verifikation
 - Medien-Connector: UC6-Handoff aus analysierten Karten; echter Render bleibt
   expliziter `ai-media-editor`-Schritt
 - Repo-Schaltpläne: Dry-Run, atomarer Apply, optionaler Commit/Push und
@@ -33,3 +35,5 @@ description: |
   `origin/main` (`6915688`) liegt sechs Commits voraus; der direkte Push
   wurde `non-fast-forward` abgelehnt. Kein Pull, Merge oder Force-Push.
 - MVP-Freigabe: BLOCKED wegen kontrolliertem Mirror-Readback; kein Release.
+- TASKPLAN-Bundle 1719/1722/1724: neutral implementiert und synthetisch
+  verifiziert; externe Autoritäten bleiben referenziell und fail-closed.

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/system-explorer.stack-schema-pin.v1.schema.json",
+  "title": "Pinned external ellmos.stack.v2 schema reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "target_schema", "version", "scope", "source_uri", "source_path", "content_hash"],
+  "properties": {
+    "schema": {"const": "system-explorer.stack-schema-pin.v1"},
+    "id": {"type": "string", "minLength": 1},
+    "target_schema": {"const": "ellmos.stack.v2"},
+    "version": {"type": "string", "minLength": 1},
+    "scope": {"type": "string", "minLength": 1},
+    "source_uri": {"type": "string", "minLength": 1},
+    "source_path": {"type": "string", "minLength": 1},
+    "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "expires_at": {"type": "string", "format": "date-time"}
+  }
+}

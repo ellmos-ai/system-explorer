@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -44,6 +45,9 @@ class ContractTest(unittest.TestCase):
             "ellmos.search-routing-query.v1.schema.json",
             "ellmos.search-routing-receipt.v1.schema.json",
             "system-explorer.receipt-trust-store.v1.schema.json",
+            "system-explorer.probe-receipt.v1.schema.json",
+            "system-explorer.composition-rule-pin.v1.schema.json",
+            "system-explorer.stack-schema-pin.v1.schema.json",
         }
         for name in names:
             value = json.loads((schema_dir / name).read_text(encoding="utf-8"))
@@ -591,6 +595,39 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(result["stacks"][0]["id"], "legacy-stack")
         self.assertIn("bundle_refs only", result["warnings"][0])
         self.assertEqual(validate_manifest({"schema": "ellmos.stack.v2", "id": "x"}), [])
+
+    def test_pinned_external_stack_schema_is_verified_during_resolution(self) -> None:
+        paths = self._write_fixture(use_stack=True)
+        schema_path = self.root / "external-stack-schema.json"
+        schema_path.write_text(
+            json.dumps({"schema": "ellmos.stack.v2", "version": "2.0.0", "required": ["id"]}),
+            encoding="utf-8",
+        )
+        pin_path = self.root / "stack-schema-pin.json"
+        pin_path.write_text(
+            json.dumps(
+                {
+                    "schema": "system-explorer.stack-schema-pin.v1",
+                    "id": "stack-schema-fixture",
+                    "target_schema": "ellmos.stack.v2",
+                    "version": "2.0.0",
+                    "scope": "template",
+                    "source_uri": "registry://stack/schema-fixture",
+                    "source_path": schema_path.name,
+                    "content_hash": hashlib.sha256(schema_path.read_bytes()).hexdigest(),
+                }
+            ),
+            encoding="utf-8",
+        )
+        result = resolve_system(
+            paths["instance"],
+            [paths["catalog"]],
+            stack_schema_pin_path=pin_path,
+        )
+        self.assertEqual(result["stack_schema_verifications"][0]["status"], "verified")
+        schema_path.write_text("{}", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "stack schema authority is blocked"):
+            resolve_system(paths["instance"], [paths["catalog"]], stack_schema_pin_path=pin_path)
 
     def test_legacy_stack_rejects_stale_self_declared_hash_after_mutation(self) -> None:
         paths = self._write_fixture(use_stack=True)

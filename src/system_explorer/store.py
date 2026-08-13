@@ -88,6 +88,19 @@ CREATE INDEX IF NOT EXISTS idx_function_equivalence_target
 ON function_equivalence_claims(
     scope_kind, scope_host_id, component_ref, desired_function
 );
+CREATE TABLE IF NOT EXISTS probe_receipts (
+    receipt_id TEXT PRIMARY KEY,
+    source_uri TEXT NOT NULL,
+    source_sha256 TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    runner_id TEXT NOT NULL,
+    task_id TEXT NOT NULL,
+    experiment_id TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    evidence_id TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(evidence_id) REFERENCES evidence(id)
+);
 CREATE TABLE IF NOT EXISTS scans (
     id TEXT PRIMARY KEY,
     started_at TEXT NOT NULL,
@@ -621,6 +634,13 @@ class Store:
     def evidence(self) -> list[dict[str, Any]]:
         rows = self.db.execute("SELECT * FROM evidence ORDER BY observed_at DESC").fetchall()
         return [self._evidence(row) for row in rows]
+
+    def probe_receipts(self) -> list[dict[str, Any]]:
+        """Return receipt indexes and provenance, never raw probe results."""
+        rows = self.db.execute(
+            "SELECT * FROM probe_receipts ORDER BY observed_at DESC, receipt_id"
+        ).fetchall()
+        return [dict(row) for row in rows]
 
     def resolved_edges(self, mode: str | None = None) -> list[dict[str, Any]]:
         query = """

@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from .assessment import assess
+from .composition_rules import evaluate_cardinality
 from .coverage import coverage_report
 from .store import Store
 from .util import sha256_text, utc_now
@@ -18,7 +19,14 @@ ACTION_WORDS = {
 }
 
 
-def propose(prompt: str, store: Store) -> dict[str, Any]:
+def propose(
+    prompt: str,
+    store: Store,
+    *,
+    composition_rules: dict[str, Any] | None = None,
+    desired_identities: list[dict[str, Any]] | None = None,
+    actual_identities: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     lowered = prompt.casefold()
     actions = [
         action for action, words in ACTION_WORDS.items() if any(word in lowered for word in words)
@@ -32,6 +40,11 @@ def propose(prompt: str, store: Store) -> dict[str, Any]:
             mentioned.append({"id": node["id"], "name": node["name"], "type": node["node_type"]})
     coverage = coverage_report(store)
     assessment = assess(store)
+    cardinality = evaluate_cardinality(
+        composition_rules,
+        desired=desired_identities or (),
+        actual=actual_identities or (),
+    )
     scoped_gaps = _scoped_coverage_gaps(coverage)
     gaps = list(
         dict.fromkeys(item["function"] for item in scoped_gaps)
@@ -57,6 +70,7 @@ def propose(prompt: str, store: Store) -> dict[str, Any]:
             "adapter-dry-run",
             "readback-and-receipt",
         ],
+        "composition_cardinality": cardinality,
         "apply": {"authorized": False, "reason": "Proposal UI never mutates the target system."},
     }
 

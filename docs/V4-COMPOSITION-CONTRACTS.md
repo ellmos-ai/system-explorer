@@ -82,10 +82,32 @@ required `declared_only` bricht fail-closed ab.
 Das Binding-Manifest darf kein `observed_on` oder `observed_at` enthalten.
 Diese Hostevidenz entsteht nur in einem expliziten nativen Receipt.
 
-`ellmos.stack.v2` bleibt kompatibel, wird aber nur tolerant über sein
-`bundle_refs`-Feld konsumiert. Das autoritative Stack-Schema liegt außerhalb
-dieses Repositories und wird hier nicht kopiert. Ein vollständiger
-Stack-v2-Vertrag bleibt ein Follow-up.
+`ellmos.stack.v2` bleibt extern autoritativ. Ohne `--stack-schema-pin` bleibt
+die bisherige dokumentierte Legacy-Auflösung bewusst tolerant und markiert die
+Grenze. Mit einer gepinnten Referenz prüft `system-resolve` Version, Scope,
+Quelle und SHA-256 des externen Schemas sowie jede Stackversion; fehlende,
+abgelaufene oder driftende Quellen blockieren fail-closed. Die externe
+Schemaquelle wird nicht in dieses Repository kopiert.
+
+## Externe Composition-Regeln und Cardinality-Gate
+
+`system-explorer.composition-rules.v1` ist ein referenzieller Vertrag für
+`exact`, `min` und `max` je Scope, Provider, Komponente und Funktion. Die
+zugehörige `system-explorer.composition-rule-pin.v1` bindet Version, Scope,
+Quelle und Hash. Der Evaluator trennt regelkonforme Belegung,
+absichtliche Überlappung, Doppelbelegung und echten Kardinalitätskonflikt.
+Fehlende, abgelaufene, ungehashte oder widersprüchliche Regeln ergeben
+`blocked`; es wird keine lokale Regelautorität erzeugt. Das Proposal-Gate
+stellt den Cardinality-Report referenziell bereit.
+
+## Externe Probe-Receipts
+
+`system-explorer.probe-receipt.v1` nimmt Runner-, Task-, Experiment-,
+Repetitions-, Step-, Outcome-, Metrik-, Zeit- und Source-Hash-Metadaten auf.
+`import-probe-receipt` prüft Identität, Hash, Kanonizität, Idempotenz und
+Tamper; gespeichert werden nur Evidence-Metadaten und ein Receipt-Index, nie
+das rohe Resultat. Ein Receipt allein erzeugt keine Function-Coverage,
+Actual-Self-Identität oder Autorisierung.
 
 ## Output- und Log-Bindings
 

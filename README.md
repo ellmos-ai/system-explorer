@@ -1,6 +1,6 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-150%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-154%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -189,6 +189,31 @@ observation time belong only in explicitly generated receipts, not in the
 host-neutral binding manifest. Resolver output is written atomically only
 with an explicit `--output`; runtime actions and target-system mutations
 remain excluded.
+
+### External composition and probe authorities
+
+Cardinality rules are consumed only through a versioned, SHA-256-pinned
+external reference. The evaluator checks `exact`, `min`, and `max` per scope,
+provider, component, and function and distinguishes intentional overlap,
+duplicate assignment, and real conflict. Missing, expired, or contradictory
+rules produce a blocked proposal gate; no local competing rule authority is
+created.
+
+External swarm results can be imported as referential probe receipts:
+
+```powershell
+system-explorer import-probe-receipt probe-receipt.json --config explorer.json `
+  --source-sha256 <authorized-source-sha256> --runner-id runner-1 --task-id task-1
+```
+
+The importer verifies provenance, identities, source/content hashes and
+idempotence, and stores only evidence metadata and an index. A receipt never
+proves function coverage, Actual-Self identity, or authorization by itself.
+
+For a pinned external `ellmos.stack.v2` schema, pass
+`--stack-schema-pin stack-schema-pin.json` to `system-resolve`. The resolver
+blocks if the source is unavailable, expired, hash-drifted, or version-
+incompatible; the external schema is verified in place and not copied here.
 
 ### Actual-self search routing
 

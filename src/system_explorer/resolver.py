@@ -15,6 +15,7 @@ from .contracts import (
     with_content_hash,
 )
 from .manifests import validate_manifest
+from .stack_schema import verify_pinned_stack_schema
 
 
 RESOLVABLE_STATUSES = OPERATIONAL_STATUSES - {"suppressed", "unavailable"}
@@ -106,6 +107,7 @@ def resolve_system(
     *,
     registry_bindings_path: Path | None = None,
     registry_source_paths: dict[str, Path] | None = None,
+    stack_schema_pin_path: Path | None = None,
 ) -> dict[str, Any]:
     instance_path = instance_path.resolve()
     catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
@@ -117,6 +119,8 @@ def resolve_system(
     resolution_inputs = (instance_path, *catalog_paths)
     if registry_bindings_path is not None:
         resolution_inputs = (*resolution_inputs, registry_bindings_path)
+    if stack_schema_pin_path is not None:
+        stack_schema_pin_path = Path(stack_schema_pin_path).resolve()
     resolution_root = _resolution_root(resolution_inputs)
     instance = _load_contract(instance_path, "ellmos.system-instance.v1")
     if instance["status"] not in RESOLVABLE_STATUSES:
@@ -140,6 +144,7 @@ def resolve_system(
         component_states=instance["component_states"],
         instance=instance,
         resolution_root=resolution_root,
+        stack_schema_pin_path=stack_schema_pin_path,
     )
     if registry_bindings_path is not None:
         resolution = apply_component_registry_gate(
@@ -266,6 +271,7 @@ def _resolve_system_document(
     component_states: dict[str, Any],
     instance: dict[str, Any] | None,
     resolution_root: Path,
+    stack_schema_pin_path: Path | None = None,
     ancestry_paths: tuple[Path, ...] = (),
     ancestry_system_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
@@ -297,6 +303,7 @@ def _resolve_system_document(
 
     bundle_refs = deepcopy(system["bundle_refs"])
     stack_summaries: list[dict[str, Any]] = []
+    stack_schema_verifications: list[dict[str, Any]] = []
     for index, stack_ref in enumerate(system.get("stack_refs", [])):
         path = _resolve_contained_ref(
             stack_ref,
@@ -313,6 +320,17 @@ def _resolve_system_document(
         if stack.get("schema") != "ellmos.stack.v2":
             raise ValueError(f"{path.name} is not ellmos.stack.v2")
         _verify_pin(stack_ref, stack, f"$.stack_refs[{index}]")
+        if stack_schema_pin_path is not None:
+            verification = verify_pinned_stack_schema(
+                path,
+                stack_schema_pin_path,
+            )
+            stack_schema_verifications.append(verification)
+            if verification["status"] != "verified":
+                raise ValueError(
+                    "stack schema authority is blocked: "
+                    + verification.get("reason", "verification failed")
+                )
         declared = stack.get("bundle_refs", [])
         if not isinstance(declared, list):
             raise ValueError(f"{path.name}.bundle_refs must be an array when present")
@@ -429,6 +447,7 @@ def _resolve_system_document(
             resolution_root=resolution_root,
             ancestry_paths=child_ancestry_paths,
             ancestry_system_ids=child_ancestry_system_ids,
+            stack_schema_pin_path=stack_schema_pin_path,
         )
         source_ref = {
             field: subsystem_ref[field]
@@ -455,6 +474,7 @@ def _resolve_system_document(
         },
         "desired_profile": desired_profile,
         "stacks": sorted(stack_summaries, key=lambda item: item["id"]),
+        "stack_schema_verifications": stack_schema_verifications,
         "bundles": sorted(bundles, key=lambda item: item["id"]),
         "functions": functions,
         "output_bindings": output_bindings,
@@ -472,7 +492,7 @@ def _resolve_system_document(
             "ellmos.stack.v2 is consumed tolerantly through bundle_refs only; "
             "its authoritative schema remains external."
         ]
-        if stack_summaries
+        if stack_summaries and stack_schema_pin_path is None
         else [],
     }
     if instance:

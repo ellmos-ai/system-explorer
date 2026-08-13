@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ellmos-ai/system-explorer/schemas/system-explorer.composition-rule-pin.v1.schema.json",
+  "title": "Pinned external composition rule reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "version", "scope", "content_hash", "source_uri"],
+  "properties": {
+    "schema": {"const": "system-explorer.composition-rule-pin.v1"},
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "scope": {"type": "string", "minLength": 1},
+    "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_uri": {"type": "string", "minLength": 1},
+    "expires_at": {"type": "string", "format": "date-time"}
+  }
+}

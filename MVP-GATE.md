@@ -32,6 +32,15 @@ leere Karte ist der erwartete Readback der frischen, ignorierten
 `.state/evidence.db` aus `examples/explorer.json`; daraus wird keine
 Produktionsabdeckung abgeleitet.
 
+## TASKPLAN-Bundle-Readback 2026-08-13
+
+Nach dem historischen MVP-HEAD wurden die externen Autoritätsverträge lokal
+erneut geprüft: 154 Pytest-/Unittest-Fälle, 26 Subtests, Ruff, Compileall,
+CLI-Hilfe, Probe-Receipt-Importer, Cardinality-Report und gepinnte
+`ellmos.stack.v2`-Schema-Drift-Tests bestanden. Dieser Readback ist kein
+Release-Sign-off; der Gate-Status bleibt BLOCKED wegen des kontrollierten
+Mirrors und der divergierenden Historie.
+
 ## NOT RUN
 
 - Provider-spezifische Live-Hook-Authentisierung, externe Consent-/Privacy-

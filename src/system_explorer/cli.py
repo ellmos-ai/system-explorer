@@ -35,6 +35,7 @@ from .media_connector import (
     discover_ai_media_editor,
 )
 from .proposals import probe_plan, propose
+from .probe_receipts import import_probe_receipt
 from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
 from .receipt_trust import load_receipt_trust_store
@@ -299,6 +300,17 @@ def build_parser() -> argparse.ArgumentParser:
     apiprober_import.add_argument("--server", required=True)
     apiprober_import.add_argument("--config", type=Path, required=True)
 
+    probe_receipt_import = sub.add_parser(
+        "import-probe-receipt",
+        help="Import one referential external probe receipt without raw results.",
+    )
+    probe_receipt_import.add_argument("path", type=Path)
+    probe_receipt_import.add_argument("--config", type=Path, required=True)
+    probe_receipt_import.add_argument("--source-sha256")
+    probe_receipt_import.add_argument("--runner-id")
+    probe_receipt_import.add_argument("--task-id")
+    probe_receipt_import.add_argument("--experiment-id")
+
     query = sub.add_parser("query")
     query.add_argument("--config", type=Path, required=True)
     query.add_argument("--kind", choices=["nodes", "edges", "evidence"], default="nodes")
@@ -415,6 +427,14 @@ def build_parser() -> argparse.ArgumentParser:
         dest="catalogs",
     )
     system_resolve.add_argument("--registry-bindings", type=Path)
+    system_resolve.add_argument(
+        "--stack-schema-pin",
+        type=Path,
+        help=(
+            "Verify each ellmos.stack.v2 reference against an external "
+            "schema pin; missing/drifted authority blocks resolution."
+        ),
+    )
     system_resolve.add_argument(
         "--registry-source-path",
         action="append",
@@ -540,6 +560,7 @@ def _run(args: argparse.Namespace) -> int:
                 registry_source_paths=parse_source_path_arguments(
                     args.registry_source_path
                 ),
+                stack_schema_pin_path=args.stack_schema_pin,
             )
             if args.command == "system-resolve"
             else resolve_test(args.test, args.catalogs)
@@ -719,6 +740,16 @@ def _run(args: argparse.Namespace) -> int:
             tag_current_system(config, store)
         elif args.command == "import-apiprober":
             value = import_apiprober_export(args.path, store, server_id=args.server)
+            tag_current_system(config, store)
+        elif args.command == "import-probe-receipt":
+            value = import_probe_receipt(
+                args.path,
+                store,
+                expected_source_sha256=args.source_sha256,
+                expected_runner_id=args.runner_id,
+                expected_task_id=args.task_id,
+                expected_experiment_id=args.experiment_id,
+            )
             tag_current_system(config, store)
         elif args.command == "map-import":
             value = import_system_map(args.path, store)

@@ -1,6 +1,6 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-150%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-154%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -194,6 +194,31 @@ erforderlich. Hostbezug und Beobachtungszeit gehören nur in explizit erzeugte
 Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
+
+### Externe Composition- und Probe-Autoritäten
+
+Kardinalitätsregeln werden ausschließlich über eine versionierte,
+SHA-256-gepinnte externe Referenz konsumiert. Der Evaluator prüft `exact`,
+`min` und `max` je Scope, Provider, Komponente und Funktion und trennt
+absichtliche Überlappung, Doppelbelegung und echten Konflikt. Fehlende,
+abgelaufene oder widersprüchliche Regeln blockieren das Proposal-Gate; eine
+zweite lokale Regelautorität wird nicht erzeugt.
+
+Externe Schwarmresultate lassen sich als referenzielle Probe-Receipts importieren:
+
+```powershell
+system-explorer import-probe-receipt probe-receipt.json --config explorer.json `
+  --source-sha256 <autorisierter-source-sha256> --runner-id runner-1 --task-id task-1
+```
+
+Der Import prüft Provenienz, Identitäten, Source-/Content-Hash und Idempotenz
+und speichert nur Evidenz-Metadaten und einen Index. Ein Receipt allein beweist
+weder Function Coverage noch Actual-Self-Identität oder Autorisierung.
+
+Für ein gepinntes externes `ellmos.stack.v2`-Schema wird
+`--stack-schema-pin stack-schema-pin.json` an `system-resolve` übergeben. Eine
+fehlende, abgelaufene, hashabweichende oder inkompatible Quelle blockiert die
+Auflösung; das externe Schema wird vor Ort geprüft und nicht kopiert.
 
 ### Actual-self Search Routing
 

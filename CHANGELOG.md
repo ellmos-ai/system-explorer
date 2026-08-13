@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- 2026-08-13: TASKPLAN-Bundle 1719/1722/1724 ergänzt scopeweise,
+  hash-/versionsgepinnte externe Composition-Regeln mit fail-closed
+  Cardinality-Report, referenzielle `system-explorer.probe-receipt.v1`-
+  Imports ohne Rohresultat-/Coverage-Eskalation sowie die optionale
+  `--stack-schema-pin`-Prüfung für externe `ellmos.stack.v2`-Autorität.
+  Synthetische Tests decken exact/min/max, Overlap/Konflikt, Receipt-
+  Idempotenz/Tamper und Schema-Drift ab. Keine Provider-, Schwarm-, Credential-
+  oder Mirror-Aktion.
+
 ## [Unreleased]
 
 ### Versionsstand (2026-08-10)
