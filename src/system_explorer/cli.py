@@ -40,7 +40,12 @@ from .registry import find_documents, register_path
 from .repo_diagrams import sync_repository_diagrams
 from .receipt_trust import load_receipt_trust_store
 from .resolution_bridge import import_resolution
-from .resolver import resolve_system, resolve_test, validate_manifest_target
+from .resolver import (
+    resolve_fleet,
+    resolve_system,
+    resolve_test,
+    validate_manifest_target,
+)
 from .resources import resource_report
 from .scanner import ProgressCallback, scan
 from .search_authority import import_search_authority_receipt
@@ -50,6 +55,27 @@ from .specs import desired_template, import_spec
 from .store import Store
 from .transcripts import SUPPORTED_PROVIDERS, import_transcripts
 from .util import expand_path
+
+
+def _activation_enforcement_status(value: dict[str, Any]) -> str | None:
+    registry = value.get("component_registry")
+    if isinstance(registry, dict):
+        status = registry.get("activation_enforcement")
+        if isinstance(status, str) and status:
+            return status
+    for subsystem in value.get("subsystems", []):
+        resolution = subsystem.get("resolution") if isinstance(subsystem, dict) else None
+        if isinstance(resolution, dict):
+            status = _activation_enforcement_status(resolution)
+            if status:
+                return status
+    for member in value.get("members", []):
+        resolution = member.get("resolution") if isinstance(member, dict) else None
+        if isinstance(resolution, dict):
+            status = _activation_enforcement_status(resolution)
+            if status:
+                return status
+    return None
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -170,6 +196,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     search_route.add_argument("--config", type=Path, required=True)
     search_route.add_argument("--output", type=Path)
+    for command_parser in (resolution, actual_self, search_authority, search_route):
+        command_parser.add_argument(
+            "--root-only-resolution",
+            action="store_true",
+            help=(
+                "Explicitly project only the root system when the resolution "
+                "contains nested subsystems; omitted subsystem count is recorded."
+            ),
+        )
 
     equivalence = sub.add_parser(
         "import-function-equivalence",
@@ -441,7 +476,48 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         metavar="SOURCE_ID=PATH",
     )
+    system_resolve.add_argument(
+        "--emit-blocked-resolution",
+        action="store_true",
+        help=(
+            "Emit a source-verified evidence view while quarantining every component "
+            "of bundles blocked by required declared-only entries."
+        ),
+    )
     system_resolve.add_argument("--output", type=Path)
+
+    fleet_resolve = sub.add_parser(
+        "fleet-resolve",
+        help=(
+            "Resolve a pinned fleet manifest into its member systems without "
+            "runtime actions."
+        ),
+    )
+    fleet_resolve.add_argument("fleet", type=Path)
+    fleet_resolve.add_argument(
+        "--catalog",
+        type=Path,
+        action="append",
+        required=True,
+        dest="catalogs",
+    )
+    fleet_resolve.add_argument("--registry-bindings", type=Path)
+    fleet_resolve.add_argument(
+        "--registry-source-path",
+        action="append",
+        default=[],
+        metavar="SOURCE_ID=PATH",
+    )
+    fleet_resolve.add_argument(
+        "--emit-blocked-resolution",
+        action="store_true",
+        help=(
+            "Emit a source-verified evidence view while quarantining every component "
+            "of bundles blocked by required declared-only entries. Quarantined "
+            "members still count as blocking fleet gaps."
+        ),
+    )
+    fleet_resolve.add_argument("--output", type=Path)
 
     test_resolve = sub.add_parser(
         "test-resolve",
@@ -551,9 +627,9 @@ def _run(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(value, ensure_ascii=False, indent=2))
         return exit_code
-    if args.command in {"system-resolve", "test-resolve"}:
-        value = (
-            resolve_system(
+    if args.command in {"system-resolve", "fleet-resolve", "test-resolve"}:
+        if args.command == "system-resolve":
+            value = resolve_system(
                 args.instance,
                 args.catalogs,
                 registry_bindings_path=args.registry_bindings,
@@ -561,19 +637,33 @@ def _run(args: argparse.Namespace) -> int:
                     args.registry_source_path
                 ),
                 stack_schema_pin_path=args.stack_schema_pin,
+                emit_blocked_resolution=args.emit_blocked_resolution,
             )
-            if args.command == "system-resolve"
-            else resolve_test(args.test, args.catalogs)
-        )
+        elif args.command == "fleet-resolve":
+            value = resolve_fleet(
+                args.fleet,
+                args.catalogs,
+                registry_bindings_path=args.registry_bindings,
+                registry_source_paths=parse_source_path_arguments(
+                    args.registry_source_path
+                ),
+                emit_blocked_resolution=args.emit_blocked_resolution,
+            )
+        else:
+            value = resolve_test(args.test, args.catalogs)
         if args.output:
             _write_json_atomic(args.output, value)
+            summary = {
+                "output": str(args.output),
+                "schema": value["schema"],
+                "content_hash": value["content_hash"],
+            }
+            activation_status = _activation_enforcement_status(value)
+            if activation_status:
+                summary["activation_status"] = activation_status
             print(
                 json.dumps(
-                    {
-                        "output": str(args.output),
-                        "schema": value["schema"],
-                        "content_hash": value["content_hash"],
-                    },
+                    summary,
                     ensure_ascii=False,
                     indent=2,
                 )
@@ -594,10 +684,18 @@ def _run(args: argparse.Namespace) -> int:
             value = import_spec(args.path, store)
             tag_current_system(config, store)
         elif args.command == "import-resolution":
-            value = import_resolution(args.path, store)
+            value = import_resolution(
+                args.path,
+                store,
+                root_only=args.root_only_resolution,
+            )
         elif args.command == "import-actual-self":
             resolution_value = _read_json_object(args.resolution)
-            import_resolution(args.resolution, store)
+            import_resolution(
+                args.resolution,
+                store,
+                root_only=args.root_only_resolution,
+            )
             trust_store = load_receipt_trust_store(config)
             value = import_actual_self_receipt(
                 args.path,
@@ -608,7 +706,11 @@ def _run(args: argparse.Namespace) -> int:
             )
         elif args.command == "import-search-authority":
             resolution_value = _read_json_object(args.resolution)
-            import_resolution(args.resolution, store)
+            import_resolution(
+                args.resolution,
+                store,
+                root_only=args.root_only_resolution,
+            )
             trust_store = load_receipt_trust_store(config)
             value = import_search_authority_receipt(
                 args.path,
@@ -627,6 +729,7 @@ def _run(args: argparse.Namespace) -> int:
                     args.resolution,
                     store,
                     defer_commit=True,
+                    root_only=args.root_only_resolution,
                 )
                 for path in args.actual_self_receipts:
                     import_actual_self_receipt(

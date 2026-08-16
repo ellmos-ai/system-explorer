@@ -1,6 +1,8 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-154%20passed-brightgreen.svg)](tests)
+<img src="assets/banner.png" width="100%" alt="System-Explorer-Banner">
+
+[![Pytest](https://img.shields.io/badge/Pytest-163%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -9,7 +11,7 @@
 [English](README.md) | [Deutsch](README_de.md)
 
 > [!NOTE]
-> Für einen LLM-optimierten Index und Referenzübersicht siehe [`llms.txt`](file:///C:/_Local_DEV/repos/system-explorer/llms.txt).
+> Für einen LLM-optimierten Index und Referenzübersicht siehe [`llms.txt`](llms.txt).
 
 `system-explorer` erstellt evidenzgestützte Karten eines modularen Agenten- und
 Softwaresystems. Das Werkzeug trennt dabei zwei Ebenen:
@@ -53,6 +55,9 @@ Minusdeckung. Eine Funktion ohne belegten Träger ist nicht einfach
   gewünschte Instanzen, Resolutionstests und Flotten
 - deterministische, gepinnte Read-only-Auflösung mit Profilen,
   Suppressions, Root-Containment und kanonischen Content-Hashes
+- Fleet-Auflösung über Hosts hinweg: stabile Fleet-IDs getrennt von relativen
+  Manifestpfaden, erhaltene Hostbindungen, begründete Desired-Abweichungen und
+  blockierende Pflichtlücken getrennt von tolerierten Abweichungen
 - typisierte Read-only-Brücke von `system-explorer.resolution.v1` in
   Desired-/Coverage-Evidenz mit Requirement-Schwere und Provider-Overlap
 - explizite, gehashte Function-Equivalence-Verträge zwischen abweichenden
@@ -92,9 +97,10 @@ system-explorer map --config software-resources.json --view resources
 system-explorer explain-video --config explorer.json --output explainer-package --media-editor ..\ai-media-editor --probe
 system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
 system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
-system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
+system-explorer manifest-validate C:\path\to\a-system-repo
 system-explorer component-registry-check component.registry.bindings.v1.json --bundle-root bundles
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json --registry-bindings component.registry.bindings.v1.json
+system-explorer fleet-resolve fleet.v1.json --catalog bundles.catalog.v1.json
 system-explorer coverage --config explorer.json --resolution resolved-system.json
 system-explorer coverage --config explorer.json --equivalence function-equivalence.json
 system-explorer import-resolution resolved-system.json --config explorer.json
@@ -195,6 +201,7 @@ Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
+<<<<<<< HEAD
 ### Externe Composition- und Probe-Autoritäten
 
 Kardinalitätsregeln werden ausschließlich über eine versionierte,
@@ -219,6 +226,18 @@ Für ein gepinntes externes `ellmos.stack.v2`-Schema wird
 `--stack-schema-pin stack-schema-pin.json` an `system-resolve` übergeben. Eine
 fehlende, abgelaufene, hashabweichende oder inkompatible Quelle blockiert die
 Auflösung; das externe Schema wird vor Ort geprüft und nicht kopiert.
+=======
+Der Standard bleibt fail-closed, wenn eine erforderliche Komponente nur
+deklariert ist. Für das Vollinventar eines Entwicklungssystems, das bewusst
+geplante und inaktive Bundles enthält, kann
+`--emit-blocked-resolution` eine source-verifizierte Resolution für
+rein lesende Identitäts- und Evidenzprüfungen ausgeben. Jedes betroffene
+Bundle bleibt `blocked`; alle seine Komponenten und Funktionen werden als
+`unavailable` operativ quarantänisiert, während ihr deklarierter Zustand als
+Evidenzmetadatum erhalten bleibt. Die Ausgabe wird als
+`blocked-evidence-only` markiert; der Schalter erteilt weder eine
+Runtime-Aktivierung noch einen ausführbaren Provider.
+>>>>>>> origin/main
 
 ### Actual-self Search Routing
 
@@ -311,6 +330,13 @@ Output-Bindings aus System und Instanz werden dedupliziert, widersprüchliche
 Policies für dasselbe Ziel brechen fail-closed ab. Bis eine scope-getrennte
 Subsystemprojektion existiert, lehnt der Resolution-Importer nichtleere
 Subsystembäume ausdrücklich ab, statt sie still zu verlieren.
+
+Wenn vor der Child-Projektion Evidenz für eine Komponente des Root-Systems
+benötigt wird, ist `--root-only-resolution` ein expliziter Scope-Fallback für
+`import-resolution`, `import-actual-self`, `import-search-authority` und
+`search-route`. Er importiert nur Root-Carrier, hält
+`projection_scope: root-only` sowie die exakte Zahl ausgelassener Subsysteme
+fest und behandelt Children weder als abwesend noch als verifiziert.
 
 Ein gespeicherter `system-explorer.resolution.v1`-Output lässt sich direkt als
 Desired-Evidenz importieren:
@@ -419,3 +445,17 @@ MCP-Server wie ControlCenter sind Zugangsflächen, keine Funktionsowner dieses
 Moduls. Die verbindliche Mitgliedschaft, Versionen, Profile und privaten
 Zusammensetzungsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest;
 diese öffentliche Übersicht ist nur eine sichere Discovery-Hilfe.
+
+## Ökosystem & Geschwisterwerkzeuge
+
+`system-explorer` ist Teil des [`ellmos-ai`](https://github.com/ellmos-ai)-Ökosystems unter dem Dach von [`open-bricks`](https://github.com/open-bricks):
+
+| Werkzeug | Fokus & Zweck |
+|----------|---------------|
+| [`policy-registry`](https://github.com/ellmos-ai/policy-registry) | Kanonische Policy-Verwaltung & Evaluierungsverträge |
+| [`sqlite-transit-sync`](https://github.com/ellmos-ai/sqlite-transit-sync) | SQLite-Replikation & Delta-Synchronisationsbrücke |
+| [`coma`](https://github.com/ellmos-ai/coma) | Context Manager & semantischer Router für LLM-Agenten |
+| [`automation-master`](https://github.com/ellmos-ai/automation-master) | Automations-Orchestrierung & Scheduling |
+| [`DevCenter`](https://github.com/dev-bricks/DevCenter) | Entwickler-Workstation-Hub & Werkzeugregister |
+| [`CodeBox`](https://github.com/dev-bricks/CodeBox) | Sandboxed Code-Ausführung & Testharnisch |
+

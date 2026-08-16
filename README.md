@@ -1,6 +1,8 @@
 # system-explorer
 
-[![Pytest](https://img.shields.io/badge/Pytest-154%20passed-brightgreen.svg)](tests)
+<img src="assets/banner.png" width="100%" alt="System Explorer banner">
+
+[![Pytest](https://img.shields.io/badge/Pytest-163%20passed-brightgreen.svg)](tests)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
@@ -9,7 +11,7 @@
 [English](README.md) | [Deutsch](README_de.md)
 
 > [!NOTE]
-> For LLM-optimized index and quick reference, see [`llms.txt`](file:///C:/_Local_DEV/repos/system-explorer/llms.txt).
+> For LLM-optimized index and quick reference, see [`llms.txt`](llms.txt).
 
 `system-explorer` creates evidence-based maps of a modular agent and software
 system. The tool separates two layers:
@@ -53,6 +55,9 @@ it is a visible system gap.
   instances, resolution tests, and fleets
 - deterministic pinned read-only resolution with profiles, suppressions, root
   containment, and canonical content hashes
+- fleet resolution across hosts: stable fleet ids kept apart from relative
+  manifest paths, preserved host bindings, justified desired deviations, and
+  blocking gaps reported separately from tolerated ones
 - typed read-only bridge from `system-explorer.resolution.v1` into desired and
   coverage evidence with requirement severity and provider overlap
 - explicit hashed function-equivalence contracts between differing desired
@@ -92,9 +97,10 @@ system-explorer map --config software-resources.json --view resources
 system-explorer explain-video --config explorer.json --output explainer-package --media-editor ..\ai-media-editor --probe
 system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
 system-explorer diagrams --bundle .\bundles\media.bundle.v1.json --apply --commit --push
-system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
+system-explorer manifest-validate C:\path\to\a-system-repo
 system-explorer component-registry-check component.registry.bindings.v1.json --bundle-root bundles
 system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json --registry-bindings component.registry.bindings.v1.json
+system-explorer fleet-resolve fleet.v1.json --catalog bundles.catalog.v1.json
 system-explorer coverage --config explorer.json --resolution resolved-system.json
 system-explorer coverage --config explorer.json --equivalence function-equivalence.json
 system-explorer import-resolution resolved-system.json --config explorer.json
@@ -190,6 +196,7 @@ host-neutral binding manifest. Resolver output is written atomically only
 with an explicit `--output`; runtime actions and target-system mutations
 remain excluded.
 
+<<<<<<< HEAD
 ### External composition and probe authorities
 
 Cardinality rules are consumed only through a versioned, SHA-256-pinned
@@ -214,6 +221,16 @@ For a pinned external `ellmos.stack.v2` schema, pass
 `--stack-schema-pin stack-schema-pin.json` to `system-resolve`. The resolver
 blocks if the source is unavailable, expired, hash-drifted, or version-
 incompatible; the external schema is verified in place and not copied here.
+=======
+The default remains fail-closed when a required component is only declared.
+For a full development-system inventory that intentionally contains planned,
+inactive bundles, `--emit-blocked-resolution` may emit a source-verified
+resolution for read-only identity and evidence checks. Every affected bundle
+stays `blocked`; all of its components and functions are quarantined as
+`unavailable`, while their declared state remains evidence metadata. The
+output is marked `blocked-evidence-only`; the flag never grants runtime
+activation or an executable provider.
+>>>>>>> origin/main
 
 ### Actual-self search routing
 
@@ -302,6 +319,13 @@ never flattened into the parent. Identical system/instance output bindings
 are deduplicated, while conflicting policies for the same target fail closed.
 Until scoped subsystem projection exists, the resolution importer rejects a
 non-empty subsystem tree explicitly instead of silently dropping it.
+
+When a caller needs evidence for a component in the root system before child
+projection is available, `--root-only-resolution` is an explicit scoped
+fallback for `import-resolution`, `import-actual-self`,
+`import-search-authority`, and `search-route`. It imports only root carriers,
+records `projection_scope: root-only` and the exact omitted subsystem count,
+and never treats children as absent or verified.
 
 ```powershell
 system-explorer coverage `
@@ -402,3 +426,17 @@ MCP servers such as ControlCenter are access surfaces, not function owners of
 this module. Authoritative membership, versions, profiles, and private
 composition recipes are defined exclusively in the respective bundle
 manifest; this public overview is only a safe discovery aid.
+
+## Ecosystem & Sibling Tools
+
+`system-explorer` is part of the [`ellmos-ai`](https://github.com/ellmos-ai) ecosystem under the [`open-bricks`](https://github.com/open-bricks) umbrella:
+
+| Tool | Focus & Purpose |
+|------|-----------------|
+| [`policy-registry`](https://github.com/ellmos-ai/policy-registry) | Canonical policy management & evaluation contracts |
+| [`sqlite-transit-sync`](https://github.com/ellmos-ai/sqlite-transit-sync) | SQLite replication & delta sync bridge |
+| [`coma`](https://github.com/ellmos-ai/coma) | Context Manager & Semantic Router for LLM agents |
+| [`automation-master`](https://github.com/ellmos-ai/automation-master) | Enterprise automation orchestration & scheduling |
+| [`DevCenter`](https://github.com/dev-bricks/DevCenter) | Developer workstation hub & tool registry |
+| [`CodeBox`](https://github.com/dev-bricks/CodeBox) | Sandboxed code execution & test harness |
+

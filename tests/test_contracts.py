@@ -16,6 +16,7 @@ from system_explorer.contracts import (
 )
 from system_explorer.manifests import validate_manifest
 from system_explorer.resolver import (
+    resolve_fleet,
     resolve_system,
     resolve_test,
     validate_manifest_target,
@@ -348,7 +349,7 @@ class ContractTest(unittest.TestCase):
         self.assertFalse((self.root / "unexpected-output.json").exists())
 
     def test_resolver_preserves_complete_component_states_for_equal_hosts(self) -> None:
-        for host, slot in (("WORKSTATION-LG", "workstation"), ("ASUS-GEI", "laptop")):
+        for host, slot in (("host-a", "workstation"), ("host-b", "laptop")):
             component_states = {
                 "module:mapper": {
                     "status": "registered",
@@ -814,6 +815,246 @@ class ContractTest(unittest.TestCase):
         self._write(paths["system"], with_content_hash(system))
         with self.assertRaisesRegex(ValueError, "conflicting output binding policy"):
             resolve_system(paths["instance"], [paths["catalog"]])
+
+    def test_fleet_resolver_applies_host_desired_deviations(self) -> None:
+        paths = self._write_fixture(suppress_optional=False)
+        workstation = self._read(paths["instance"])
+        laptop_path = self._laptop_instance(workstation)
+        fleet_path = self._write_fleet(paths, workstation, laptop_path)
+
+        first = resolve_fleet(fleet_path, [paths["catalog"]])
+        second = resolve_fleet(fleet_path, [paths["catalog"]])
+        self.assertEqual(first, second)
+        self.assertEqual(first["content_hash"], canonical_content_hash(first))
+        self.assertEqual(
+            [member["id"] for member in first["members"]], ["laptop", "workstation"]
+        )
+
+        laptop_result, workstation_result = first["members"]
+        self.assertEqual(laptop_result["host_id"], "host-b")
+        self.assertEqual(laptop_result["resolution"]["functions"], ["system.map"])
+        self.assertEqual(laptop_result["coverage_status"], "tolerated-gap")
+        self.assertEqual(laptop_result["open_tolerated_gaps"], ["system.ui"])
+        self.assertEqual(laptop_result["quarantined_bundles"], [])
+        self.assertIn("system.ui", workstation_result["functions"])
+
+        self.assertEqual(first["coverage_status"], "tolerated-gap")
+        self.assertEqual(first["blocking_required_gaps"], [])
+        self.assertEqual(first["quarantined_members"], [])
+        coverage = {item["function"]: item for item in first["function_coverage"]}
+        self.assertEqual(coverage["system.map"]["members"], ["laptop", "workstation"])
+        self.assertFalse(coverage["system.map"]["single_provider"])
+        self.assertEqual(coverage["system.ui"]["members"], ["workstation"])
+        self.assertTrue(coverage["system.ui"]["single_provider"])
+
+        self.assertEqual(first["dependencies"][0]["source"], "workstation")
+        self.assertEqual(first["dependencies"][0]["target"], "laptop")
+        self.assertEqual(first["host_bindings"], [])
+        self.assertEqual(first["runtime_actions"], [])
+        self.assertEqual(first["target_mutations"], [])
+        self.assertEqual(self._read(paths["instance"]), workstation)
+
+        output = self.root / "out" / "fleet-resolution.json"
+        code = main(
+            [
+                "fleet-resolve",
+                str(fleet_path),
+                "--catalog",
+                str(paths["catalog"]),
+                "--output",
+                str(output),
+            ]
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(self._read(output), first)
+        self.assertEqual(list(self.root.rglob(f".{output.name}.*.tmp")), [])
+
+    def test_fleet_resolver_reports_functions_from_subsystems(self) -> None:
+        """Member coverage is the whole member, not just its root projection.
+
+        `resolution["functions"]` is deliberately root-only since the nested
+        composition work. A fleet asks what a member provides, so it has to
+        include the subsystems -- otherwise a function that only a subsystem
+        carries would read as an uncovered gap at fleet level.
+        """
+
+        paths = self._write_fixture(suppress_optional=False)
+        workstation = self._read(paths["instance"])
+        system = self._read(paths["system"])
+        parent = deepcopy(system)
+        parent.update(
+            {
+                "id": "parent-system",
+                "bundle_refs": [],
+                "profiles": {"default": {"include": [], "exclude": [], "overrides": {}}},
+            }
+        )
+        parent["subsystem_refs"] = [
+            {
+                "path": paths["system"].name,
+                "role": "child",
+                "profile": "default",
+                "content_hash": system["content_hash"],
+            }
+        ]
+        parent_path = self.root / "parent-system.json"
+        self._write(parent_path, with_content_hash(parent))
+
+        parent_instance = deepcopy(workstation)
+        parent_instance.update(
+            {
+                "id": "parent-instance",
+                "instance_id": "parent-instance@host-c",
+                "host_id": "host-c",
+                "component_states": {},
+                "system_ref": {
+                    "ref": parent_path.name,
+                    "content_hash": canonical_content_hash(parent),
+                },
+            }
+        )
+        parent_instance_path = self.root / "parent-instance.json"
+        self._write(parent_instance_path, with_content_hash(parent_instance))
+
+        fleet = self._common("ellmos.fleet.v1", "nested-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "id": "nested",
+                        "path": parent_instance_path.name,
+                        "content_hash": canonical_content_hash(parent_instance),
+                    }
+                ],
+                "roles": [],
+                "handoffs": [],
+                "dependencies": [],
+                "host_overrides": [],
+            }
+        )
+        fleet_path = self.root / "nested-fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+
+        result = resolve_fleet(fleet_path, [paths["catalog"]])
+        member = result["members"][0]
+        self.assertEqual(member["root_functions"], [])
+        self.assertIn("system.map", member["functions"])
+        self.assertIn("system.map", result["functions"])
+        self.assertEqual(member["blocking_required_gaps"], [])
+        self.assertEqual(result["coverage_status"], "covered")
+
+    def test_fleet_resolver_rejects_host_overrides_for_unknown_hosts(self) -> None:
+        paths = self._write_fixture(suppress_optional=False)
+        workstation = self._read(paths["instance"])
+        fleet = self._common("ellmos.fleet.v1", "test-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "id": "workstation",
+                        "path": paths["instance"].name,
+                        "content_hash": workstation["content_hash"],
+                    }
+                ],
+                "roles": [],
+                "handoffs": [],
+                "dependencies": [],
+                "host_overrides": [
+                    {"host_id": "host-does-not-exist", "reason": "typo"}
+                ],
+            }
+        )
+        fleet_path = self.root / "fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+        with self.assertRaisesRegex(ValueError, "unresolved hosts"):
+            resolve_fleet(fleet_path, [paths["catalog"]])
+
+    def test_fleet_resolver_rejects_duplicate_member_ids(self) -> None:
+        paths = self._write_fixture(suppress_optional=False)
+        workstation = self._read(paths["instance"])
+        laptop_path = self._laptop_instance(workstation)
+        laptop = self._read(laptop_path)
+        fleet = self._common("ellmos.fleet.v1", "test-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "id": "same",
+                        "path": paths["instance"].name,
+                        "content_hash": workstation["content_hash"],
+                    },
+                    {
+                        "id": "same",
+                        "path": laptop_path.name,
+                        "content_hash": laptop["content_hash"],
+                    },
+                ],
+                "roles": [],
+                "handoffs": [],
+                "dependencies": [],
+                "host_overrides": [],
+            }
+        )
+        fleet_path = self.root / "fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+        with self.assertRaisesRegex(ValueError, "duplicate fleet member id"):
+            resolve_fleet(fleet_path, [paths["catalog"]])
+
+    def _laptop_instance(self, workstation: dict[str, object]) -> Path:
+        laptop = deepcopy(workstation)
+        laptop.update(
+            {
+                "id": "laptop-instance",
+                "instance_id": "test-instance@host-b",
+                "host_id": "host-b",
+            }
+        )
+        laptop_path = self.root / "laptop-instance.json"
+        self._write(laptop_path, with_content_hash(laptop))
+        return laptop_path
+
+    def _write_fleet(
+        self,
+        paths: dict[str, Path],
+        workstation: dict[str, object],
+        laptop_path: Path,
+    ) -> Path:
+        laptop = self._read(laptop_path)
+        fleet = self._common("ellmos.fleet.v1", "test-fleet")
+        fleet.update(
+            {
+                "systems": [
+                    {
+                        "id": "workstation",
+                        "path": paths["instance"].name,
+                        "content_hash": workstation["content_hash"],
+                    },
+                    {
+                        "id": "laptop",
+                        "path": laptop_path.name,
+                        "content_hash": laptop["content_hash"],
+                    },
+                ],
+                "roles": [{"system": "workstation", "role": "development-primary"}],
+                "handoffs": [
+                    {"source": "workstation", "target": "laptop", "kind": "sync"}
+                ],
+                "dependencies": [{"source": "workstation", "target": "laptop"}],
+                "host_overrides": [
+                    {
+                        "host_id": "host-b",
+                        "reason": "Laptop intentionally omits the optional UI.",
+                        "component_states": {
+                            "module:optional-ui": {"status": "suppressed"}
+                        },
+                        "tolerated_gaps": ["system.ui"],
+                    }
+                ],
+            }
+        )
+        fleet_path = self.root / "fleet.json"
+        self._write(fleet_path, with_content_hash(fleet))
+        return fleet_path
 
     def _write_fixture(
         self,

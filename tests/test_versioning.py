@@ -47,6 +47,36 @@ class VersioningTests(unittest.TestCase):
             self.assertIn("nicht aus diesem Clone", versioning)
             self.assertIn("Fallback", versioning)
 
+    def test_readme_and_badges_parity(self) -> None:
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        for readme in (readme_en, readme_de):
+            self.assertIn("Pytest-163%20passed", readme)
+            self.assertIn("Ecosystem-ellmos--ai", readme)
+            self.assertIn("Umbrella-open--bricks", readme)
+            self.assertIn("policy-registry", readme)
+            self.assertIn("sqlite-transit-sync", readme)
+            self.assertIn("coma", readme)
+            self.assertIn("automation-master", readme)
+            self.assertIn("DevCenter", readme)
+            self.assertIn("CodeBox", readme)
+
+    def test_llms_txt_and_manifest_parity(self) -> None:
+        llms_txt = (self.root / "llms.txt").read_text(encoding="utf-8")
+        manifest = json.loads(
+            (self.root / "ellmos-module.v2.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("Last-checked: 2026-08-16", llms_txt)
+        self.assertEqual(manifest["id"], "system-explorer")
+        self.assertEqual(manifest["version"], PROJECT_VERSION)
+        adapter_ids = {a["id"] for a in manifest.get("adapters", [])}
+        self.assertIn("codex-jsonl", adapter_ids)
+        self.assertIn("claude-code-jsonl", adapter_ids)
+        self.assertIn("gemini-sqlite", adapter_ids)
+        self.assertIn("provider-native-redacted-events", adapter_ids)
+
 
 if __name__ == "__main__":
     unittest.main()
+

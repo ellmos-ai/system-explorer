@@ -21,6 +21,7 @@ def import_resolution(
     path: Path,
     store: Store,
     *,
+    root_only: bool = False,
     defer_commit: bool = False,
 ) -> dict[str, Any]:
     owns_transaction = not store.in_transaction
@@ -30,7 +31,7 @@ def import_resolution(
         )
     source_bytes, source_stat = _read_resolution_snapshot(path)
     value = json.loads(source_bytes.decode("utf-8"))
-    _validate_resolution(value)
+    _validate_resolution(value, root_only=root_only)
     source_digest = hashlib.sha256(source_bytes).hexdigest()
     effective_at = file_effective_date(
         path,
@@ -42,6 +43,8 @@ def import_resolution(
     scope = instance.get("instance_id") if instance else system["id"]
     host_id = instance.get("host_id") if instance else None
     projection_key = f"resolution:{scope}"
+    projection_scope = "root-only" if root_only else "full"
+    subsystems_omitted = len(value.get("subsystems", [])) if root_only else 0
 
     carriers: dict[str, dict[str, Any]] = {}
     provider_sources: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -124,8 +127,12 @@ def import_resolution(
             function_requirements=function_requirements,
             empty_provides=empty_provides,
             inactive_provides=inactive_provides,
-            commit=owns_transaction,
+            commit=owns_transaction and not defer_commit,
+            projection_scope=projection_scope,
+            subsystems_omitted=subsystems_omitted,
         )
+        result["projection_scope"] = projection_scope
+        result["subsystems_omitted"] = subsystems_omitted
         if owns_transaction and store.in_transaction:
             store.rollback()
         return result
@@ -155,6 +162,8 @@ def _import_resolution_locked(
     empty_provides: int,
     inactive_provides: int,
     commit: bool,
+    projection_scope: str,
+    subsystems_omitted: int,
 ) -> dict[str, Any]:
     resolution_hash = value["content_hash"]
     active_projection = store.resolution_projection_state(projection_key)
@@ -206,6 +215,8 @@ def _import_resolution_locked(
             "resolution_scope": scope,
             "resolution_projection": projection_key,
             "resolution_generation": list(generation),
+            "projection_scope": projection_scope,
+            "subsystems_omitted": subsystems_omitted,
         },
     )
     superseded = store.clear_resolution_projection(projection_key)
@@ -366,7 +377,7 @@ def _generation(effective_at: str, source_mtime_ns: int) -> tuple[int, int]:
     return effective_ns, source_mtime_ns
 
 
-def _validate_resolution(value: Any) -> None:
+def _validate_resolution(value: Any, *, root_only: bool = False) -> None:
     if not isinstance(value, dict):
         raise ValueError("resolution must be a JSON object")
     if value.get("schema") != "system-explorer.resolution.v1":
@@ -393,10 +404,10 @@ def _validate_resolution(value: Any) -> None:
     subsystems = value.get("subsystems", [])
     if not isinstance(subsystems, list):
         raise ValueError("resolution subsystems must be an array")
-    if subsystems:
+    if subsystems and not root_only:
         raise ValueError(
             "resolution subsystems are not importable until scoped subsystem "
-            "projection is implemented"
+            "projection is selected explicitly"
         )
     if not isinstance(value.get("functions"), list) or not all(
         isinstance(function, str) and function for function in value["functions"]

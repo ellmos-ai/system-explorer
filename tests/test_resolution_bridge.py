@@ -209,7 +209,9 @@ class ResolutionBridgeTest(unittest.TestCase):
             proposal["relevant_function_gaps"],
         )
 
-    def test_resolution_bridge_rejects_nonempty_subsystems_until_scoped_import(self) -> None:
+    def test_resolution_bridge_requires_explicit_root_only_subsystem_projection(
+        self,
+    ) -> None:
         value = json.loads(FIXTURE.read_text(encoding="utf-8"))
         child = json.loads(FIXTURE.read_text(encoding="utf-8"))
         child.pop("instance", None)
@@ -229,9 +231,49 @@ class ResolutionBridgeTest(unittest.TestCase):
 
         with Store(self.db) as store, self.assertRaisesRegex(
             ValueError,
-            "not importable until scoped subsystem projection",
+            "not importable until scoped subsystem projection is selected explicitly",
         ):
             import_resolution(path, store)
+
+        with Store(self.db) as store:
+            stats = import_resolution(path, store, root_only=True)
+            evidence = [
+                item
+                for item in store.evidence()
+                if item["source_kind"] == "system-resolution"
+            ]
+
+        self.assertEqual(stats["status"], "imported")
+        self.assertEqual(stats["projection_scope"], "root-only")
+        self.assertEqual(stats["subsystems_omitted"], 1)
+        self.assertEqual(len(evidence), 1)
+        self.assertEqual(evidence[0]["metadata"]["projection_scope"], "root-only")
+        self.assertEqual(evidence[0]["metadata"]["subsystems_omitted"], 1)
+
+        config = self._config()
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            rejected = main(
+                ["import-resolution", str(path), "--config", str(config)]
+            )
+        self.assertEqual(rejected, 2)
+        self.assertIn("selected explicitly", stderr.getvalue())
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            accepted = main(
+                [
+                    "import-resolution",
+                    str(path),
+                    "--config",
+                    str(config),
+                    "--root-only-resolution",
+                ]
+            )
+        self.assertEqual(accepted, 0)
+        cli_result = json.loads(stdout.getvalue())
+        self.assertEqual(cli_result["projection_scope"], "root-only")
+        self.assertEqual(cli_result["subsystems_omitted"], 1)
 
     def test_resolution_instances_remain_isolated_in_coverage(self) -> None:
         first = json.loads(FIXTURE.read_text(encoding="utf-8"))

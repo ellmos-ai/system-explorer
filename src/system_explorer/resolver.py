@@ -108,6 +108,7 @@ def resolve_system(
     registry_bindings_path: Path | None = None,
     registry_source_paths: dict[str, Path] | None = None,
     stack_schema_pin_path: Path | None = None,
+    emit_blocked_resolution: bool = False,
 ) -> dict[str, Any]:
     instance_path = instance_path.resolve()
     catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
@@ -152,8 +153,381 @@ def resolve_system(
             registry_bindings_path,
             resolution_root=resolution_root,
             source_paths=registry_source_paths,
+            emit_blocked_resolution=emit_blocked_resolution,
         )
     return resolution
+
+
+def resolve_fleet(
+    fleet_path: Path,
+    catalog_paths: Iterable[Path],
+    *,
+    registry_bindings_path: Path | None = None,
+    registry_source_paths: dict[str, Path] | None = None,
+    emit_blocked_resolution: bool = False,
+) -> dict[str, Any]:
+    fleet_path = fleet_path.resolve()
+    catalog_paths = tuple(Path(path).resolve() for path in catalog_paths)
+    registry_bindings_path = (
+        Path(registry_bindings_path).resolve()
+        if registry_bindings_path is not None
+        else None
+    )
+    resolution_inputs = (fleet_path, *catalog_paths)
+    if registry_bindings_path is not None:
+        resolution_inputs = (*resolution_inputs, registry_bindings_path)
+    resolution_root = _resolution_root(resolution_inputs)
+    fleet = _load_contract(fleet_path, "ellmos.fleet.v1")
+    if fleet["status"] not in RESOLVABLE_STATUSES:
+        raise ValueError(
+            f"fleet {fleet['id']!r} has non-resolvable status {fleet['status']!r}"
+        )
+    catalogs = _load_catalogs(catalog_paths, resolution_root)
+    manifest_index = _manifest_id_index(
+        resolution_root,
+        {"ellmos.system.v1", "ellmos.system-instance.v1"},
+    )
+
+    descriptors = _fleet_descriptors(fleet, resolution_root, manifest_index)
+    alias_targets: dict[str, set[str]] = {}
+    for descriptor in descriptors:
+        for alias in descriptor["aliases"]:
+            alias_targets.setdefault(alias, set()).add(descriptor["member_id"])
+
+    overrides_by_host, host_bindings = _fleet_host_overrides(
+        fleet, descriptors, alias_targets
+    )
+
+    members: list[dict[str, Any]] = []
+    function_members: dict[str, list[str]] = {}
+    fleet_blocking_gaps: list[dict[str, str]] = []
+    for descriptor in sorted(descriptors, key=lambda item: item["member_id"]):
+        member = _resolve_fleet_member(
+            descriptor,
+            catalogs,
+            resolution_root=resolution_root,
+            override=overrides_by_host.get(descriptor["host_id"], {}),
+            registry_bindings_path=registry_bindings_path,
+            registry_source_paths=registry_source_paths,
+            emit_blocked_resolution=emit_blocked_resolution,
+        )
+        for function in member["functions"]:
+            function_members.setdefault(function, []).append(member["id"])
+        for function in member["blocking_required_gaps"]:
+            fleet_blocking_gaps.append(
+                {"member": member["id"], "function": function}
+            )
+        members.append(member)
+
+    dependencies = _fleet_dependencies(fleet, alias_targets)
+    function_coverage = [
+        {
+            "function": function,
+            "members": sorted(member_list),
+            "member_count": len(member_list),
+            "single_provider": len(member_list) == 1,
+        }
+        for function, member_list in sorted(function_members.items())
+    ]
+    quarantined_members = sorted(
+        member["id"] for member in members if member["quarantined_bundles"]
+    )
+    return with_content_hash(
+        {
+            "schema": "system-explorer.fleet-resolution.v1",
+            "fleet": {
+                "id": fleet["id"],
+                "version": fleet["version"],
+                "status": fleet["status"],
+                "lifecycle": fleet["lifecycle"],
+                "content_hash": fleet["content_hash"],
+            },
+            "members": members,
+            "functions": sorted(function_members),
+            "function_coverage": function_coverage,
+            "blocking_required_gaps": _sorted_objects(fleet_blocking_gaps),
+            "quarantined_members": quarantined_members,
+            "coverage_status": (
+                "blocking-gap"
+                if fleet_blocking_gaps
+                else "tolerated-gap"
+                if any(member["open_tolerated_gaps"] for member in members)
+                else "covered"
+            ),
+            "roles": _sorted_objects(fleet.get("roles", [])),
+            "handoffs": _sorted_objects(fleet.get("handoffs", [])),
+            "host_bindings": _sorted_objects(host_bindings),
+            "dependencies": _sorted_objects(dependencies),
+            "runtime_actions": [],
+            "target_mutations": [],
+        }
+    )
+
+
+def _fleet_descriptors(
+    fleet: dict[str, Any],
+    resolution_root: Path,
+    manifest_index: dict[str, list[Path]],
+) -> list[dict[str, Any]]:
+    descriptors: list[dict[str, Any]] = []
+    member_ids: set[str] = set()
+    for index, fleet_ref in enumerate(fleet["systems"]):
+        label = f"$.systems[{index}]"
+        target_path = _resolve_fleet_manifest_ref(
+            fleet_ref, resolution_root, manifest_index, label
+        )
+        target = _read_object(target_path)
+        _verify_pin(fleet_ref, target, label)
+        schema = target.get("schema")
+        instance: dict[str, Any] | None = None
+        if schema == "ellmos.system-instance.v1":
+            instance = _load_contract(target_path, "ellmos.system-instance.v1")
+            if instance["status"] not in RESOLVABLE_STATUSES:
+                raise ValueError(
+                    f"{label} instance {instance['id']!r} has non-resolvable "
+                    f"status {instance['status']!r}"
+                )
+            system_path = _resolve_contained_ref(
+                instance["system_ref"], resolution_root, f"{label}.system_ref"
+            )
+            system = _load_contract(system_path, "ellmos.system.v1")
+            _verify_pin(instance["system_ref"], system, f"{label}.system_ref")
+            default_member_id = instance["instance_id"]
+            host_id = instance["host_id"]
+        elif schema == "ellmos.system.v1":
+            system = _load_contract(target_path, "ellmos.system.v1")
+            system_path = target_path
+            default_member_id = system["id"]
+            host_id = None
+        else:
+            raise ValueError(
+                f"{label} must resolve to ellmos.system.v1 or "
+                "ellmos.system-instance.v1"
+            )
+
+        member_id = _fleet_member_id(fleet_ref, default_member_id)
+        if member_id in member_ids:
+            raise ValueError(f"duplicate fleet member id: {member_id}")
+        member_ids.add(member_id)
+        aliases = _resolver_ref_aliases(fleet_ref)
+        aliases.update({member_id, target["id"], system["id"]})
+        if instance:
+            aliases.update({instance["instance_id"], instance["host_id"]})
+        descriptors.append(
+            {
+                "member_id": member_id,
+                "fleet_ref": deepcopy(fleet_ref),
+                "aliases": aliases,
+                "manifest": target,
+                "manifest_path": target_path,
+                "system": system,
+                "system_path": system_path,
+                "instance": instance,
+                "host_id": host_id,
+            }
+        )
+    return descriptors
+
+
+def _fleet_host_overrides(
+    fleet: dict[str, Any],
+    descriptors: list[dict[str, Any]],
+    alias_targets: dict[str, set[str]],
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
+    entries = fleet.get("host_overrides", [])
+    desired_overrides = [item for item in entries if "host_id" in item]
+    overrides_by_host: dict[str, dict[str, Any]] = {}
+    for item in desired_overrides:
+        host_id = item["host_id"]
+        if host_id in overrides_by_host:
+            raise ValueError(f"duplicate host_overrides entry for host {host_id!r}")
+        overrides_by_host[host_id] = item
+    known_hosts = {
+        descriptor["host_id"]
+        for descriptor in descriptors
+        if descriptor["host_id"] is not None
+    }
+    unknown_hosts = sorted(set(overrides_by_host) - known_hosts)
+    if unknown_hosts:
+        raise ValueError(
+            "host_overrides references unresolved hosts: " + ", ".join(unknown_hosts)
+        )
+
+    descriptors_by_member = {
+        descriptor["member_id"]: descriptor for descriptor in descriptors
+    }
+    host_bindings: list[dict[str, str]] = []
+    for index, binding in enumerate(entries):
+        if "host" not in binding:
+            continue
+        member_id = _resolve_fleet_alias(
+            binding.get("ref"), alias_targets, f"$.host_overrides[{index}].ref"
+        )
+        descriptor = descriptors_by_member[member_id]
+        if descriptor["host_id"] != binding["host"]:
+            raise ValueError(
+                f"host binding {binding['host']!r} does not match fleet member "
+                f"{member_id!r} host {descriptor['host_id']!r}"
+            )
+        host_bindings.append({"host_id": binding["host"], "member": member_id})
+    return overrides_by_host, host_bindings
+
+
+def _resolve_fleet_member(
+    descriptor: dict[str, Any],
+    catalogs: dict[str, dict[str, Any]],
+    *,
+    resolution_root: Path,
+    override: dict[str, Any],
+    registry_bindings_path: Path | None,
+    registry_source_paths: dict[str, Path] | None,
+    emit_blocked_resolution: bool,
+) -> dict[str, Any]:
+    instance = descriptor["instance"]
+    if instance:
+        desired_profile = override.get(
+            "desired_profile", instance["desired_profile"]
+        )
+        component_states = deepcopy(instance["component_states"])
+        component_states.update(deepcopy(override.get("component_states", {})))
+    else:
+        desired_profile = _fleet_profile(
+            descriptor["fleet_ref"], descriptor["system"]
+        )
+        component_states = deepcopy(override.get("component_states", {}))
+    resolution = _resolve_system_document(
+        descriptor["system"],
+        descriptor["system_path"],
+        catalogs,
+        desired_profile=desired_profile,
+        component_states=component_states,
+        instance=instance,
+        resolution_root=resolution_root,
+    )
+    if registry_bindings_path is not None:
+        resolution = apply_component_registry_gate(
+            resolution,
+            registry_bindings_path,
+            resolution_root=resolution_root,
+            source_paths=registry_source_paths,
+            emit_blocked_resolution=emit_blocked_resolution,
+        )
+
+    functions = set(_resolution_functions(resolution))
+    required = _declared_required_functions(resolution)
+    tolerated = set(override.get("tolerated_gaps", []))
+    blocking_required = sorted(required - functions - tolerated)
+    open_tolerated = sorted(tolerated - functions)
+    quarantined = _quarantined_bundles(resolution)
+    return {
+        "id": descriptor["member_id"],
+        "manifest": {
+            "schema": descriptor["manifest"]["schema"],
+            "id": descriptor["manifest"]["id"],
+            "version": descriptor["manifest"]["version"],
+            "content_hash": descriptor["manifest"]["content_hash"],
+        },
+        "system_id": descriptor["system"]["id"],
+        "host_id": descriptor["host_id"],
+        "desired_profile": desired_profile,
+        "host_override": deepcopy(override) if override else None,
+        "coverage_status": (
+            "blocking-gap"
+            if blocking_required
+            else "tolerated-gap"
+            if open_tolerated
+            else "covered"
+        ),
+        "functions": sorted(functions),
+        "root_functions": list(resolution["functions"]),
+        "blocking_required_gaps": blocking_required,
+        "open_tolerated_gaps": open_tolerated,
+        "covered_tolerances": sorted(tolerated & functions),
+        "quarantined_bundles": quarantined,
+        "resolution": resolution,
+    }
+
+
+def _declared_required_functions(resolution: dict[str, Any]) -> set[str]:
+    """Required functions a system promises, quarantine included.
+
+    A bundle quarantined by the component-registry gate has its components
+    emptied: ``provides`` becomes ``[]`` and the declared value moves into
+    ``activation_quarantine.declared_provides``. Reading ``provides`` alone
+    would therefore make a fully blocked member look covered, because it
+    promises nothing any more. The declared value is what the member was
+    supposed to deliver, so that is what a gap is measured against.
+    """
+
+    functions: set[str] = set()
+    for bundle in resolution["bundles"]:
+        for component in bundle["components"]:
+            if component.get("requirement") != "required":
+                continue
+            quarantine = component.get("activation_quarantine")
+            declared = (
+                quarantine.get("declared_provides", [])
+                if isinstance(quarantine, dict)
+                else component.get("provides", [])
+            )
+            functions.update(declared)
+    for subsystem in resolution.get("subsystems", []):
+        functions.update(_declared_required_functions(subsystem["resolution"]))
+    return functions
+
+
+def _quarantined_bundles(
+    resolution: dict[str, Any], *, scope: str = ""
+) -> list[dict[str, Any]]:
+    quarantined: list[dict[str, Any]] = []
+    activation = (resolution.get("component_registry") or {}).get("activation", {})
+    system_id = resolution.get("system", {}).get("id", "")
+    prefix = f"{scope}/{system_id}" if scope else system_id
+    for bundle_id, entry in sorted(activation.items()):
+        if entry.get("state") != "blocked":
+            continue
+        quarantined.append(
+            {
+                "scope": prefix,
+                "bundle": bundle_id,
+                "state": entry["state"],
+                "quarantined": bool(entry.get("quarantined", False)),
+                "required_unresolved": list(entry.get("required_unresolved", [])),
+            }
+        )
+    for subsystem in resolution.get("subsystems", []):
+        quarantined.extend(
+            _quarantined_bundles(subsystem["resolution"], scope=prefix)
+        )
+    return quarantined
+
+
+def _fleet_dependencies(
+    fleet: dict[str, Any], alias_targets: dict[str, set[str]]
+) -> list[dict[str, Any]]:
+    dependencies: list[dict[str, Any]] = []
+    for index, dependency in enumerate(fleet.get("dependencies", [])):
+        source = dependency.get("source", dependency.get("from"))
+        target = dependency.get("target", dependency.get("to"))
+        normalized = {
+            key: deepcopy(value)
+            for key, value in dependency.items()
+            if key not in {"source", "from", "target", "to"}
+        }
+        normalized.update(
+            {
+                "source": _resolve_fleet_alias(
+                    source, alias_targets, f"$.dependencies[{index}].source"
+                ),
+                "target": _resolve_fleet_alias(
+                    target, alias_targets, f"$.dependencies[{index}].target"
+                ),
+                "declared_source": source,
+                "declared_target": target,
+            }
+        )
+        dependencies.append(normalized)
+    return dependencies
 
 
 def resolve_test(test_path: Path, catalog_paths: Iterable[Path]) -> dict[str, Any]:
@@ -356,6 +730,7 @@ def _resolve_system_document(
 
     bundles: list[dict[str, Any]] = []
     seen_bundle_ids: set[str] = set()
+    considered_component_refs: set[str] = set()
     for index, bundle_ref in enumerate(selected_refs):
         bundle_id = _ref_name(bundle_ref)
         if bundle_id in seen_bundle_ids:
@@ -387,6 +762,7 @@ def _resolve_system_document(
             bundle,
             desired_profile=desired_profile,
             component_states=component_states,
+            considered_refs=considered_component_refs,
         )
         bundles.append(
             {
@@ -401,12 +777,11 @@ def _resolve_system_document(
             }
         )
 
-    known_component_refs = {
-        _ref_name(component["ref"])
-        for bundle in bundles
-        for component in bundle["components"]
-    }
-    unknown_states = sorted(set(component_states) - known_component_refs)
+    # Validate against every component the profile actually offered, not only
+    # the ones that survived. A state of "suppressed" removes its own component
+    # from the resolved set, so checking the survivors would report the very
+    # state that did the suppressing as an unresolved reference.
+    unknown_states = sorted(set(component_states) - considered_component_refs)
     if unknown_states:
         raise ValueError(
             "component_states references unresolved components: "
@@ -546,6 +921,7 @@ def _resolved_components(
     *,
     desired_profile: str,
     component_states: dict[str, Any],
+    considered_refs: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     profile = bundle.get("profiles", {}).get(
         desired_profile,
@@ -561,6 +937,8 @@ def _resolved_components(
     resolved: list[dict[str, Any]] = []
     for component in components:
         ref = _ref_name(component["ref"])
+        if considered_refs is not None:
+            considered_refs.add(ref)
         item = deepcopy(component)
         state = deepcopy(component_states.get(ref, {}))
         desired_status = state.get("status", item.pop("status", "configured"))
@@ -930,3 +1308,119 @@ def _ref_name(value: Any) -> str:
             if isinstance(candidate, str) and candidate:
                 return candidate
     return ""
+
+
+def _manifest_id_index(root: Path, schemas: set[str]) -> dict[str, list[Path]]:
+    root = root.resolve()
+    index: dict[str, list[Path]] = {}
+    for candidate in sorted(root.rglob("*.json"), key=lambda item: item.as_posix()):
+        resolved = candidate.resolve()
+        try:
+            resolved.relative_to(root)
+        except ValueError:
+            continue
+        if not resolved.is_file():
+            continue
+        try:
+            value = _read_object(resolved)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        manifest_id = value.get("id")
+        if value.get("schema") not in schemas or not isinstance(manifest_id, str):
+            continue
+        if resolved not in index.setdefault(manifest_id, []):
+            index[manifest_id].append(resolved)
+    return index
+
+
+def _resolve_fleet_manifest_ref(
+    ref: Any,
+    root: Path,
+    manifest_index: dict[str, list[Path]],
+    label: str,
+) -> Path:
+    if isinstance(ref, dict) and isinstance(ref.get("path"), str):
+        return _contained_path(root.resolve(), ref["path"], label)
+    name = _ref_name(ref)
+    if not name:
+        raise ValueError(f"{label} does not identify a system manifest")
+    indexed = manifest_index.get(name, [])
+    candidate = Path(name)
+    file_candidate: Path | None = None
+    if candidate.is_absolute():
+        return _contained_path(root.resolve(), name, label)
+    resolved_candidate = (root / candidate).resolve()
+    try:
+        resolved_candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"{label} escapes its manifest root") from exc
+    if resolved_candidate.is_file():
+        file_candidate = resolved_candidate
+    matches = set(indexed)
+    if file_candidate is not None:
+        matches.add(file_candidate)
+    if not matches:
+        raise ValueError(f"{label} does not resolve to a system manifest: {name}")
+    if len(matches) > 1:
+        raise ValueError(
+            f"{label} is ambiguous across system manifests: "
+            + ", ".join(sorted(path.relative_to(root).as_posix() for path in matches))
+        )
+    return next(iter(matches))
+
+
+def _resolver_ref_aliases(value: Any) -> set[str]:
+    if isinstance(value, str):
+        return {value} if value else set()
+    if not isinstance(value, dict):
+        return set()
+    aliases: set[str] = set()
+    for field in ("ref", "id", "path"):
+        candidate = value.get(field)
+        if isinstance(candidate, str) and candidate:
+            aliases.add(candidate)
+    return aliases
+
+
+def _resolve_fleet_alias(
+    value: Any, alias_targets: dict[str, set[str]], label: str
+) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} must be a non-empty fleet member reference")
+    targets = alias_targets.get(value, set())
+    if not targets:
+        raise ValueError(f"{label} references an unresolved fleet member: {value}")
+    if len(targets) > 1:
+        raise ValueError(
+            f"{label} is ambiguous across fleet members: {value} -> "
+            + ", ".join(sorted(targets))
+        )
+    return next(iter(targets))
+
+
+def _fleet_member_id(value: Any, fallback: str) -> str:
+    if isinstance(value, dict):
+        candidate = value.get("id")
+        if isinstance(candidate, str) and candidate:
+            return candidate
+    return fallback
+
+
+def _fleet_profile(fleet_ref: Any, system: dict[str, Any]) -> str:
+    if isinstance(fleet_ref, dict):
+        selected = fleet_ref.get("profile")
+        if isinstance(selected, str) and selected:
+            return selected
+    profiles = sorted(system.get("profiles", {}))
+    if "default" in profiles:
+        return "default"
+    return profiles[0] if profiles else "default"
+
+
+def _sorted_objects(values: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        (deepcopy(item) for item in values),
+        key=lambda item: json.dumps(
+            item, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ),
+    )

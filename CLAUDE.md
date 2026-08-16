@@ -4,9 +4,9 @@ type: project-docs
 profile: "FULL"
 version: 0.4.0
 created: "2026-07-29"
-updated: "2026-08-13"
-reason_last_change: "Maintainer-Verifikation und aktuelle Test-/Doku-Readbacks"
-last_verified: "2026-08-13"
+updated: "2026-08-16"
+reason_last_change: "Discoverability, README-Design, Badges & Metadata Parity Check (Pfad B)"
+last_verified: "2026-08-16"
 author: "Lukas Geiger"
 anthropic_compatible: true
 description: |
@@ -35,7 +35,7 @@ description: |
 Steuerdokumentkarten für modulare Agenten- und Softwaresysteme.
 
 **Pfad:** `C:\_Local_DEV\repos\system-explorer`
-**Repository:** `github.com/ellmos-ai/system-explorer` (privat)
+**Repository:** `github.com/ellmos-ai/system-explorer` (öffentlich)
 **Sprache/Stack:** Python 3.10+, SQLite, Vanilla HTML/CSS/JavaScript
 
 ## Rolle & Stil

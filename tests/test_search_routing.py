@@ -159,6 +159,65 @@ class SearchRoutingTests(unittest.TestCase):
         self.assertFalse(result["executable"])
         self.assertEqual(result["verification_receipt"], [imported["evidence_id"]])
 
+    def test_blocked_bundle_quarantine_cannot_import_or_execute_provider(
+        self,
+    ) -> None:
+        blocked = deepcopy(self.resolution)
+        component = self._component(blocked, "module:required-provider")
+        component["activation_quarantine"] = {
+            "reason": "bundle-has-required-declared-only-components",
+            "declared_desired_status": component["desired_status"],
+            "declared_provides": list(component["provides"]),
+        }
+        component["desired_status"] = "unavailable"
+        component["provides"] = []
+        blocked["functions"] = [
+            function
+            for function in blocked["functions"]
+            if function != "function.required"
+        ]
+        blocked["component_registry"]["activation"] = {
+            "fixture-core-bundle": {
+                "state": "blocked",
+                "required_unresolved": ["module:planned"],
+                "recommended_unresolved": [],
+                "optional_unresolved": [],
+                "quarantined": True,
+            }
+        }
+        blocked["component_registry"]["activation_enforcement"] = (
+            "blocked-evidence-only"
+        )
+        blocked = with_content_hash(blocked)
+        receipt_path = self._receipt(
+            "module:required-provider",
+            "module",
+            ["function.required"],
+            suffix="-quarantined",
+        )
+
+        with self.assertRaisesRegex(ValueError, "is not provided"):
+            import_actual_self_receipt(
+                receipt_path,
+                blocked,
+                self.store,
+                evaluated_at=OBSERVED_AT,
+                trust_store=self.trust_store,
+            )
+
+        with self.assertRaisesRegex(ValueError, "not in the resolution"):
+            resolve_search_route(
+                self._query(
+                    mode="tool-search",
+                    capabilities=["function.required"],
+                    exact_refs=["module:required-provider"],
+                    execution_requested=True,
+                ),
+                blocked,
+                self.store,
+                trust_store=self.trust_store,
+            )
+
     def test_declared_scanner_edge_never_proves_availability(self) -> None:
         evidence_id = self.store.add_evidence(
             uri="file:///declared/module.json",

@@ -160,7 +160,7 @@ Einzeldatei oder gesamter Repo-Baum:
 
 ```powershell
 system-explorer manifest-validate .\manifest.json
-system-explorer manifest-validate C:\_Local_DEV\repos\ellmos-development-system
+system-explorer manifest-validate C:\path\to\a-system-repo
 ```
 
 Die Baumprüfung läuft rekursiv und pfadsortiert. Sie validiert die sieben
@@ -171,7 +171,7 @@ stillschweigend als validiert behauptet.
 System- und Testauflösung:
 
 ```powershell
-system-explorer system-resolve systems\instances\WORKSTATION-LG.json `
+system-explorer system-resolve systems\instances\my-host.json `
   --catalog manifests\bundles.catalog.v1.json `
   --registry-bindings manifests\component.registry.bindings.v1.json
 
@@ -205,7 +205,7 @@ SFTP über SSH; Tailscale kann nur den Netzwerkpfad tragen.
 ## Fremdfixture-Readback vom 2026-07-29
 
 Die zu Beginn von W1 vorhandenen einfachen Manifeste im lokalen
-`ellmos-development-system`-Clone erfüllen den strikten Vertrag noch nicht.
+Clones eines Vollsystem-Repos erfüllen den strikten Vertrag noch nicht.
 Die beobachteten Migrationspunkte sind insbesondere gemeinsame
 Metadaten/Hashes, typisierte gepinnte Komponenten, der Schema-Name
 `ellmos.bundles.catalog.v1`, gepinnte System-/Instanzreferenzen sowie
