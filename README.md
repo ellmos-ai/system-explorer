@@ -2,11 +2,16 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer banner">
 
-[![Pytest](https://img.shields.io/badge/Pytest-163%20passed-brightgreen.svg)](tests)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
+[![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
+[![Pytest](https://img.shields.io/badge/Pytest-173%20passed-brightgreen.svg)](tests)
+[![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
+[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
+[![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
+[![Security](https://img.shields.io/badge/security-Local--First%20%7C%20Fail--Closed-orange.svg)](SECURITY.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
+[![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
 [English](README.md) | [Deutsch](README_de.md)
 
@@ -24,6 +29,21 @@ system. The tool separates two layers:
 This mapping reveals full, partial, absent, overlapping, and negative
 coverage. A function without an evidenced carrier is not merely "unknown";
 it is a visible system gap.
+
+## Quick Navigation
+
+- [Features](#features)
+- [Evidence-Backed Resolution Lifecycle](#evidence-backed-resolution-lifecycle)
+- [Quick Start](#quick-start)
+- [External Composition & Probe Authorities](#external-composition-and-probe-authorities)
+- [Actual-Self Search Routing](#actual-self-search-routing)
+- [Security & Truth Boundaries](#security-and-truth-boundaries)
+- [Resolution as Desired Evidence](#resolution-as-desired-evidence)
+- [Explicit Function Equivalence](#explicit-function-equivalence)
+- [Bundles & Partners](#bundles-and-partners)
+- [Security Policy](SECURITY.md)
+- [LLM Context Index](llms.txt)
+- [Ecosystem & Sibling Tools](#ecosystem--sibling-tools)
 
 ## Features
 
@@ -70,6 +90,42 @@ it is a visible system gap.
 - local graphical interface with evidence-related details
 - read-only, prompt-assisted change proposals with mandatory gates
 - path-probing plans for external, budgeted swarm tests
+
+## Evidence-Backed Resolution Lifecycle
+
+The following sequence diagram illustrates the lifecycle of bounded system discovery, hash-pinned authority receipt validation, all-or-nothing resolution, and drift detection:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Operator / Agent
+    participant CLI as System Explorer CLI
+    participant Scanner as Scanner & Harvester
+    participant Store as SQLite Evidence Store
+    participant Resolver as Resolution & Bridge Engine
+    participant Gate as Governance & Drift Detector
+    participant Output as Exporter / Local UI (127.0.0.1)
+
+    Dev->>CLI: system-explorer ingest --config explorer.json
+    CLI->>Scanner: Bounded Scan (Manifests, Skills, Docs, Entry Points)
+    Scanner->>Store: Store Immutable Evidence (URI, Locators, SHA-256 Hashes)
+    
+    Dev->>CLI: system-explorer system-resolve instance.v1.json --catalog bundles.catalog.v1.json
+    CLI->>Resolver: Match Desired Specifications vs. Actual Function Carriers
+    Resolver->>Store: Query Decision & Policy Authority Receipts
+    Store-->>Resolver: Verified Hash-Pinned Authority Receipts (document:decision / policy)
+    
+    Resolver->>Gate: Evaluate Cardinality & Authority Receipts (All-or-Nothing)
+    alt Validation Succeeded & Evidence Matches
+        Gate-->>Resolver: Coverage Verified (Full / Partial / Declared)
+        Resolver->>Output: Emit Resolved System Map (JSON / Mermaid / HTML)
+        Output-->>Dev: Coverage Report & Local Dashboard on 127.0.0.1:8765
+    else Authority Missing or Hash Drift Detected
+        Gate-->>Resolver: Conflict / Tamper / Missing Authority (Fail-Closed)
+        Resolver->>Output: Emit Blocked Resolution (Unavailable / Quarantined)
+        Output-->>Dev: Visible Gap & Drift Warning (0 Target Mutation)
+    end
+```
 
 ## Quick start
 
@@ -196,7 +252,6 @@ host-neutral binding manifest. Resolver output is written atomically only
 with an explicit `--output`; runtime actions and target-system mutations
 remain excluded.
 
-<<<<<<< HEAD
 ### External composition and probe authorities
 
 Cardinality rules are consumed only through a versioned, SHA-256-pinned
@@ -221,7 +276,7 @@ For a pinned external `ellmos.stack.v2` schema, pass
 `--stack-schema-pin stack-schema-pin.json` to `system-resolve`. The resolver
 blocks if the source is unavailable, expired, hash-drifted, or version-
 incompatible; the external schema is verified in place and not copied here.
-=======
+
 The default remains fail-closed when a required component is only declared.
 For a full development-system inventory that intentionally contains planned,
 inactive bundles, `--emit-blocked-resolution` may emit a source-verified
@@ -230,7 +285,6 @@ stays `blocked`; all of its components and functions are quarantined as
 `unavailable`, while their declared state remains evidence metadata. The
 output is marked `blocked-evidence-only`; the flag never grants runtime
 activation or an executable provider.
->>>>>>> origin/main
 
 ### Actual-self search routing
 
@@ -437,6 +491,17 @@ manifest; this public overview is only a safe discovery aid.
 | [`sqlite-transit-sync`](https://github.com/ellmos-ai/sqlite-transit-sync) | SQLite replication & delta sync bridge |
 | [`coma`](https://github.com/ellmos-ai/coma) | Context Manager & Semantic Router for LLM agents |
 | [`automation-master`](https://github.com/ellmos-ai/automation-master) | Enterprise automation orchestration & scheduling |
+| [`ellmos-delegation-authority`](https://github.com/ellmos-ai/ellmos-delegation-authority) | Fail-closed signed delegation grant & capture authority |
+| [`ellmos-controlcenter-mcp`](https://github.com/ellmos-ai/ellmos-controlcenter-mcp) | Unified MCP control plane for tools, profiles & decisions |
+| [`ellmos-filecommander-mcp`](https://github.com/ellmos-ai/ellmos-filecommander-mcp) | High-performance filesystem manipulation MCP server |
+| [`ellmos-codecommander-mcp`](https://github.com/ellmos-ai/ellmos-codecommander-mcp) | Code intelligence, AST refactoring & structural edit MCP server |
+| [`n8n-manager-mcp`](https://github.com/ellmos-ai/n8n-manager-mcp) | Visual workflow automation & node configuration MCP server |
+| [`lock-master`](https://github.com/ellmos-ai/lock-master) | Cross-process atomic lock management & resource leasing |
+| [`ticket-master`](https://github.com/ellmos-ai/ticket-master) | Deterministic task tracking & atomic ticket ledger |
+| [`clutch`](https://github.com/ellmos-ai/clutch) | Transactional git state management & atomic branch operations |
 | [`DevCenter`](https://github.com/dev-bricks/DevCenter) | Developer workstation hub & tool registry |
 | [`CodeBox`](https://github.com/dev-bricks/CodeBox) | Sandboxed code execution & test harness |
-
+| [`MethodenAnalyser`](https://github.com/dev-bricks/MethodenAnalyser) | Code complexity & method structure analysis |
+| [`CleanMarkdown`](https://github.com/doc-bricks/CleanMarkdown) | Deterministic markdown formatting & linting engine |
+| [`PDFtoPDFocr`](https://github.com/doc-bricks/PDFtoPDFocr) | Local-first searchable PDF OCR & text extraction |
+| [`open-bricks`](https://github.com/open-bricks) | Umbrella organization for sovereign desktop & developer tools |
