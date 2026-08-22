@@ -14,7 +14,7 @@ from .contracts import (
     validate_contract,
     with_content_hash,
 )
-from .manifests import validate_manifest
+from .manifests import STACK_PROJECTION_SCHEMA, validate_manifest
 from .stack_schema import verify_pinned_stack_schema
 
 
@@ -76,7 +76,11 @@ def validate_manifest_target(path: Path) -> dict[str, Any]:
             )
             continue
         schema = value.get("schema")
-        if schema not in CONTRACT_SCHEMAS | {"ellmos.module.v2", "ellmos.stack.v2"}:
+        if schema not in CONTRACT_SCHEMAS | {
+            "ellmos.module.v2",
+            "ellmos.stack.v2",
+            STACK_PROJECTION_SCHEMA,
+        }:
             if isinstance(schema, str) and schema.startswith("ellmos."):
                 skipped.append(
                     {
@@ -677,6 +681,7 @@ def _resolve_system_document(
 
     bundle_refs = deepcopy(system["bundle_refs"])
     stack_summaries: list[dict[str, Any]] = []
+    legacy_stack_count = 0
     stack_schema_verifications: list[dict[str, Any]] = []
     for index, stack_ref in enumerate(system.get("stack_refs", [])):
         path = _resolve_contained_ref(
@@ -685,16 +690,26 @@ def _resolve_system_document(
             f"$.stack_refs[{index}]",
         )
         stack = _read_object(path)
+        stack_schema = stack.get("schema")
         stack_errors = validate_manifest(stack)
         if stack_errors:
+            schema_label = (
+                STACK_PROJECTION_SCHEMA
+                if stack_schema == STACK_PROJECTION_SCHEMA
+                else "ellmos.stack.v2"
+            )
             raise ValueError(
-                f"invalid ellmos.stack.v2 reference {path.name}: "
+                f"invalid {schema_label} reference {path.name}: "
                 + "; ".join(stack_errors)
             )
-        if stack.get("schema") != "ellmos.stack.v2":
-            raise ValueError(f"{path.name} is not ellmos.stack.v2")
+        if stack_schema not in {"ellmos.stack.v2", STACK_PROJECTION_SCHEMA}:
+            raise ValueError(
+                f"{path.name} is neither ellmos.stack.v2 nor {STACK_PROJECTION_SCHEMA}"
+            )
         _verify_pin(stack_ref, stack, f"$.stack_refs[{index}]")
-        if stack_schema_pin_path is not None:
+        if stack_schema == "ellmos.stack.v2":
+            legacy_stack_count += 1
+        if stack_schema == "ellmos.stack.v2" and stack_schema_pin_path is not None:
             verification = verify_pinned_stack_schema(
                 path,
                 stack_schema_pin_path,
@@ -709,14 +724,15 @@ def _resolve_system_document(
         if not isinstance(declared, list):
             raise ValueError(f"{path.name}.bundle_refs must be an array when present")
         bundle_refs.extend(deepcopy(declared))
-        stack_summaries.append(
-            {
-                "id": stack["id"],
-                "version": stack.get("version"),
-                "content_hash": stack.get("content_hash")
-                or canonical_content_hash(stack),
-            }
-        )
+        stack_summary = {
+            "id": stack["id"],
+            "version": stack.get("version"),
+            "content_hash": stack.get("content_hash")
+            or canonical_content_hash(stack),
+        }
+        if stack_schema == STACK_PROJECTION_SCHEMA:
+            stack_summary["schema"] = STACK_PROJECTION_SCHEMA
+        stack_summaries.append(stack_summary)
 
     selected_refs = _apply_profile(
         bundle_refs,
@@ -867,7 +883,7 @@ def _resolve_system_document(
             "ellmos.stack.v2 is consumed tolerantly through bundle_refs only; "
             "its authoritative schema remains external."
         ]
-        if stack_summaries and stack_schema_pin_path is None
+        if legacy_stack_count and stack_schema_pin_path is None
         else [],
     }
     if instance:

@@ -101,6 +101,34 @@ class ScannerIdentityTest(unittest.TestCase):
         self.assertEqual(node["metadata"]["origin_system"], "TEST-HOST")
         self.assertEqual(len(claims), 1)
 
+    def test_stack_projection_scans_as_distinct_carrier_kind(self) -> None:
+        projection = {
+            "schema": "ellmos.stack-projection.v1",
+            "id": "deployment-projection",
+            "version": "1.0.0",
+            "purpose": "Pinned deployment bundle selection.",
+            "bundle_refs": [{"ref": "bundle-a", "version": "1.0.0"}],
+        }
+        projection["content_hash"] = canonical_content_hash(projection)
+        (self.scan_root / "projection.json").write_text(
+            json.dumps(projection),
+            encoding="utf-8",
+        )
+
+        with Store(self.db) as store:
+            scan(self._config(), store)
+            node = next(
+                item
+                for item in store.nodes("carrier")
+                if item["id"] == "carrier:deployment-projection"
+            )
+
+        self.assertEqual(node["metadata"]["carrier_kind"], "stack-projection")
+        self.assertEqual(
+            node["metadata"]["manifest_schema"],
+            "ellmos.stack-projection.v1",
+        )
+
     def test_invalid_module_and_name_only_skill_remain_unbound(self) -> None:
         invalid = self.scan_root / "invalid" / "ellmos-module.v2.json"
         invalid.parent.mkdir()

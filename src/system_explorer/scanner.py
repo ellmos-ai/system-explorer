@@ -44,6 +44,7 @@ MANIFEST_NAMES = {
     "ellmos-module.v2.json",
     "ellmos.module.v2.json",
     "stack.v2.json",
+    "stack-projection.v1.json",
     "server.json",
 }
 MANIFEST_SCHEMAS = {
@@ -53,6 +54,7 @@ MANIFEST_SCHEMAS = {
     "ellmos.fleet.v1",
     "ellmos.module.v2",
     "ellmos.stack.v2",
+    "ellmos.stack-projection.v1",
     "ellmos.system-instance.v1",
     "ellmos.system-test.v1",
     "ellmos.system.v1",
@@ -734,6 +736,7 @@ def _scan_manifest(
         "ellmos.fleet.v1": "fleet",
         "ellmos.module.v2": "module",
         "ellmos.stack.v2": "stack",
+        "ellmos.stack-projection.v1": "stack-projection",
         "ellmos.system-instance.v1": "system-instance",
         "ellmos.system-test.v1": "system-test",
         "ellmos.system.v1": "system",
@@ -1194,7 +1197,9 @@ def _is_schema_manifest(path: Path) -> bool:
         value.get("schema") in MANIFEST_SCHEMAS
         or (
             isinstance(value.get("schema"), str)
-            and value["schema"].startswith(("ellmos.module.", "ellmos.stack."))
+            and value["schema"].startswith(
+                ("ellmos.module.", "ellmos.stack.", "ellmos.stack-projection.")
+            )
         )
     )
 

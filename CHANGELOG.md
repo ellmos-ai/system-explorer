@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 2026-08-22: `ellmos.stack-projection.v1` als formal getrennten,
+  selbstgehashten Deployment-Projektionsvertrag mit gepinnten `bundle_refs`
+  ergänzt. Manifestbaum, Resolver und Scanner erkennen die neue Schemaart;
+  `manifest_kind` bleibt nicht-discriminierend. Der externe
+  `ellmos.stack.v2`-Kompositions- und Pinpfad bleibt kompatibel und semantisch
+  unverändert. Gezielte Schema-, Positiv-, Negativ-, Resolver-, Scanner- und
+  Legacy-Regressionen sichern die Grenze ab. Kein Release oder Pin-Nachzug.
+
 - 2026-08-21: Discoverability, README-Design, Security & Metadata Parity Check (Pfad B).
   - GitHub Actions CI-Workflow (`.github/workflows/ci.yml`) für Multi-OS (`ubuntu-latest`, `windows-latest`, `macos-latest`) und Python 3.10-3.13 Matrix mit `ruff`-Linter und `pytest` implementiert.
   - Zweisprachige `SECURITY.md` mit Local-First-, Zero-Egress-, Fail-Closed Authority-Receipt- und Loopback-Bindungsgarantien sowie direkten Sicherheitskontaktadressen (`security@ellmos.ai` / `support@lukasgeiger.com`) integriert.

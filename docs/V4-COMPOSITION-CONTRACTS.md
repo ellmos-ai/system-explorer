@@ -7,7 +7,8 @@ Systeminstanzen, Resolutionstests und Flotten. System Explorer validiert und
 löst diese Dokumente deterministisch und read-only auf. Er startet keine
 Runtime, liest keine Secrets und verändert kein Zielsystem.
 
-Die sieben JSON-Schemas liegen unter `schemas/`:
+Die sieben V4-Basisschemas und das getrennte Deployment-Projektionsschema
+liegen unter `schemas/`:
 
 - `ellmos.bundle.v1`
 - `ellmos.bundles.catalog.v1`
@@ -16,8 +17,9 @@ Die sieben JSON-Schemas liegen unter `schemas/`:
 - `ellmos.system-instance.v1`
 - `ellmos.system-test.v1`
 - `ellmos.fleet.v1`
+- `ellmos.stack-projection.v1`
 
-Alle Verträge besitzen `schema`, `id`, `version`, operativen `status`,
+Die sieben V4-Basisverträge besitzen `schema`, `id`, `version`, operativen `status`,
 separaten `lifecycle`, `authority`, `provenance` und `content_hash`.
 Operative Statuswerte beschreiben Verfügbarkeit von `registered` bis
 `healthy`, `suppressed` oder `unavailable`; der Lebenszyklus bleibt davon
@@ -88,6 +90,44 @@ Grenze. Mit einer gepinnten Referenz prüft `system-resolve` Version, Scope,
 Quelle und SHA-256 des externen Schemas sowie jede Stackversion; fehlende,
 abgelaufene oder driftende Quellen blockieren fail-closed. Die externe
 Schemaquelle wird nicht in dieses Repository kopiert.
+
+## Deployment-Projektion und Legacy-Komposition
+
+`ellmos.stack-projection.v1` ist der lokale, formal getrennte Vertrag für
+eine gepinnte Deployment-Auswahl über `bundle_refs`. Er verlangt `schema`,
+`id`, `version`, `purpose`, mindestens einen gepinnten Bundle-Verweis und
+einen korrekten kanonischen `content_hash`. `optional_bundle_refs`,
+Projektionsprofile, Identitäts-, Authority-, Lifecycle- und
+Deployment-Metadaten bleiben als deklarative Felder erhalten. Sie werden
+nicht still zu aktivierten Bundles oder Runtime-Autorität aufgewertet.
+
+Das Feld `manifest_kind: deployment-projection` darf zur Beschreibung
+mitgeführt werden, ist aber weder erforderlich noch ein Diskriminator. Nur
+`schema: ellmos.stack-projection.v1` aktiviert den Projektionsvertrag. Ein
+altes `ellmos.stack.v2`-Dokument wechselt daher durch `manifest_kind` nicht
+seine Semantik. Insbesondere bleibt die bisherige tolerante Legacy-Auflösung
+von `ellmos.stack.v2` unverändert und die externe `--stack-schema-pin`-
+Verifikation gilt weiterhin ausschließlich für dieses Legacy-Schema.
+
+Der Resolver übernimmt aus beiden Quellen ausschließlich `bundle_refs` in
+die bestehende Systemauflösung. Beim neuen Projektionsschema sind diese
+Verweise strikt gepinnt und nicht leer. `components` ist dort unzulässig;
+Kompositionsmanifeste mit `components[]` verbleiben beim externen
+`ellmos.stack.v2`-Vertrag. Projektionsinterne `optional_bundle_refs` und
+`profiles` sind bewusst deklarativ und werden ohne eigenen späteren Vertrag
+nicht aktiviert.
+
+### Consumerinventar
+
+| Consumer | Bindung und neue Grenze |
+|---|---|
+| `src/system_explorer/manifests.py` | Schemaauswahl und strikte Projektionsvalidierung; Legacy-Validator bleibt unverändert. |
+| `src/system_explorer/resolver.py` | Baum-Whitelist, Literalprüfung, Pin-/Selbsthashprüfung und `bundle_refs`-Readback; externe Stack-Schema-Pins gelten nur für `ellmos.stack.v2`. |
+| `src/system_explorer/scanner.py` | Manifest-Whitelist, Dateinamensheuristik, Schemapräfix und eigene Trägerart `stack-projection`. |
+| `schemas/ellmos.stack-projection.v1.schema.json` | Maschinenlesbare Feld-, Pin-, Hash- und Kompositionsgrenze. |
+| `src/system_explorer/stack_schema.py`, `src/system_explorer/cli.py`, `src/system_explorer/__init__.py` | Unveränderte externe Legacy-Schema-Verifikation und deren CLI/API-Oberfläche. |
+| `tests/test_contracts.py`, `tests/test_scanner_identity.py` | Positive, negative, Kompatibilitäts-, Resolver-, Scanner- und Schema-Regressionen. |
+| `ARCHITECTURE.md`, `README.md`, `README_de.md`, `STATE.md`, `TODO.md`, `MVP-GATE.md`, `CHANGELOG.md` | Dokumentieren weiterhin die externe Legacy-Autorität; diese Aussagen werden durch den neuen lokalen Projektionsvertrag nicht gelockert. |
 
 ## Externe Composition-Regeln und Cardinality-Gate
 
@@ -164,9 +204,10 @@ system-explorer manifest-validate C:\path\to\a-system-repo
 ```
 
 Die Baumprüfung läuft rekursiv und pfadsortiert. Sie validiert die sieben
-V4-Verträge sowie kompatible `ellmos.module.v2`- und `ellmos.stack.v2`-
-Manifeste. Andere `ellmos.*`-Schemas werden als `skipped` ausgewiesen, nicht
-stillschweigend als validiert behauptet.
+V4-Basisverträge sowie kompatible `ellmos.module.v2`-,
+`ellmos.stack-projection.v1`- und `ellmos.stack.v2`-Manifeste. Andere
+`ellmos.*`-Schemas werden als `skipped` ausgewiesen, nicht stillschweigend als
+validiert behauptet.
 
 System- und Testauflösung:
 

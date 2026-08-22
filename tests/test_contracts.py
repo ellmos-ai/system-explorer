@@ -45,6 +45,7 @@ class ContractTest(unittest.TestCase):
             "ellmos.search-authority-receipt.v1.schema.json",
             "ellmos.search-routing-query.v1.schema.json",
             "ellmos.search-routing-receipt.v1.schema.json",
+            "ellmos.stack-projection.v1.schema.json",
             "system-explorer.receipt-trust-store.v1.schema.json",
             "system-explorer.probe-receipt.v1.schema.json",
             "system-explorer.composition-rule-pin.v1.schema.json",
@@ -594,8 +595,105 @@ class ContractTest(unittest.TestCase):
         paths = self._write_fixture(use_stack=True)
         result = resolve_system(paths["instance"], [paths["catalog"]])
         self.assertEqual(result["stacks"][0]["id"], "legacy-stack")
+        self.assertNotIn("schema", result["stacks"][0])
         self.assertIn("bundle_refs only", result["warnings"][0])
         self.assertEqual(validate_manifest({"schema": "ellmos.stack.v2", "id": "x"}), [])
+
+    def test_stack_projection_is_strictly_validated_without_manifest_kind_switch(self) -> None:
+        projection = with_content_hash(
+            {
+                "schema": "ellmos.stack-projection.v1",
+                "id": "deployment-projection",
+                "version": "1.0.0",
+                "purpose": "Pinned deployment bundle selection.",
+                "bundle_refs": [{"ref": "bundle-a", "version": "1.0.0"}],
+                "optional_bundle_refs": ["bundle-b"],
+                "manifest_kind": "deployment-projection",
+            }
+        )
+        self.assertEqual(validate_manifest(projection), [])
+
+        composition_shape = deepcopy(projection)
+        composition_shape["components"] = []
+        composition_shape["content_hash"] = canonical_content_hash(composition_shape)
+        errors = validate_manifest(composition_shape)
+        self.assertIn("unsupported field: components", errors)
+
+        unpinned = deepcopy(projection)
+        unpinned["bundle_refs"] = ["bundle-a"]
+        unpinned["content_hash"] = canonical_content_hash(unpinned)
+        self.assertIn(
+            "bundle_refs[0] must be a pinned object",
+            validate_manifest(unpinned),
+        )
+
+        legacy_with_marker = {
+            "schema": "ellmos.stack.v2",
+            "id": "legacy-composition",
+            "components": [],
+            "manifest_kind": "deployment-projection",
+        }
+        self.assertEqual(validate_manifest(legacy_with_marker), [])
+
+    def test_stack_projection_resolves_bundle_refs_without_legacy_schema_warning(self) -> None:
+        paths = self._write_fixture(use_stack=True)
+        stack_path = self.root / "stack.json"
+        projection = self._read(stack_path)
+        projection.update(
+            {
+                "schema": "ellmos.stack-projection.v1",
+                "purpose": "Pinned deployment bundle selection.",
+            }
+        )
+        projection = with_content_hash(projection)
+        self._write(stack_path, projection)
+
+        system = self._read(paths["system"])
+        system["stack_refs"][0]["content_hash"] = projection["content_hash"]
+        self._write(paths["system"], with_content_hash(system))
+
+        result = resolve_system(paths["instance"], [paths["catalog"]])
+        self.assertEqual(result["warnings"], [])
+        self.assertEqual(result["stack_schema_verifications"], [])
+        self.assertEqual(
+            result["stacks"],
+            [
+                {
+                    "id": "legacy-stack",
+                    "version": "2.0.0",
+                    "content_hash": projection["content_hash"],
+                    "schema": "ellmos.stack-projection.v1",
+                }
+            ],
+        )
+        self.assertEqual(
+            [bundle["id"] for bundle in result["bundles"]],
+            ["ellmos-core-discovery-bundle"],
+        )
+
+    def test_stack_projection_rejects_empty_bundle_selection_during_resolution(self) -> None:
+        paths = self._write_fixture(use_stack=True)
+        stack_path = self.root / "stack.json"
+        projection = self._read(stack_path)
+        projection.update(
+            {
+                "schema": "ellmos.stack-projection.v1",
+                "purpose": "Pinned deployment bundle selection.",
+                "bundle_refs": [],
+            }
+        )
+        projection = with_content_hash(projection)
+        self._write(stack_path, projection)
+
+        system = self._read(paths["system"])
+        system["stack_refs"][0]["content_hash"] = projection["content_hash"]
+        self._write(paths["system"], with_content_hash(system))
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "invalid ellmos.stack-projection.v1 reference.*bundle_refs must not be empty",
+        ):
+            resolve_system(paths["instance"], [paths["catalog"]])
 
     def test_pinned_external_stack_schema_is_verified_during_resolution(self) -> None:
         paths = self._write_fixture(use_stack=True)
