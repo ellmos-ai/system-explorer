@@ -33,10 +33,20 @@ class VersioningTests(unittest.TestCase):
         self.assertEqual(system_explorer.__version__, PROJECT_VERSION)
 
     def test_metadata_checks_editable_install_or_documents_external_fallback(self) -> None:
-        distribution = importlib.metadata.distribution("system-explorer")
-        location = Path(distribution.locate_file(""))
         source_root = (self.root / "src").resolve()
         versioning = (self.root / "VERSIONING.md").read_text(encoding="utf-8")
+        try:
+            distribution = importlib.metadata.distribution("system-explorer")
+        except importlib.metadata.PackageNotFoundError:
+            # Dritter, bis 2026-08-24 nicht behandelter Fall: Das Paket ist auf diesem Host
+            # gar nicht installiert. Das ist hier der Normalzustand und kein Fehler -- auch
+            # gardener und policy-registry laufen so. Der Test stuerzte davor beim
+            # distribution()-Aufruf ab, statt den dokumentierten Fallback zu pruefen, den er
+            # laut eigenem Namen ausdruecklich zulaesst.
+            self.assertIn("nicht aus diesem Clone", versioning)
+            self.assertIn("Fallback", versioning)
+            return
+        location = Path(distribution.locate_file(""))
         try:
             local_metadata = location.resolve().is_relative_to(source_root)
         except AttributeError:  # pragma: no cover - Python 3.9 fallback
