@@ -62,7 +62,7 @@ class VersioningTests(unittest.TestCase):
         readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
 
         for readme in (readme_en, readme_de):
-            self.assertIn("Pytest-173%20passed", readme)
+            self.assertIn("Pytest-179%20passed", readme)
             self.assertIn("Ecosystem-ellmos--ai", readme)
             self.assertIn("Umbrella-open--bricks", readme)
             self.assertIn("policy-registry", readme)
@@ -77,7 +77,7 @@ class VersioningTests(unittest.TestCase):
         manifest = json.loads(
             (self.root / "ellmos-module.v2.json").read_text(encoding="utf-8")
         )
-        self.assertIn("Last-checked: 2026-08-21", llms_txt)
+        self.assertIn("Last-checked: 2026-08-24", llms_txt)
         self.assertEqual(manifest["id"], "system-explorer")
         self.assertEqual(manifest["version"], PROJECT_VERSION)
         adapter_ids = {a["id"] for a in manifest.get("adapters", [])}

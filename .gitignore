@@ -43,3 +43,8 @@ data/
 *.db-shm
 *.log
 .*.todo-archive-*.json
+
+# Sync conflicts and locks
+*.sync-conflict-*
+*.conflict
+LOCK*.txt

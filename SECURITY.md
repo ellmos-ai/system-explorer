@@ -17,6 +17,13 @@ If you discover a security issue or vulnerability in `system-explorer`, please r
 
 Please include detailed steps to reproduce the vulnerability and any relevant logs or evidence payloads. We will acknowledge receipt within 48 hours and provide regular status updates.
 
+### Supported Versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.4.x   | :white_check_mark: |
+| < 0.4.0 | :x:                |
+
 ### Local-First & Zero-Egress Boundary Guarantees
 
 `system-explorer` is designed from the ground up to operate locally and securely:
@@ -41,6 +48,13 @@ Wenn Sie eine Schwachstelle in `system-explorer` entdecken, melden Sie diese bit
 - **Maintainer**: `support@lukasgeiger.com` / `lukas@open-bricks.org`
 
 Bitte fügen Sie eine Beschreibung der Schritte zur Reproduktion sowie relevante Logs oder Belegstrukturen bei. Wir bestätigen den Eingang innerhalb von 48 Stunden.
+
+### Unterstützte Versionen
+
+| Version | Unterstützt        |
+| ------- | ------------------ |
+| 0.4.x   | :white_check_mark: |
+| < 0.4.0 | :x:                |
 
 ### Local-First- & Zero-Egress-Garantien
 

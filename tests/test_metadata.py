@@ -61,11 +61,20 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Fail-Closed", security_text)
         self.assertIn("127.0.0.1", security_text)
 
+        # Supported versions table
+        self.assertIn("### Supported Versions", security_text)
+        self.assertIn("### Unterstützte Versionen", security_text)
+        self.assertIn("0.4.x", security_text)
+
     def test_ci_workflow_structure(self) -> None:
         """Verify GitHub Actions CI workflow runs across platforms and Python versions."""
         ci_path = self.root / ".github" / "workflows" / "ci.yml"
         self.assertTrue(ci_path.is_file(), "CI workflow file .github/workflows/ci.yml missing")
         ci_content = ci_path.read_text(encoding="utf-8")
+
+        # Concurrency control
+        self.assertIn("concurrency:", ci_content)
+        self.assertIn("cancel-in-progress: true", ci_content)
 
         # OS Matrix
         self.assertIn("ubuntu-latest", ci_content)
@@ -89,8 +98,21 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Homepage = ", pyproject_text)
         self.assertIn("Repository = ", pyproject_text)
         self.assertIn("Security = ", pyproject_text)
+        self.assertIn('"Parent Organization" = "https://github.com/ellmos-ai"', pyproject_text)
+        self.assertIn('"Umbrella Ecosystem" = "https://github.com/open-bricks"', pyproject_text)
+        self.assertIn("Topic :: Security", pyproject_text)
+        self.assertIn("Topic :: System :: Monitoring", pyproject_text)
         self.assertIn("[tool.ruff]", pyproject_text)
         self.assertIn("cryptography>=41", pyproject_text)
+
+    def test_gitignore_hygiene_patterns(self) -> None:
+        """Verify .gitignore contains standard sync conflict, lock, and cache exclusions."""
+        gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("*.sync-conflict-*", gitignore_text)
+        self.assertIn("*.conflict", gitignore_text)
+        self.assertIn("LOCK*.txt", gitignore_text)
+        self.assertIn(".pytest_cache/", gitignore_text)
+        self.assertIn(".ruff_cache/", gitignore_text)
 
     def test_readme_navigation_and_badges_parity(self) -> None:
         """Verify navigation links and standard Shields.io badges in both READMEs."""
@@ -104,7 +126,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         # Standard badges
         for doc in (readme_en, readme_de):
             self.assertIn("actions/workflows/ci.yml", doc)
-            self.assertIn("Pytest-173%20passed", doc)
+            self.assertIn("Pytest-179%20passed", doc)
             self.assertIn("Zero--Egress", doc)
             self.assertIn("Local--First", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
@@ -140,11 +162,11 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-08-21", llms_text)
+        self.assertIn("Last-checked: 2026-08-24", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
-        self.assertIn("173 Pytest tests", llms_text)
+        self.assertIn("179 Pytest tests", llms_text)
 
     def test_ecosystem_table_parity(self) -> None:
         """Verify sibling ecosystem tools table contains essential partner repositories."""

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 2026-08-24: Repository Hygiene, CI Concurrency Hardening & Contract Parity Check (Pfad A).
+  - GitHub Actions CI-Workflow (`.github/workflows/ci.yml`) um Concurrency-Steuerung mit automatischem Abbruch veralteter Läufe (`cancel-in-progress: true`) gehärtet.
+  - Zweisprachige `SECURITY.md` um strukturierte Supported-Versions-Matrix (`0.4.x`) in beiden Sprachfassungen erweitert.
+  - PEP 621 Metadaten in `pyproject.toml` um `Topic :: Security`, `Topic :: System :: Monitoring` und vollständige Ecosystem-URLs (`Parent Organization` und `Umbrella Ecosystem`) erweitert.
+  - Repository-Hygiene & `.gitignore` um Synchronisationskonfliktmuster (`*.sync-conflict-*`, `*.conflict`) und Lockdateien (`LOCK*.txt`) ergänzt.
+  - Automatisierte Metadaten- und Vertragstestsuite `tests/test_metadata.py` um Tests für CI-Concurrency, Supported-Versions-Matrix, Ecosystem-URLs und Gitignore-Hygiene erweitert (11/11 tests, Gesamtsuite: 179 Pytest Tests 100% grün).
+  - Maschinenlesbarer Kontext (`llms.txt`) und README-Badges auf Version `0.4.0` und 179 verifizierte Tests synchronisiert.
+
 - 2026-08-21: Discoverability, README-Design, Security & Metadata Parity Check (Pfad B).
   - GitHub Actions CI-Workflow (`.github/workflows/ci.yml`) für Multi-OS (`ubuntu-latest`, `windows-latest`, `macos-latest`) und Python 3.10-3.13 Matrix mit `ruff`-Linter und `pytest` implementiert.
   - Zweisprachige `SECURITY.md` mit Local-First-, Zero-Egress-, Fail-Closed Authority-Receipt- und Loopback-Bindungsgarantien sowie direkten Sicherheitskontaktadressen (`security@ellmos.ai` / `support@lukasgeiger.com`) integriert.
