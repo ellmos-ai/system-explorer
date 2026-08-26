@@ -5,6 +5,7 @@
 - 2026-08-26: Repository Hygiene Verification Refresh (Pfad A).
   - `llms.txt` Last-checked und Verifikationsbaseline auf den heutigen Maintenance-Check synchronisiert.
   - CI-Dev-Extras um `jsonschema>=4.0` ergänzt, damit `tests/test_search_routing.py` in frischen GitHub-Actions-Umgebungen sammelbar ist.
+  - Scan-Time-Budget-Test normalisiert temporäre Root-Pfade, damit macOS-/Windows-Runner die Rollback-Strecke deterministisch prüfen.
   - Lokale Testsuite erneut vollständig geprüft (179 Pytest Tests plus 26 Subtests), ergänzt durch Ruff, Compileall, `git diff --check` und engen Secret-Scan.
   - GitHub-Repositorybeschreibung auf den dokumentierten Projektzweck gesetzt.
 

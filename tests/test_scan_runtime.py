@@ -76,6 +76,7 @@ class ScanRuntimeTest(unittest.TestCase):
         (first / "first.md").write_text("# First\n", encoding="utf-8")
         (second / "one.md").write_text("# One\n", encoding="utf-8")
         (second / "two.md").write_text("# Two\n", encoding="utf-8")
+        resolved_second = second.resolve()
         now = [0.0]
         events: list[dict[str, object]] = []
 
@@ -86,7 +87,7 @@ class ScanRuntimeTest(unittest.TestCase):
         def advance_after_first_second_root_file(*args: object, **kwargs: object) -> None:
             path = args[0]
             original_scan_file(*args, **kwargs)
-            if isinstance(path, Path) and path.parent == second:
+            if isinstance(path, Path) and path.parent.resolve() == resolved_second:
                 now[0] = 11.0
 
         with (
