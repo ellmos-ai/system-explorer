@@ -76,6 +76,7 @@ class ScanRuntimeTest(unittest.TestCase):
         (first / "first.md").write_text("# First\n", encoding="utf-8")
         (second / "one.md").write_text("# One\n", encoding="utf-8")
         (second / "two.md").write_text("# Two\n", encoding="utf-8")
+        resolved_first = first.resolve()
         resolved_second = second.resolve()
         now = [0.0]
         events: list[dict[str, object]] = []
@@ -119,8 +120,8 @@ class ScanRuntimeTest(unittest.TestCase):
             }
         finally:
             db.close()
-        self.assertTrue(any(str(first) in scope for scope in scopes))
-        self.assertFalse(any(str(second) in scope for scope in scopes))
+        self.assertTrue(any(str(resolved_first) in scope for scope in scopes))
+        self.assertFalse(any(str(resolved_second) in scope for scope in scopes))
         self.assertFalse(Path(f"{self.db}-journal").exists())
         self.assertIn("root_rolled_back", [event["event"] for event in events])
         self.assertIn("scan_timed_out", [event["event"] for event in events])
