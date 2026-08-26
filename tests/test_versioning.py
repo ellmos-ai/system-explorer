@@ -77,7 +77,7 @@ class VersioningTests(unittest.TestCase):
         manifest = json.loads(
             (self.root / "ellmos-module.v2.json").read_text(encoding="utf-8")
         )
-        self.assertIn("Last-checked: 2026-08-24", llms_txt)
+        self.assertIn("Last-checked: 2026-08-26", llms_txt)
         self.assertEqual(manifest["id"], "system-explorer")
         self.assertEqual(manifest["version"], PROJECT_VERSION)
         adapter_ids = {a["id"] for a in manifest.get("adapters", [])}

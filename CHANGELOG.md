@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 2026-08-26: Repository Hygiene Verification Refresh (Pfad A).
+  - `llms.txt` Last-checked und Verifikationsbaseline auf den heutigen Maintenance-Check synchronisiert.
+  - Lokale Testsuite erneut vollständig geprüft (179 Pytest Tests plus 26 Subtests), ergänzt durch Ruff, Compileall, `git diff --check` und engen Secret-Scan.
+  - GitHub-Repositorybeschreibung auf den dokumentierten Projektzweck gesetzt.
+
 - 2026-08-24: Repository Hygiene, CI Concurrency Hardening & Contract Parity Check (Pfad A).
   - GitHub Actions CI-Workflow (`.github/workflows/ci.yml`) um Concurrency-Steuerung mit automatischem Abbruch veralteter Läufe (`cancel-in-progress: true`) gehärtet.
   - Zweisprachige `SECURITY.md` um strukturierte Supported-Versions-Matrix (`0.4.x`) in beiden Sprachfassungen erweitert.

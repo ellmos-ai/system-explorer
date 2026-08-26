@@ -162,7 +162,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-08-24", llms_text)
+        self.assertIn("Last-checked: 2026-08-26", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
