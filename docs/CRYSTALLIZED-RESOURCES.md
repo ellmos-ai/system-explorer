@@ -53,3 +53,18 @@ oder über die enge Allowlist `software_discovery.commands` aufgelöst.
 Gespeichert werden Pfad, Hash und Metadaten, nicht der Dateiinhalt. So bleibt
 die Kartierung nachvollziehbar und vermeidet eine breite Sammlung lokaler
 Software- und Nutzungsdaten.
+
+## Maschinenlesbare Endpoint-Registry
+
+`system-explorer software-endpoints --config <config> --refresh` projiziert
+den vorhandenen Ressourcengraphen als
+`system-explorer.software-endpoint-registry.v1`. Das Ergebnis enthält pro
+Schnittstelle die stabile ID, Ressource, Methode, den deklarierten Einstieg,
+Strukturierungsgrad, Bereitschaft, Akteure, Funktionen und den beobachteten
+Installationsstatus. Es enthält keine Rohinhalte, Credential-Werte oder
+Zielsystemmutationen.
+
+Die Projektion ist deterministisch sortiert und besitzt einen kanonischen
+SHA-256-Inhaltshash. Ihr JSON-Schema liegt unter
+`schemas/software-endpoint-registry.v1.schema.json`. Der Registry-Beleg ist
+eine lesende Sicht auf den Evidence Store und keine neue Runtime-Autorität.

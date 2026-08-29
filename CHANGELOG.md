@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- 2026-08-29: Explizite Software-Endpoint-Registry für OCEAN Full Dev.
+  - Neue read-only CLI `software-endpoints` mit optionalem, eng begrenztem `--refresh` der konfigurierten Software-Ressourcen.
+  - Deterministische, inhaltsgehashte Projektion `system-explorer.software-endpoint-registry.v1` mit Ressourcen, Schnittstellen, Funktionen, Akteuren, LLM-Bereitschaft und beobachtetem Installationsstatus.
+  - JSON-Schema und fokussierte API-/CLI-Tests ergänzen die bestehende Ressourcenkarte; Rohinhalte, Credential-Werte und Zielsystemmutationen bleiben ausgeschlossen.
+  - Das Modul deklariert nun ausdrücklich `software.endpoint.registry` und kann dadurch die gleichnamige OCEAN-Kompositionsrolle tragen.
+  - Vollständiger lokaler Nachweis: 181 Pytest-Tests plus 26 Subtests, Ruff, Compileall, CLI-Hilfe und Manifestvalidierung grün.
+
 - 2026-08-26: Repository Hygiene Verification Refresh (Pfad A).
   - `llms.txt` Last-checked und Verifikationsbaseline auf den heutigen Maintenance-Check synchronisiert.
   - CI-Dev-Extras um `jsonschema>=4.0` ergänzt, damit `tests/test_search_routing.py` in frischen GitHub-Actions-Umgebungen sammelbar ist.

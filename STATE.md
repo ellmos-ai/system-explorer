@@ -2,10 +2,10 @@
 name: "system-explorer-state"
 type: state-snapshot
 version: 0.4.0
-updated: "2026-08-16"
-updated_by: "gemini"
+updated: "2026-08-29"
+updated_by: "codex"
 current_phase: "MVP release"
-last_verified: "2026-08-16"
+last_verified: "2026-08-29"
 description: |
   Current-state snapshot for fast session-start orientation in system-explorer.
 ---
@@ -18,6 +18,11 @@ description: |
 - Datenspeicherung: lokale SQLite-Referenzen, keine rohen Transcripttexte
 - Randressourcen: installierte Software mit Funktionen, LLM-Steuerwegen,
   Readiness-Symbolen und getrenntem Tokenersparnisstatus
+- Software-Endpoint-Registry: deterministische, schema-validierte und
+  inhaltsgehashte Read-only-Projektion des Ressourcengraphen; eigenständig per
+  `software-endpoints --refresh` nutzbar und als OCEAN-Provider vorgesehen
+- Verifikation 2026-08-29: 181 Pytest-Tests plus 26 Subtests, Ruff, Compileall,
+  CLI-Hilfe und Modulmanifestvalidierung grün
 - V4-Komposition: additive Bundle-/System-/Instanz-/Test-/Fleet- und
   Komponentenregistry-Verträge, deterministische Read-only-Auflösung sowie
   fail-closed `declared_only`-Activation-Gates

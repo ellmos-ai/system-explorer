@@ -178,6 +178,17 @@ beweisen weder tatsächliche Nutzung noch Tokenreduktion. Skills sind im
 Default flexibler, fertige Programme stärker kristallisiert. `generated_by`
 kennzeichnet von LLMs gebaute Brückenskripte, ohne sie freizugeben.
 
+### Software-Endpoint-Registry
+
+`software-endpoints` ist eine deterministische Projektion dieses vorhandenen
+Graphen, keine zweite Datenhaltung. Jede Zeile bindet genau eine
+`software_resource --exposes_interface--> interface`-Kante an ihre Funktionen,
+Akteure, LLM-Bereitschaft und den beobachteten Installationsstatus. Der Vertrag
+`system-explorer.software-endpoint-registry.v1` schließt Rohinhalte,
+Credential-Werte und Runtime-Autorität aus und bindet den gesamten Beleg mit
+einem kanonischen SHA-256-Hash. `--refresh` liest nur die ausdrücklich
+konfigurierten Ressourcen und die begrenzte Command-Allowlist neu ein.
+
 ## Änderungsfluss
 
 ```text

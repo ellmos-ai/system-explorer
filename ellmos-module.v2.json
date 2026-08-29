@@ -36,6 +36,7 @@
     "system.llm-trace-analysis",
     "system.llm-action-surface",
     "system.software-resource.mapping",
+    "software.endpoint.registry",
     "system.llm-readiness-analysis",
     "system.crystallized-intelligence.mapping",
     "system.token-saving-endpoint.analysis",

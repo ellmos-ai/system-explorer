@@ -126,7 +126,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         # Standard badges
         for doc in (readme_en, readme_de):
             self.assertIn("actions/workflows/ci.yml", doc)
-            self.assertIn("Pytest-179%20passed", doc)
+            self.assertIn("Pytest-181%20passed", doc)
             self.assertIn("Zero--Egress", doc)
             self.assertIn("Local--First", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
@@ -162,11 +162,11 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-08-26", llms_text)
+        self.assertIn("Last-checked: 2026-08-29", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
-        self.assertIn("179 Pytest tests", llms_text)
+        self.assertIn("181 Pytest tests plus 26 subtests", llms_text)
 
     def test_ecosystem_table_parity(self) -> None:
         """Verify sibling ecosystem tools table contains essential partner repositories."""

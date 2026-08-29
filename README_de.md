@@ -3,7 +3,7 @@
 <img src="assets/banner.png" width="100%" alt="System Explorer Banner">
 
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-179%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-181%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -149,6 +149,7 @@ system-explorer server-check --config deployment.json
 system-explorer provider-refresh --config deployment.json
 system-explorer purpose-check --target carrier:system-explorer --config deployment.json
 system-explorer resources --config software-resources.json
+system-explorer software-endpoints --config software-resources.json --refresh
 system-explorer map --config software-resources.json --view resources
 system-explorer explain-video --config explorer.json --output explainer-package --media-editor ..\ai-media-editor --probe
 system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
@@ -237,7 +238,14 @@ Installierte Software wird nicht automatisch mit LLM-Nutzbarkeit gleichgesetzt.
 `software_resources` und eine begrenzte `software_discovery.commands`-Allowlist
 registrieren Ressource, Funktion und Steuerweg. `◆`, `◇`, `△`, `○` und `?`
 markieren native, direkte, indirekte, reine Referenz- und unbelegte
-LLM-Bereitschaft. Die Regeln und Wahrheitsschranken stehen in
+LLM-Bereitschaft.
+`software-endpoints --refresh` überführt dieselbe Evidenz in die deterministische
+Projektion `system-explorer.software-endpoint-registry.v1`. Sie enthält nur typisierte
+Ressourcen-, Schnittstellen-, Funktions-, Akteurs-, Bereitschafts- und beobachtete
+Installationsfelder; Rohinhalte, Credential-Werte und Zielsystemmutationen bleiben
+ausgeschlossen. Der Inhalt ist gehasht und wird gegen
+[`schemas/software-endpoint-registry.v1.schema.json`](schemas/software-endpoint-registry.v1.schema.json)
+validiert. Die Regeln und Wahrheitsschranken stehen in
 [`docs/CRYSTALLIZED-RESOURCES.md`](docs/CRYSTALLIZED-RESOURCES.md); eine
 neutrale Konfiguration liegt in
 [`examples/software-resources.json`](examples/software-resources.json).
@@ -483,6 +491,11 @@ es der erforderliche Discovery-, Mapping- und Coverage-Prüfer für das
 `ellmos-core-discovery-bundle`. Direkte Partner sind `ellmos-core` als
 Orchestrierungsaufrufer sowie als empfohlener Komponenten-Resolver und
 Semantic-Routing-Partner.
+
+Dasselbe Modul ist der konkrete, lesende Provider für die Kompositionsrolle
+`module:software-endpoint-registry`: Die eigene CLI-Projektion materialisiert den
+bereits belegten Software-Ressourcengraphen, ohne eine zweite Registry-Autorität
+zu erzeugen.
 
 Das Modul kann zudem an zwei Grenzen lesend unterstützen:
 

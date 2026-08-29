@@ -1,12 +1,12 @@
 # system-explorer
 
-> Last-checked: 2026-08-26
+> Last-checked: 2026-08-29
 
 Purpose: map desired system functions to evidenced function carriers.
 Truth boundary: source systems remain authoritative; evidence is referenced.
 Safety boundary: proposals are read-only and never authorize target mutation.
 Key command: system-explorer --help
-Verification baseline: 179 Pytest tests (including metadata contract tests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-08-26.
+Verification baseline: 181 Pytest tests plus 26 subtests (including the software endpoint registry and metadata contracts), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-08-29.
 Security policy: SECURITY.md
 CI workflow: .github/workflows/ci.yml
 Architecture: ARCHITECTURE.md
@@ -16,6 +16,8 @@ Deployment and purpose rules: docs/DEPLOYMENT-PURPOSE-MODEL.md
 Federated map contract: docs/FEDERATED-MAPS.md
 Time-bound provider baseline: docs/CLOUD-SERVER-BASELINE_2026-07-29.md
 Crystallized software resources: docs/CRYSTALLIZED-RESOURCES.md
+Software endpoint registry: system-explorer software-endpoints --config <config> [--refresh]
+Software endpoint schema: schemas/software-endpoint-registry.v1.schema.json
 Connector contracts: docs/CONNECTOR-ADAPTERS.md
 Portable map: system-explorer map-export --config <config> --view all --output <map.json>
 Cross-system analysis: system-explorer map --config <config> --view <view> [--system <id>]
