@@ -33,6 +33,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             "README_de.md",
             "SECURITY.md",
             "LICENSE",
+            "THIRD_PARTY_LICENSES.md",
             "CHANGELOG.md",
             "llms.txt",
             "ARCHITECTURE.md",
@@ -61,10 +62,35 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Fail-Closed", security_text)
         self.assertIn("127.0.0.1", security_text)
 
+        # Response SLA
+        self.assertIn("### Response SLA", security_text)
+        self.assertIn("### Reaktionszeiten (SLA)", security_text)
+        self.assertIn("Within 48 hours", security_text)
+        self.assertIn("Within 5 business days", security_text)
+        self.assertIn("Innerhalb von 48 Stunden", security_text)
+        self.assertIn("Innerhalb von 5 Werktagen", security_text)
+
         # Supported versions table
         self.assertIn("### Supported Versions", security_text)
         self.assertIn("### Unterstützte Versionen", security_text)
         self.assertIn("0.4.x", security_text)
+
+    def test_third_party_licenses_inventory(self) -> None:
+        """Verify third-party license inventory document structure and declarations."""
+        licenses_path = self.root / "THIRD_PARTY_LICENSES.md"
+        self.assertTrue(licenses_path.is_file(), "Missing THIRD_PARTY_LICENSES.md")
+        licenses_text = licenses_path.read_text(encoding="utf-8")
+
+        self.assertIn("cryptography", licenses_text)
+        self.assertIn(">=41", licenses_text)
+        self.assertIn("Apache-2.0 OR BSD-3-Clause", licenses_text)
+        self.assertIn("pytest", licenses_text)
+        self.assertIn("ruff", licenses_text)
+        self.assertIn("build", licenses_text)
+        self.assertIn("jsonschema", licenses_text)
+        self.assertIn("Apache License 2.0", licenses_text)
+        self.assertIn("BSD 3-Clause License", licenses_text)
+        self.assertIn("MIT License", licenses_text)
 
     def test_ci_workflow_structure(self) -> None:
         """Verify GitHub Actions CI workflow runs across platforms and Python versions."""
@@ -94,6 +120,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         pyproject_text = (self.root / "pyproject.toml").read_text(encoding="utf-8")
 
         self.assertIn("[project]", pyproject_text)
+        self.assertIn('license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]', pyproject_text)
         self.assertIn("[project.urls]", pyproject_text)
         self.assertIn("Homepage = ", pyproject_text)
         self.assertIn("Repository = ", pyproject_text)
@@ -110,7 +137,12 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("*.sync-conflict-*", gitignore_text)
         self.assertIn("*.conflict", gitignore_text)
+        self.assertIn("*-WORKSTATION-LG*", gitignore_text)
+        self.assertIn("*-ASUS-GEI*", gitignore_text)
         self.assertIn("LOCK*.txt", gitignore_text)
+        self.assertIn(".npmrc", gitignore_text)
+        self.assertIn("*token*", gitignore_text)
+        self.assertIn("*secret*", gitignore_text)
         self.assertIn(".pytest_cache/", gitignore_text)
         self.assertIn(".ruff_cache/", gitignore_text)
 
@@ -149,6 +181,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.root / "README.md",
             self.root / "README_de.md",
             self.root / "SECURITY.md",
+            self.root / "THIRD_PARTY_LICENSES.md",
             self.root / "llms.txt",
             self.root / "CHANGELOG.md",
         ]:
@@ -162,8 +195,9 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-08-26", llms_text)
+        self.assertIn("Last-checked: 2026-09-08", llms_text)
         self.assertIn("SECURITY.md", llms_text)
+        self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
         self.assertIn("179 Pytest tests", llms_text)

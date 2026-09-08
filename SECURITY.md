@@ -15,7 +15,13 @@ If you discover a security issue or vulnerability in `system-explorer`, please r
 - **Security Team**: `security@ellmos.ai`
 - **Maintainer**: `support@lukasgeiger.com` / `lukas@open-bricks.org`
 
-Please include detailed steps to reproduce the vulnerability and any relevant logs or evidence payloads. We will acknowledge receipt within 48 hours and provide regular status updates.
+Please include detailed steps to reproduce the vulnerability and any relevant logs or evidence payloads.
+
+### Response SLA
+
+- **Acknowledgment:** Within 48 hours
+- **Initial Assessment & Triage:** Within 5 business days
+- **Fix & Advisory Release:** Coordinated disclosure following verified resolution
 
 ### Supported Versions
 
@@ -47,7 +53,13 @@ Wenn Sie eine Schwachstelle in `system-explorer` entdecken, melden Sie diese bit
 - **Sicherheitsteam**: `security@ellmos.ai`
 - **Maintainer**: `support@lukasgeiger.com` / `lukas@open-bricks.org`
 
-Bitte fügen Sie eine Beschreibung der Schritte zur Reproduktion sowie relevante Logs oder Belegstrukturen bei. Wir bestätigen den Eingang innerhalb von 48 Stunden.
+Bitte fügen Sie eine Beschreibung der Schritte zur Reproduktion sowie relevante Logs oder Belegstrukturen bei.
+
+### Reaktionszeiten (SLA)
+
+- **Empfangsbestätigung:** Innerhalb von 48 Stunden
+- **Ersteinschätzung & Triage:** Innerhalb von 5 Werktagen
+- **Behebung & Veröffentlichung:** Koordinierte Veröffentlichung nach verifizierter Behebung
 
 ### Unterstützte Versionen
 

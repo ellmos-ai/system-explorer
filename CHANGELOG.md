@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 2026-09-08: AI Security & Dependency Audit: Third-Party-Lizenzinventar, PEP 639 & SLA-Härtung.
+  - Drittanbieter-Lizenzinventar `THIRD_PARTY_LICENSES.md` mit detaillierter Aufstellung aller Runtime- (`cryptography>=41`, Apache-2.0 / BSD-3-Clause) und Entwicklungsabhängigkeiten (`pytest`, `ruff`, `build`, `jsonschema`) sowie vollständigen Lizenztexten angelegt.
+  - `pyproject.toml` um standardisierte PEP 639 `license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]` Deklaration erweitert.
+  - `.gitignore` um Secret-, Credential- und Token-Muster (`.npmrc`, `*token*`, `*secret*`, `*.pem`, `*.pfx`, `*.p12`) und Multi-Host-Konfliktmuster (`*-WORKSTATION-LG*`, `*-ASUS-GEI*`) gehärtet.
+  - Zweisprachige `SECURITY.md` um verbindliches Response-SLA (Empfangsbestätigung innerhalb von 48 Stunden, Triage & Ersteinschätzung innerhalb von 5 Werktagen) erweitert.
+  - `llms.txt` Last-checked-Zeitstempel auf 2026-09-08 aktualisiert und Querverweis auf `THIRD_PARTY_LICENSES.md` ergänzt.
+  - Metadaten- und Vertragstestsuite `tests/test_metadata.py` um Prüfungen für Lizenzinventar, PEP 639 `license-files`, erweiterte Gitignore-Muster und Sicherheits-SLA erweitert.
+
 - 2026-08-26: Repository Hygiene Verification Refresh (Pfad A).
   - `llms.txt` Last-checked und Verifikationsbaseline auf den heutigen Maintenance-Check synchronisiert.
   - CI-Dev-Extras um `jsonschema>=4.0` ergänzt, damit `tests/test_search_routing.py` in frischen GitHub-Actions-Umgebungen sammelbar ist.

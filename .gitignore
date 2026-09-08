@@ -32,7 +32,13 @@ output/
 .env.*
 !.env.example
 *.key
+*.pem
+*.pfx
+*.p12
 credentials.json
+.npmrc
+*token*
+*secret*
 
 # Local scratch
 tmp/
@@ -47,4 +53,6 @@ data/
 # Sync conflicts and locks
 *.sync-conflict-*
 *.conflict
+*-WORKSTATION-LG*
+*-ASUS-GEI*
 LOCK*.txt

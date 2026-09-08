@@ -9,6 +9,7 @@ description = "Evidence-backed system maps for functions, carriers, entry points
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]
 authors = [{ name = "Lukas Geiger", email = "lukas@open-bricks.org" }]
 keywords = [
     "ellmos",
