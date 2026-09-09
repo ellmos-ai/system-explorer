@@ -2,12 +2,15 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer Banner">
 
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-179%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-183%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
 [![Security](https://img.shields.io/badge/security-Local--First%20%7C%20Fail--Closed-orange.svg)](SECURITY.md)
+[![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
@@ -33,16 +36,18 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 ## Schnellnavigation
 
 - [Funktionen](#funktionen)
+- [Systemarchitektur](#systemarchitektur)
 - [Evidenzbasierter Auflösungs-Lebenszyklus](#evidenzbasierter-auflösungs-lebenszyklus)
 - [Schnellstart](#schnellstart)
+- [Begrenzte Scans & Fortschritt](#begrenzte-scans-und-fortschritt)
 - [Externe Composition- & Probe-Autoritäten](#externe-composition--und-probe-autoritäten)
 - [Actual-Self Search Routing](#actual-self-search-routing)
 - [Sicherheit & Wahrheitsschranken](#sicherheit-und-wahrheitsschranken)
 - [Resolution als Soll-Evidenz](#resolution-als-soll-evidenz)
 - [Explizite Funktions-Äquivalenz](#explizite-funktions-äquivalenz)
-- [Bundles & Partner](#bundles-und-partner)
+- [Governance- & Laufzeit-Invarianten](#governance--und-laufzeit-invarianten)
+- [Bundles & Partner](#bundles--partner)
 - [Sicherheitsrichtlinie](SECURITY.md)
-- [LLM-Kontextindex](llms.txt)
 - [Ökosystem & Geschwisterwerkzeuge](#ökosystem--geschwisterwerkzeuge)
 
 ## Funktionen
@@ -90,6 +95,64 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - Lokale Weboberfläche mit evidenzbezogenen Detailansichten
 - Rein lesende, promptgestützte Änderungsvorschläge mit Pflicht-Gates
 - Pfad-Probing-Pläne für externe, budgetierte Schwarmtests
+
+## Systemarchitektur
+
+`system-explorer` strukturiert Erkennung, Evidenzerfassung, deterministische Auflösung und Governance-Gates in eine saubere, geschichtete lokale Architektur:
+
+```mermaid
+flowchart TD
+    subgraph UI_CLI["Client-, CLI- & Web-Oberfläche"]
+        CLI["system-explorer CLI<br/>(ingest, scan, system-resolve, coverage)"]
+        WebUI["Lokales Web-Dashboard<br/>(127.0.0.1:8765 / Nur Loopback)"]
+        Exporter["Karten- & Storyboard-Exporter<br/>(JSON, Mermaid, ASCII, HTML)"]
+    end
+
+    subgraph Discovery["Bounded Scanner & Harvester-Engine"]
+        Scanner["Manifest- & Skill-Scanner<br/>(ellmos.module.v2, Skills, Entry-Points)"]
+        Adapters["Transkript-Adapter<br/>(Codex, Claude, Gemini/agy, Kimi)"]
+        Resources["Ressourcen-Harvester<br/>(Software-Befehle, DBs, Registries)"]
+    end
+
+    subgraph Storage["Unveränderliche Evidenzschicht"]
+        DB[("Lokaler SQLite-Evidenzspeicher<br/>(URIs, Locatoren, SHA-256-Hashes)")]
+        TrustStore["Receipt-Trust-Store<br/>(Ed25519-Public-Keys, Schlüssel-Pins)"]
+    end
+
+    subgraph Engine["Auflösungs- & Bridge-Engine"]
+        Resolver["V4 Composition- & Fleet-Resolver<br/>(Instanzabgleich, Bundles, Kataloge)"]
+        Bridge["Resolution-Bridge<br/>(Soll- vs. Ist-Coverage, Lücken)"]
+        Equiv["Funktionsäquivalenz-Bridge<br/>(Typisierte gehashte Äquivalenzverträge)"]
+        Router["Actual-Self Search Router<br/>(Ed25519-signierte Receipt-Validierung)"]
+    end
+
+    subgraph Governance["Governance & Invarianten-Gate"]
+        Gate{"Fail-Closed Invarianten-Gate<br/>(All-or-Nothing-Validierung)"}
+        StatusPass["Verifizierte Systemkarte<br/>(Volle / Teilweise / Deklarierte Coverage)"]
+        StatusFail["Blockierte Resolution<br/>(Quarantäne / Sichtbare Lücke / 0 Mutation)"]
+    end
+
+    CLI --> Scanner
+    CLI --> Adapters
+    CLI --> Resources
+    Scanner --> DB
+    Adapters --> DB
+    Resources --> DB
+    WebUI --> DB
+
+    DB --> Resolver
+    DB --> Bridge
+    TrustStore --> Router
+    Resolver --> Gate
+    Bridge --> Gate
+    Equiv --> Gate
+    Router --> Gate
+
+    Gate -->|Evidenz & Hash gültig| StatusPass
+    Gate -->|Abweichung / Fehlende Autorität| StatusFail
+    StatusPass --> Exporter
+    StatusFail --> Exporter
+```
 
 ## Evidenzbasierter Auflösungs-Lebenszyklus
 
@@ -476,7 +539,24 @@ nur Registry, Importer und synthetische Tests bereit, aber kein reales
 Äquivalenz-Mapping. Reale Paare werden erst nach explizitem
 Capability-Vertrag und Decision-/Policy-Provenienz ergänzt.
 
-## Bundles und Partner
+## Governance- & Laufzeit-Invarianten
+
+`system-explorer` unterliegt 10 verbindlichen System- und Betriebsinvarianten:
+
+| ID | Invariante | Beschreibung & Durchsetzung |
+|:---|:---|:---|
+| **INV-LOCAL-01** | **100% Local-First & Zero Network Egress** | Alle Analysen, Transkript-Parsings und Evidenzspeicherungen laufen rein lokal ab. Der Webserver bindet ausschließlich an `127.0.0.1:8765`. Keine Telemetrie oder externe Datenübertragung. |
+| **INV-EVID-02** | **Unveränderliche Evidenz & Inhaltsprüfsummen** | Quelldateien verbleiben an ihrem Ursprung. Die lokale SQLite-Datenbank speichert ausschließlich URIs, Locatoren, Zeitmetadaten und SHA-256-Hashes; Rohdaten und private Prompts werden nicht kopiert. |
+| **INV-FAIL-03** | **Fail-Closed-Auflösung & Anti-Drift** | Jede fehlende Authority-Receipt, jeder Hash-Drift, abgelaufene Key-Pins oder unbewiesene Fähigkeiten lösen sofortige Quarantäne / Blockierung aus. Keine Namensheuristiken. |
+| **INV-RO-04** | **Read-Only-Governance & Zero Target Mutation** | Das Modul generiert Systemkarten, Analysen und Vorschläge, ohne gescannte Zielsysteme, Repositories oder externe Register zu manipulieren. |
+| **INV-NON-05** | **Non-Elevation & Rechtefreie Ausführung** | Läuft vollständig im regulären Benutzerkontext (RunAsInvoker) ohne administrative oder Root-Rechte. |
+| **INV-SCOP-06** | **Strikte Scope- & Host-Isolation** | Instanzen und Funktionsträger auf unterschiedlichen physischen Rechnern (`WORKSTATION-LG`, `ASUS-GEI`) werden strikt getrennt gehalten. Keine Verschmelzung über Host-Grenzen. |
+| **INV-ED25519-07** | **Kryptographische Belegintegrität** | Actual-Self- und Search-Authority-Belege erfordern gültige Ed25519-Signaturen, validiert gegen lokale inhaltgehashte Trust-Stores mit SHA-256-Schlüssel-Pinning. |
+| **INV-TIME-08** | **Begrenzte Scanzeit & Transaktionaler Rollback** | Scans unterliegen konfigurierbaren Fristen (Standard 300s). Root-Scans laufen in atomaren Transaktionen; Abbrüche rollen offene Wurzel-Transaktionen sauber zurück. |
+| **INV-CROSS-09** | **Plattformparität & Multi-Host-Sync-Resilienz** | Dateipfade und Manifestreferenzen sind über Windows, Linux und macOS normalisiert. Schutz vor Cloud-Sync-Konfliktdateien und Multi-Agent-Sperren. |
+| **INV-SLA-10** | **48h Sicherheitsreaktion & 5-Tage-Triage-SLA** | Sicherheitsmeldungen werden innerhalb von 48 Stunden bestätigt und innerhalb von 5 Werktagen formell bewertet, flankiert von koordinierter Offenlegung. |
+
+## Bundles & Partner
 
 `system-explorer` bleibt für sich allein nutzbar. In einer V4-Komposition ist
 es der erforderliche Discovery-, Mapping- und Coverage-Prüfer für das

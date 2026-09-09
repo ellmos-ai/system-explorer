@@ -55,6 +55,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
         # Contact addresses
         self.assertIn("security@ellmos.ai", security_text)
+        self.assertIn("security@open-bricks.org", security_text)
         self.assertIn("support@lukasgeiger.com", security_text)
 
         # Architectural guarantees
@@ -112,8 +113,9 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn(py_ver, ci_content)
 
         # Lint and test runners
+        self.assertIn("compileall -q src tests", ci_content)
         self.assertIn("ruff check", ci_content)
-        self.assertIn("pytest", ci_content)
+        self.assertIn("pytest -ra -v", ci_content)
 
     def test_pyproject_pep621_metadata(self) -> None:
         """Verify PEP 621 metadata fields, URLs, classifiers, and ruff lint configuration."""
@@ -137,12 +139,15 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("*.sync-conflict-*", gitignore_text)
         self.assertIn("*.conflict", gitignore_text)
+        self.assertIn("*-conflict-*", gitignore_text)
         self.assertIn("*-WORKSTATION-LG*", gitignore_text)
         self.assertIn("*-ASUS-GEI*", gitignore_text)
         self.assertIn("LOCK*.txt", gitignore_text)
+        self.assertIn("LOCK.permissions.json", gitignore_text)
         self.assertIn(".npmrc", gitignore_text)
         self.assertIn("*token*", gitignore_text)
         self.assertIn("*secret*", gitignore_text)
+        self.assertIn("*.tmp", gitignore_text)
         self.assertIn(".pytest_cache/", gitignore_text)
         self.assertIn(".ruff_cache/", gitignore_text)
 
@@ -157,11 +162,103 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
         # Standard badges
         for doc in (readme_en, readme_de):
+            self.assertIn("version-0.4.0", doc)
             self.assertIn("actions/workflows/ci.yml", doc)
-            self.assertIn("Pytest-179%20passed", doc)
+            self.assertRegex(doc, r"Pytest-\d+%20passed")
             self.assertIn("Zero--Egress", doc)
             self.assertIn("Local--First", doc)
+            self.assertIn("security%20sla-48h%20response%20%7C%205d%20triage", doc)
+            self.assertIn("code%20style-ruff", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
+
+        # 14-point navigation items
+        expected_nav_en = [
+            "#features",
+            "#system-architecture",
+            "#evidence-backed-resolution-lifecycle",
+            "#quick-start",
+            "#bounded-scans-and-progress",
+            "#external-composition-and-probe-authorities",
+            "#actual-self-search-routing",
+            "#security-and-truth-boundaries",
+            "#resolution-as-desired-evidence",
+            "#explicit-function-equivalence",
+            "#governance--runtime-invariants",
+            "#bundles--partners",
+            "SECURITY.md",
+            "#ecosystem--sibling-tools",
+        ]
+        for nav in expected_nav_en:
+            self.assertIn(nav, readme_en, f"Missing nav anchor {nav} in README.md")
+
+        expected_nav_de = [
+            "#funktionen",
+            "#systemarchitektur",
+            "#evidenzbasierter-auflösungs-lebenszyklus",
+            "#schnellstart",
+            "#begrenzte-scans-und-fortschritt",
+            "#externe-composition--und-probe-autoritäten",
+            "#actual-self-search-routing",
+            "#sicherheit-und-wahrheitsschranken",
+            "#resolution-als-soll-evidenz",
+            "#explizite-funktions-äquivalenz",
+            "#governance--und-laufzeit-invarianten",
+            "#bundles--partner",
+            "SECURITY.md",
+            "#ökosystem--geschwisterwerkzeuge",
+        ]
+        for nav in expected_nav_de:
+            self.assertIn(nav, readme_de, f"Missing nav anchor {nav} in README_de.md")
+
+    def test_readme_mermaid_flowchart_architecture(self) -> None:
+        """Verify Mermaid flowchart exists and models layered local architecture."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        self.assertIn("## System Architecture", readme_en)
+        self.assertIn("## Systemarchitektur", readme_de)
+
+        for doc in (readme_en, readme_de):
+            self.assertIn("```mermaid", doc)
+            self.assertIn("flowchart TD", doc)
+            self.assertIn("127.0.0.1:8765", doc)
+            self.assertIn("SQLite", doc)
+
+        self.assertIn("Fail-Closed Invariant Gate", readme_en)
+        self.assertIn("Fail-Closed Invarianten-Gate", readme_de)
+
+    def test_governance_invariants_table_parity(self) -> None:
+        """Verify 10 governance and runtime invariants are defined in both READMEs."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Governance & Runtime Invariants", readme_en)
+        self.assertIn("## Governance- & Laufzeit-Invarianten", readme_de)
+
+        expected_inv_ids = [
+            "INV-LOCAL-01",
+            "INV-EVID-02",
+            "INV-FAIL-03",
+            "INV-RO-04",
+            "INV-NON-05",
+            "INV-SCOP-06",
+            "INV-ED25519-07",
+            "INV-TIME-08",
+            "INV-CROSS-09",
+            "INV-SLA-10",
+        ]
+        for inv_id in expected_inv_ids:
+            self.assertIn(inv_id, readme_en, f"Missing {inv_id} in README.md")
+            self.assertIn(inv_id, readme_de, f"Missing {inv_id} in README_de.md")
+
+    def test_marketing_log_present(self) -> None:
+        """Verify MARKETING-LOG.txt exists and documents Pfad B."""
+        marketing_log = self.root / "MARKETING-LOG.txt"
+        self.assertTrue(marketing_log.is_file(), "MARKETING-LOG.txt missing")
+        content = marketing_log.read_text(encoding="utf-8")
+        self.assertIn("Pfad B", content)
+        self.assertIn("2026-09-09", content)
+        self.assertIn("INV-LOCAL-01", content)
 
     def test_readme_mermaid_sequence_diagrams(self) -> None:
         """Verify Mermaid sequence diagram exists and models the resolution lifecycle."""
@@ -182,6 +279,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.root / "README_de.md",
             self.root / "SECURITY.md",
             self.root / "THIRD_PARTY_LICENSES.md",
+            self.root / "MARKETING-LOG.txt",
             self.root / "llms.txt",
             self.root / "CHANGELOG.md",
         ]:
@@ -195,12 +293,12 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-08", llms_text)
+        self.assertIn("Last-checked: 2026-09-09", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
-        self.assertIn("179 Pytest tests", llms_text)
+        self.assertRegex(llms_text, r"\d+ Pytest tests")
 
     def test_ecosystem_table_parity(self) -> None:
         """Verify sibling ecosystem tools table contains essential partner repositories."""

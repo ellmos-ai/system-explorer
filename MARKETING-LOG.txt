@@ -1,0 +1,38 @@
+# MARKETING-LOG — system-explorer
+# Discoverability, Visual Architecture & Brand Governance
+# Standardized across open-bricks & ellmos-ai ecosystems
+
+2026-09-09 — Pfad B: Discoverability, Visual Architecture & Invariants Overhaul (Gemini/antigravity)
+- Visual Architecture & Dual Mermaid Modeling:
+  * Implemented primary System Architecture flowchart (`flowchart TD`) in both README.md and README_de.md, visualizing Client/CLI layer (CLI, local loopback web dashboard 127.0.0.1:8765, exporters), Bounded Scanner & Harvester Engine (manifests, skills, transcripts, commands), Immutable SQLite Evidence Store (URIs, locators, SHA-256 digests), Resolution & Bridge Engine (V4 composition, fleet resolution, actual-self router, function equivalence), and Fail-Closed Governance Invariant Gate.
+  * Synchronized Evidence-Backed Resolution Lifecycle sequence diagram (`sequenceDiagram`) with full bilingual annotations and step-by-step authority verification semantics.
+- Governance & Runtime Invariants Matrix:
+  * Established authoritative 10-point runtime invariants table (INV-LOCAL-01 through INV-SLA-10) in both English and German landing pages:
+    - INV-LOCAL-01: 100% Local-First & Zero Network Egress
+    - INV-EVID-02: Immutable Evidence & Content Checksums (SHA-256)
+    - INV-FAIL-03: Fail-Closed Resolution & Anti-Drift Enforcement
+    - INV-RO-04: Read-Only Governance & Zero Target Mutation
+    - INV-NON-05: Non-Elevation & Unprivileged Execution (RunAsInvoker)
+    - INV-SCOP-06: Strict Scope & Host Isolation (No cross-host conflation)
+    - INV-ED25519-07: Cryptographic Receipt Integrity (Ed25519-signed actual-self receipts)
+    - INV-TIME-08: Bounded Scan Time & Transactional Checkpoint Rollback
+    - INV-CROSS-09: Cross-Platform Parity & Multi-Host Sync Resilience
+    - INV-SLA-10: 48h Security Response & 5-Day Triage SLA
+- Shields.io Badges & Navigation Hardening:
+  * Expanded Shields.io suite in README.md and README_de.md: Version (0.4.0), CI Status, Pytest 100% green passed count, Python 3.10-3.13, Multi-OS Platforms, Privacy Zero-Egress, Security Local-First/Fail-Closed, Security SLA (48h response | 5d triage), Code style ruff, MIT License, Ecosystem ellmos-ai, Umbrella open-bricks, and LLM-Ready llms.txt.
+  * Structured 14-point Schnellnavigation with exact anchor alignment across both localized landing pages.
+- Security Policy & Governance:
+  * Added umbrella contact security@open-bricks.org alongside security@ellmos.ai and support@lukasgeiger.com in SECURITY.md.
+  * Reaffirmed 48h acknowledgment SLA and 5-business-day triage commitment in both English and German.
+- Build & CI Workflow Hardening:
+  * Added bytecode compilation gate (`python -m compileall -q src tests`) to .github/workflows/ci.yml.
+  * Hardened test runner invocation with `-ra -v` flags.
+  * Hardened .gitignore against multi-host conflict files (`*-conflict-*`, `*.sync-temp-*`, `*.sync-conflict-*`, `*.conflict`, `*-CONFLIT-*`), multi-agent locks (`LOCK`, `LOCK.*`, `*.lock`, `LOCK*.txt`, `LOCK.permissions.json`), and scratch caches (`wheelhouse/`, `.wheel-smoke/`, `*.tmp`, `*.bak`, `*~`).
+- LLM Readiness & Metadata:
+  * Synchronized llms.txt with updated verification baseline and Last-checked: 2026-09-09.
+  * Documented Pfad B overhaul in CHANGELOG.md.
+- Automated Contract Testing:
+  * Expanded tests/test_metadata.py with contract tests verifying flowchart architecture diagrams, sequence lifecycle diagrams, runtime invariants table, marketing log presence, bytecode CI step, and full bilingual parity.
+
+2026-08-21 — Pfad B: Initial Discoverability, README-Design & Metadata Parity Check
+- CI multi-OS matrix implementation, initial sequence diagram, bilingual SECURITY.md, 18-partner ecosystem matrix.

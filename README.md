@@ -2,12 +2,15 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer banner">
 
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-179%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-183%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
 [![Security](https://img.shields.io/badge/security-Local--First%20%7C%20Fail--Closed-orange.svg)](SECURITY.md)
+[![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
@@ -33,16 +36,18 @@ it is a visible system gap.
 ## Quick Navigation
 
 - [Features](#features)
+- [System Architecture](#system-architecture)
 - [Evidence-Backed Resolution Lifecycle](#evidence-backed-resolution-lifecycle)
 - [Quick Start](#quick-start)
+- [Bounded Scans & Progress](#bounded-scans-and-progress)
 - [External Composition & Probe Authorities](#external-composition-and-probe-authorities)
 - [Actual-Self Search Routing](#actual-self-search-routing)
 - [Security & Truth Boundaries](#security-and-truth-boundaries)
 - [Resolution as Desired Evidence](#resolution-as-desired-evidence)
 - [Explicit Function Equivalence](#explicit-function-equivalence)
-- [Bundles & Partners](#bundles-and-partners)
+- [Governance & Runtime Invariants](#governance--runtime-invariants)
+- [Bundles & Partners](#bundles--partners)
 - [Security Policy](SECURITY.md)
-- [LLM Context Index](llms.txt)
 - [Ecosystem & Sibling Tools](#ecosystem--sibling-tools)
 
 ## Features
@@ -91,6 +96,64 @@ it is a visible system gap.
 - read-only, prompt-assisted change proposals with mandatory gates
 - path-probing plans for external, budgeted swarm tests
 
+## System Architecture
+
+`system-explorer` organizes discovery, evidence harvesting, deterministic resolution, and governance gates into a clean layered local architecture:
+
+```mermaid
+flowchart TD
+    subgraph UI_CLI["Client, CLI & Web Surface"]
+        CLI["system-explorer CLI<br/>(ingest, scan, system-resolve, coverage)"]
+        WebUI["Local Web Dashboard<br/>(127.0.0.1:8765 / Loopback only)"]
+        Exporter["Map & Storyboard Exporter<br/>(JSON, Mermaid, ASCII, HTML)"]
+    end
+
+    subgraph Discovery["Bounded Scanner & Harvester Engine"]
+        Scanner["Manifest & Skill Scanner<br/>(ellmos.module.v2, skills, entry points)"]
+        Adapters["Transcript Adapters<br/>(Codex, Claude, Gemini/agy, Kimi)"]
+        Resources["Resource Harvesters<br/>(Software commands, DBs, registries)"]
+    end
+
+    subgraph Storage["Immutable Evidence Layer"]
+        DB[("Local SQLite Evidence Store<br/>(URIs, Locators, SHA-256 Hashes)")]
+        TrustStore["Receipt Trust Store<br/>(Ed25519 public keys, key pins)"]
+    end
+
+    subgraph Engine["Resolution & Bridge Engine"]
+        Resolver["V4 Composition & Fleet Resolver<br/>(Instance matching, bundles, catalogs)"]
+        Bridge["Resolution Bridge<br/>(Desired vs. actual coverage, gaps)"]
+        Equiv["Function Equivalence Bridge<br/>(Typed hashed equivalence contracts)"]
+        Router["Actual-Self Search Router<br/>(Ed25519-signed receipt validation)"]
+    end
+
+    subgraph Governance["Governance & Invariant Gate"]
+        Gate{"Fail-Closed Invariant Gate<br/>(All-or-Nothing validation)"}
+        StatusPass["Verified System Map<br/>(Full / Partial / Declared coverage)"]
+        StatusFail["Blocked Resolution<br/>(Quarantined / Visible gap / 0 mutation)"]
+    end
+
+    CLI --> Scanner
+    CLI --> Adapters
+    CLI --> Resources
+    Scanner --> DB
+    Adapters --> DB
+    Resources --> DB
+    WebUI --> DB
+
+    DB --> Resolver
+    DB --> Bridge
+    TrustStore --> Router
+    Resolver --> Gate
+    Bridge --> Gate
+    Equiv --> Gate
+    Router --> Gate
+
+    Gate -->|Evidence & Hash Valid| StatusPass
+    Gate -->|Mismatch / Missing Authority| StatusFail
+    StatusPass --> Exporter
+    StatusFail --> Exporter
+```
+
 ## Evidence-Backed Resolution Lifecycle
 
 The following sequence diagram illustrates the lifecycle of bounded system discovery, hash-pinned authority receipt validation, all-or-nothing resolution, and drift detection:
@@ -127,7 +190,7 @@ sequenceDiagram
     end
 ```
 
-## Quick start
+## Quick Start
 
 ```powershell
 python -m venv .venv
@@ -460,7 +523,24 @@ only the registry, importer, and synthetic tests, but no real equivalence
 mapping. Real pairs are added only after an explicit capability contract and
 decision/policy provenance exist.
 
-## Bundles and partners
+## Governance & Runtime Invariants
+
+`system-explorer` strictly adheres to 10 foundational system and operational invariants:
+
+| ID | Invariant | Description & Enforcement |
+|:---|:---|:---|
+| **INV-LOCAL-01** | **100% Local-First & Zero Network Egress** | All analysis, transcript parsing, and evidence storage operate exclusively offline. The web server binds strictly to `127.0.0.1:8765`. Zero telemetry or remote data transmission. |
+| **INV-EVID-02** | **Immutable Evidence & Content Checksums** | Source files remain in place. The local SQLite store records only URIs, locators, temporal metadata, and SHA-256 digests; raw prompt and private payload contents are never stored. |
+| **INV-FAIL-03** | **Fail-Closed Resolution & Anti-Drift** | Any missing authority receipt, content hash drift, expired key pin, or unevidenced capability triggers an immediate quarantine/blocked state. No heuristic guessing. |
+| **INV-RO-04** | **Read-Only Governance & Zero Target Mutation** | The system explorer generates proposals, system maps, and diffs without modifying scanned modules, target environments, or external registries. |
+| **INV-NON-05** | **Non-Elevation & Unprivileged Execution** | Executes completely within standard user-level privileges (RunAsInvoker). Never requires administrative or root privileges. |
+| **INV-SCOP-06** | **Strict Scope & Host Isolation** | Instances and carriers on different physical hosts (`WORKSTATION-LG`, `ASUS-GEI`) are strictly segregated. Cross-host merging of identical names is rejected. |
+| **INV-ED25519-07** | **Cryptographic Receipt Integrity** | Actual-self and search authority receipts require valid Ed25519 cryptographic signatures verified against local content-hashed trust stores with SHA-256 key pinning. |
+| **INV-TIME-08** | **Bounded Scan Time & Transactional Rollback** | Scans operate within configurable deadlines (default 300s). Root scans execute within atomic transactional boundaries; errors roll back open transactions safely. |
+| **INV-CROSS-09** | **Cross-Platform Parity & Multi-Host Sync Resilience** | Native file paths and manifest references are normalized across Windows, Linux, and macOS. Hardened against cloud sync conflict copies and multi-agent lock contention. |
+| **INV-SLA-10** | **48h Security Response & 5-Day Triage SLA** | Security vulnerabilities receive initial acknowledgment within 48 hours and formal triage within 5 business days, backed by coordinated disclosure. |
+
+## Bundles & Partners
 
 `system-explorer` remains usable on its own. In a V4 composition, it is the
 required discovery, mapping, and coverage checker for the

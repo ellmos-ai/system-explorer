@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- 2026-09-09: Pfad B: Discoverability, Visual Architecture, Runtime Invariants & CI Hardening.
+  - Primäres zweisprachiges Systemarchitektur-Diagramm (`flowchart TD`) in `README.md` und `README_de.md` integriert: visualisiert Client/CLI-Schicht, Bounded Scanner & Harvester, SQLite-Evidenzschicht, Auflösungs-Engine und Fail-Closed-Governance-Gate.
+  - Verbindliche 10-Punkte-Laufzeitinvarianten-Tabelle (`INV-LOCAL-01` bis `INV-SLA-10`) in beiden Dokumentationen etabliert.
+  - Vollständiges Shields.io-Badge-Set um Version (0.4.0), Security SLA (48h/5d) und Code-Style Ruff ergänzt sowie 14-Punkte-Schnellnavigation mit exakten Ankerzielen synchronisiert.
+  - `SECURITY.md` um Dachorganisations-Kontakt `security@open-bricks.org` erweitert und Reaktions-SLAs bekräftigt.
+  - CI-Workflow `.github/workflows/ci.yml` um Bytecode-Kompilierungsprüfung (`compileall`) erweitert und Pytest-Aufruf gehärtet (`-ra -v`).
+  - `.gitignore` gegen Multi-Host-Konfliktdateien, Multi-Agent-Locks (`LOCK`, `LOCK.*`, `*.lock`, `LOCK.permissions.json`) und temporäre Build-Caches gehärtet.
+  - Lokales Marketing- und Visual-Architecture-Protokoll `MARKETING-LOG.txt` im Repository-Root etabliert.
+  - `llms.txt` Last-checked-Zeitstempel auf 2026-09-09 synchronisiert.
+  - Vertragstestsuite `tests/test_metadata.py` um Validierungen für Architektur-Flowchart, Invarianten-Tabelle, Marketing-Log und CI-Bytecode-Gate erweitert.
+
 - 2026-09-08: AI Security & Dependency Audit: Third-Party-Lizenzinventar, PEP 639 & SLA-Härtung.
   - Drittanbieter-Lizenzinventar `THIRD_PARTY_LICENSES.md` mit detaillierter Aufstellung aller Runtime- (`cryptography>=41`, Apache-2.0 / BSD-3-Clause) und Entwicklungsabhängigkeiten (`pytest`, `ruff`, `build`, `jsonschema`) sowie vollständigen Lizenztexten angelegt.
   - `pyproject.toml` um standardisierte PEP 639 `license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]` Deklaration erweitert.

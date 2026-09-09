@@ -51,8 +51,22 @@ data/
 .*.todo-archive-*.json
 
 # Sync conflicts and locks
+*-conflict-*
+*.sync-temp-*
 *.sync-conflict-*
 *.conflict
+*-CONFLIT-*
 *-WORKSTATION-LG*
 *-ASUS-GEI*
+LOCK
+LOCK.*
+*.lock
 LOCK*.txt
+LOCK.permissions.json
+
+# Scratch and build caches
+wheelhouse/
+.wheel-smoke/
+*.tmp
+*.bak
+*~

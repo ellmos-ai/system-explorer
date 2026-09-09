@@ -12,7 +12,7 @@ Please **do not report security vulnerabilities through public GitHub issues**.
 
 If you discover a security issue or vulnerability in `system-explorer`, please report it via GitHub Security Advisories or contact:
 
-- **Security Team**: `security@ellmos.ai`
+- **Security Team**: `security@ellmos.ai` / `security@open-bricks.org`
 - **Maintainer**: `support@lukasgeiger.com` / `lukas@open-bricks.org`
 
 Please include detailed steps to reproduce the vulnerability and any relevant logs or evidence payloads.
@@ -50,7 +50,7 @@ Bitte **melden Sie Sicherheitslücken nicht über öffentliche GitHub-Issues**.
 
 Wenn Sie eine Schwachstelle in `system-explorer` entdecken, melden Sie diese bitte über GitHub Security Advisories oder kontaktieren Sie:
 
-- **Sicherheitsteam**: `security@ellmos.ai`
+- **Sicherheitsteam**: `security@ellmos.ai` / `security@open-bricks.org`
 - **Maintainer**: `support@lukasgeiger.com` / `lukas@open-bricks.org`
 
 Bitte fügen Sie eine Beschreibung der Schritte zur Reproduktion sowie relevante Logs oder Belegstrukturen bei.
