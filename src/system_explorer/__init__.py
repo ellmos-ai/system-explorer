@@ -1,6 +1,6 @@
 """Evidence-backed system cartography."""
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 from .composition_rules import (
     evaluate_cardinality,

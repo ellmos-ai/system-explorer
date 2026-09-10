@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- 2026-09-10: Pfad A: Repository Hygiene, Pytest Standard Config, .gitignore Hardening & Contract Parity Refresh.
+  - Kanonischen Development-Stand auf `0.4.1` synchronisiert über `pyproject.toml`, `src/system_explorer/__init__.py`, `ellmos-module.v2.json`, `CLAUDE.md`, `STATE.md`, `VERSIONING.md`, `llms.txt` und zweisprachige READMEs.
+  - `pyproject.toml` unter `[tool.pytest.ini_options]` um standardisierte Runner-Flags `addopts = "-ra -v"` ergänzt.
+  - `.gitignore` umfassend gehärtet gegen Multi-Host-Synchronisationskonflikte (`*-WORKSTATION.*`, `* (kopie)*`, `* (copy)*`), Lock-Dateien (`uv.lock`) und Coverage-Caches (`.coverage.*`).
+  - CI-Workflow `.github/workflows/ci.yml` hinsichtlich Bytecode-Kompilierung (`compileall`) und Runner-Flags (`pytest -ra -v`) re-validiert.
+  - Zweisprachige `SECURITY.md` hinsichtlich Supported-Versions-Matrix (`0.4.x`), 48h-Reaktions-SLA, 5-Werktage-Triage und offizieller Kontakte re-verifiziert.
+  - `llms.txt` Last-checked-Zeitstempel auf 2026-09-10 und Verifikationsbaseline synchronisiert.
+  - Automatisierte Vertragstestsuite in `tests/test_metadata.py` und `tests/test_versioning.py` um Tests für Pytest-Konfiguration, erweiterte Gitignore-Muster und aktuellen Pfad-A-Changelog-Eintrag ausgebaut.
+
 - 2026-09-09: Pfad B: Discoverability, Visual Architecture, Runtime Invariants & CI Hardening.
   - Primäres zweisprachiges Systemarchitektur-Diagramm (`flowchart TD`) in `README.md` und `README_de.md` integriert: visualisiert Client/CLI-Schicht, Bounded Scanner & Harvester, SQLite-Evidenzschicht, Auflösungs-Engine und Fail-Closed-Governance-Gate.
   - Verbindliche 10-Punkte-Laufzeitinvarianten-Tabelle (`INV-LOCAL-01` bis `INV-SLA-10`) in beiden Dokumentationen etabliert.
@@ -67,7 +76,7 @@
 
 ### Versionsstand (2026-08-10)
 - Packaging, Runtime, Manifest und Steuerdokumente sind auf den kanonischen
-  Development-Stand `0.4.0` synchronisiert; ein Release ist nicht autorisiert.
+  Development-Stand `0.4.1` synchronisiert; ein Release ist nicht autorisiert.
 - Der externe `importlib.metadata`-Fallback wird in `VERSIONING.md` und einem
   Regressionstest ausdrücklich als umgebungsfremd behandelt.
 

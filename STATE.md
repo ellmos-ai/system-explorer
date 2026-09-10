@@ -1,11 +1,11 @@
 ---
 name: "system-explorer-state"
 type: state-snapshot
-version: 0.4.0
-updated: "2026-08-16"
+version: 0.4.1
+updated: "2026-09-10"
 updated_by: "gemini"
 current_phase: "MVP release"
-last_verified: "2026-08-16"
+last_verified: "2026-09-10"
 description: |
   Current-state snapshot for fast session-start orientation in system-explorer.
 ---

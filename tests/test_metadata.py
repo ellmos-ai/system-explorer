@@ -18,7 +18,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
     def test_version_consistency(self) -> None:
         """Verify version across package, module manifest, pyproject.toml, and docs."""
         version = system_explorer.__version__
-        self.assertEqual(version, "0.4.0")
+        self.assertEqual(version, "0.4.1")
 
         pyproject = (self.root / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn(f'version = "{version}"', pyproject)
@@ -142,8 +142,13 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("*-conflict-*", gitignore_text)
         self.assertIn("*-WORKSTATION-LG*", gitignore_text)
         self.assertIn("*-ASUS-GEI*", gitignore_text)
+        self.assertIn("*-WORKSTATION.*", gitignore_text)
+        self.assertIn("* (kopie)*", gitignore_text)
+        self.assertIn("* (copy)*", gitignore_text)
         self.assertIn("LOCK*.txt", gitignore_text)
         self.assertIn("LOCK.permissions.json", gitignore_text)
+        self.assertIn("uv.lock", gitignore_text)
+        self.assertIn(".coverage.*", gitignore_text)
         self.assertIn(".npmrc", gitignore_text)
         self.assertIn("*token*", gitignore_text)
         self.assertIn("*secret*", gitignore_text)
@@ -162,7 +167,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
         # Standard badges
         for doc in (readme_en, readme_de):
-            self.assertIn("version-0.4.0", doc)
+            self.assertIn("version-0.4.1", doc)
             self.assertIn("actions/workflows/ci.yml", doc)
             self.assertRegex(doc, r"Pytest-\d+%20passed")
             self.assertIn("Zero--Egress", doc)
@@ -293,7 +298,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-09", llms_text)
+        self.assertIn("Last-checked: 2026-09-10", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
@@ -325,6 +330,19 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         for partner in expected_partners:
             self.assertIn(partner, readme_en, f"Missing partner {partner} in README.md")
             self.assertIn(partner, readme_de, f"Missing partner {partner} in README_de.md")
+
+    def test_pytest_configuration_and_flags(self) -> None:
+        """Verify pyproject.toml defines standardized pytest testpaths and addopts."""
+        pyproject = (self.root / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn("[tool.pytest.ini_options]", pyproject)
+        self.assertIn('testpaths = ["tests"]', pyproject)
+        self.assertIn('addopts = "-ra -v"', pyproject)
+
+    def test_changelog_recent_pfad_a_entry(self) -> None:
+        """Verify CHANGELOG.md contains a recent Pfad A hygiene entry."""
+        changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("2026-09-10", changelog)
+        self.assertIn("Pfad A", changelog)
 
 
 if __name__ == "__main__":

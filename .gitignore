@@ -14,6 +14,7 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .coverage
+.coverage.*
 htmlcov/
 
 # Node / generated output
@@ -58,11 +59,15 @@ data/
 *-CONFLIT-*
 *-WORKSTATION-LG*
 *-ASUS-GEI*
+*-WORKSTATION.*
+* (kopie)*
+* (copy)*
 LOCK
 LOCK.*
 *.lock
 LOCK*.txt
 LOCK.permissions.json
+uv.lock
 
 # Scratch and build caches
 wheelhouse/

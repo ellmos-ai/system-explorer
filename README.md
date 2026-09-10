@@ -2,9 +2,9 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer banner">
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-183%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-185%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)

@@ -2,11 +2,11 @@
 name: "system-explorer"
 type: project-docs
 profile: "FULL"
-version: 0.4.0
+version: 0.4.1
 created: "2026-07-29"
-updated: "2026-08-16"
-reason_last_change: "Discoverability, README-Design, Badges & Metadata Parity Check (Pfad B)"
-last_verified: "2026-08-16"
+updated: "2026-09-10"
+reason_last_change: "Repository Hygiene, Pytest Standard Config & Contract Parity (Pfad A)"
+last_verified: "2026-09-10"
 author: "Lukas Geiger"
 anthropic_compatible: true
 description: |

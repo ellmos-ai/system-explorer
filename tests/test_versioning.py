@@ -8,7 +8,7 @@ from pathlib import Path
 import system_explorer
 
 
-PROJECT_VERSION = "0.4.0"
+PROJECT_VERSION = "0.4.1"
 
 
 class VersioningTests(unittest.TestCase):
@@ -24,12 +24,12 @@ class VersioningTests(unittest.TestCase):
         state = (self.root / "STATE.md").read_text(encoding="utf-8")
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
 
-        self.assertIn('version = "0.4.0"', pyproject)
+        self.assertIn('version = "0.4.1"', pyproject)
         self.assertEqual(manifest["version"], PROJECT_VERSION)
         self.assertEqual(manifest["status"], "development")
-        self.assertRegex(claude, r"(?m)^version:\s*0\.4\.0\s*$")
-        self.assertRegex(state, r"(?m)^version:\s*0\.4\.0\s*$")
-        self.assertIn("Development-Stand `0.4.0`", changelog)
+        self.assertRegex(claude, r"(?m)^version:\s*0\.4\.1\s*$")
+        self.assertRegex(state, r"(?m)^version:\s*0\.4\.1\s*$")
+        self.assertIn("Development-Stand `0.4.1`", changelog)
         self.assertEqual(system_explorer.__version__, PROJECT_VERSION)
 
     def test_metadata_checks_editable_install_or_documents_external_fallback(self) -> None:
@@ -77,7 +77,7 @@ class VersioningTests(unittest.TestCase):
         manifest = json.loads(
             (self.root / "ellmos-module.v2.json").read_text(encoding="utf-8")
         )
-        self.assertIn("Last-checked: 2026-09-09", llms_txt)
+        self.assertIn("Last-checked: 2026-09-10", llms_txt)
         self.assertEqual(manifest["id"], "system-explorer")
         self.assertEqual(manifest["version"], PROJECT_VERSION)
         adapter_ids = {a["id"] for a in manifest.get("adapters", [])}
