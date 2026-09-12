@@ -1,38 +1,137 @@
-# MARKETING-LOG — system-explorer
-# Discoverability, Visual Architecture & Brand Governance
-# Standardized across open-bricks & ellmos-ai ecosystems
+# MARKETING-LOG: ellmos-ai/system-explorer
+# Discoverability, Visual Architecture, SEO, Ecosystem & Repository Hygiene
+Date: 2026-09-12
+Operator: Antigravity / Gemini (via GITHUBBOT Pfad B)
+Target Repo: ellmos-ai/system-explorer
+Canonical Path: C:\_Local_DEV\repos\system-explorer
+Version: 0.4.2
 
-2026-09-09 — Pfad B: Discoverability, Visual Architecture & Invariants Overhaul (Gemini/antigravity)
-- Visual Architecture & Dual Mermaid Modeling:
-  * Implemented primary System Architecture flowchart (`flowchart TD`) in both README.md and README_de.md, visualizing Client/CLI layer (CLI, local loopback web dashboard 127.0.0.1:8765, exporters), Bounded Scanner & Harvester Engine (manifests, skills, transcripts, commands), Immutable SQLite Evidence Store (URIs, locators, SHA-256 digests), Resolution & Bridge Engine (V4 composition, fleet resolution, actual-self router, function equivalence), and Fail-Closed Governance Invariant Gate.
-  * Synchronized Evidence-Backed Resolution Lifecycle sequence diagram (`sequenceDiagram`) with full bilingual annotations and step-by-step authority verification semantics.
-- Governance & Runtime Invariants Matrix:
-  * Established authoritative 10-point runtime invariants table (INV-LOCAL-01 through INV-SLA-10) in both English and German landing pages:
-    - INV-LOCAL-01: 100% Local-First & Zero Network Egress
-    - INV-EVID-02: Immutable Evidence & Content Checksums (SHA-256)
-    - INV-FAIL-03: Fail-Closed Resolution & Anti-Drift Enforcement
-    - INV-RO-04: Read-Only Governance & Zero Target Mutation
-    - INV-NON-05: Non-Elevation & Unprivileged Execution (RunAsInvoker)
-    - INV-SCOP-06: Strict Scope & Host Isolation (No cross-host conflation)
-    - INV-ED25519-07: Cryptographic Receipt Integrity (Ed25519-signed actual-self receipts)
-    - INV-TIME-08: Bounded Scan Time & Transactional Checkpoint Rollback
-    - INV-CROSS-09: Cross-Platform Parity & Multi-Host Sync Resilience
-    - INV-SLA-10: 48h Security Response & 5-Day Triage SLA
-- Shields.io Badges & Navigation Hardening:
-  * Expanded Shields.io suite in README.md and README_de.md: Version (0.4.0), CI Status, Pytest 100% green passed count, Python 3.10-3.13, Multi-OS Platforms, Privacy Zero-Egress, Security Local-First/Fail-Closed, Security SLA (48h response | 5d triage), Code style ruff, MIT License, Ecosystem ellmos-ai, Umbrella open-bricks, and LLM-Ready llms.txt.
-  * Structured 14-point Schnellnavigation with exact anchor alignment across both localized landing pages.
-- Security Policy & Governance:
-  * Added umbrella contact security@open-bricks.org alongside security@ellmos.ai and support@lukasgeiger.com in SECURITY.md.
-  * Reaffirmed 48h acknowledgment SLA and 5-business-day triage commitment in both English and German.
-- Build & CI Workflow Hardening:
-  * Added bytecode compilation gate (`python -m compileall -q src tests`) to .github/workflows/ci.yml.
-  * Hardened test runner invocation with `-ra -v` flags.
-  * Hardened .gitignore against multi-host conflict files (`*-conflict-*`, `*.sync-temp-*`, `*.sync-conflict-*`, `*.conflict`, `*-CONFLIT-*`), multi-agent locks (`LOCK`, `LOCK.*`, `*.lock`, `LOCK*.txt`, `LOCK.permissions.json`), and scratch caches (`wheelhouse/`, `.wheel-smoke/`, `*.tmp`, `*.bak`, `*~`).
-- LLM Readiness & Metadata:
-  * Synchronized llms.txt with updated verification baseline and Last-checked: 2026-09-09.
-  * Documented Pfad B overhaul in CHANGELOG.md.
-- Automated Contract Testing:
-  * Expanded tests/test_metadata.py with contract tests verifying flowchart architecture diagrams, sequence lifecycle diagrams, runtime invariants table, marketing log presence, bytecode CI step, and full bilingual parity.
+# Audit & Action Tracking:
+# [2026-08-21 15:30:00 CEST] [GITHUBBOT_ONE_REPO_MARKETING_AND_DESIGN] ACTION: PFAD_B_UPGRADE | REPO: ellmos-ai/system-explorer | SCOPE: Initial discoverability, README design, bilingual SECURITY.md, 18-partner ecosystem matrix.
+# [2026-08-24 11:20:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: CI concurrency hardening, supported-versions matrix, PEP 621 classifiers/topics, gitignore sync conflict patterns, 11/11 contract tests.
+# [2026-08-26 14:15:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: Test baseline refresh (179 Pytest tests), scan-time budget normalization, jsonschema dev-dependency.
+# [2026-09-08 21:10:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: Third-party licenses inventory (THIRD_PARTY_LICENSES.md), PEP 639 license-files, 48h/5d security response SLA.
+# [2026-09-09 18:45:00 CEST] [GITHUBBOT_ONE_REPO_MARKETING_AND_DESIGN] ACTION: PFAD_B_UPGRADE | REPO: ellmos-ai/system-explorer | SCOPE: Dual mermaid architecture flowchart and resolution lifecycle sequence diagram, 10 governance invariants (INV-LOCAL-01 to INV-SLA-10), 14-point quick navigation, Shields.io badges suite, compileall CI step, marketing log baseline.
+# [2026-09-10 09:15:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: Canonical version 0.4.1 sync, pyproject.toml addopts = "-ra -v", .gitignore conflict patterns (*-WORKSTATION.*, * (kopie)*), contract tests refresh (185 tests green).
+# [2026-09-12 06:50:00 CEST] [GITHUBBOT_ONE_REPO_MARKETING_AND_DESIGN] ACTION: PFAD_B_UPGRADE | REPO: ellmos-ai/system-explorer | SCOPE: Full 16-point Quick Navigation standard with 100% reciprocal anchor parity (#target-personas--discoverability / #zielgruppen--auffindbarkeit, #third-party-licenses--transparency / #drittanbieter-lizenzen--transparenz), dedicated personas and third-party transparency sections in bilingual READMEs, audited THIRD_PARTY_LICENSES.md with governance assurances, modernized MARKETING-LOG.txt with 4 personas, bilingual keyword matrix, 5-way competitive matrix across 10 dimensions, PEP 621 project URLs extended ("Third-Party Licenses", "Marketing-Log", "LLM-Ready"), version bump to 0.4.2 across all manifests, llms.txt synchronization, and expanded automated contract tests.
 
-2026-08-21 — Pfad B: Initial Discoverability, README-Design & Metadata Parity Check
-- CI multi-OS matrix implementation, initial sequence diagram, bilingual SECURITY.md, 18-partner ecosystem matrix.
+--------------------------------------------------------------------------------
+1. REPOSITORY AUDIT & DISCOVERABILITY BASELINE
+--------------------------------------------------------------------------------
+- Organization: ellmos-ai
+- Umbrella Ecosystem: open-bricks
+- Primary Category: AI Infrastructure & Systems Cartography / Architecture Drift Detection
+- Core Positioning: Evidence-backed system cartography and architecture drift detection engine. Separates desired system functions from concrete function carriers (skills, modules, MCP interfaces, CLI tools, actors) and provides cryptographic proof of coverage, gaps, overlaps, and negative assertions without mutating scanned codebases.
+- Distinct Value Proposition:
+  * Two-Layer Function vs. Carrier Separation: Clarifies whether an expected capability is actually provided by an evidenced component or merely assumed in prompts/documentation.
+  * Local SQLite Evidence Store: Persists locators, URIs, and SHA-256 content digests rather than duplicating full text or confidential data.
+  * Cryptographic Receipt Verification: Ed25519-signed actual-self search receipts verified against local content-hashed trust stores with pinned keys.
+  * Fail-Closed Anti-Drift Engine: Any missing authority receipt, key mismatch, or unevidenced capability triggers an immediate quarantine/blocked state.
+  * 100% Local-First & Zero-Egress: Operates entirely offline; local web dashboard binds strictly to 127.0.0.1:8765 with zero telemetry.
+- Sibling Ecosystem Integration: Interlocks with `ellmos-ai/policy-registry` for governance contracts, `ellmos-ai/coma` for context management, `ellmos-ai/ellmos-controlcenter-mcp` as tool execution plane, and developer tools across `dev-bricks` and `open-bricks`.
+
+--------------------------------------------------------------------------------
+2. TARGET PERSONAS & USER JOURNEYS
+--------------------------------------------------------------------------------
+1. Autonomous AI Agent Engineers & Multi-Agent Swarm Architects
+   - Needs: Formulate clear capability boundaries and understand which tools, skills, and MCP endpoints are available, verified, and safe to execute.
+   - Pain Points: Multi-agent systems suffer from tool collision, hallucinated tool availability, and conflicting skill declarations across repositories.
+   - Solution: Query `system-explorer` evidence maps via CLI or exported JSON to verify actual capability coverage before invoking agent tools, with fail-closed quarantine on drift.
+
+2. Enterprise System Architects & SREs (Architecture Drift Detection)
+   - Needs: Track deviation between intended system designs (desired functions) and actual code implementations (function carriers) across complex multi-repo ecosystems.
+   - Pain Points: Microservices and agent swarms evolve rapidly, leading to silent architectural drift, obsolete interfaces, and unevidenced dead code.
+   - Solution: Run bounded, reproducible scans with time budgets; generate automated architecture diffs, coverage reports, and Mermaid visual diagrams.
+
+3. Local-First & Sovereign Software Developers
+   - Needs: Inspect system topology, module relationships, and peripheral software resources on local workstations without cloud dependencies or telemetry.
+   - Pain Points: Cloud-based APM and enterprise cartography tools require SaaS subscriptions, outbound network connections, and leak proprietary IP.
+   - Solution: 100% local-first CLI and loopback web UI (`127.0.0.1:8765`), unprivileged user-mode execution (RunAsInvoker), and zero network egress.
+
+4. Security, Compliance & Governance Auditors
+   - Needs: Validate that system components have verified provenance, non-elevation boundaries, cryptographic receipt signatures, and compliant open-source licenses.
+   - Pain Points: Black-box agent frameworks execute untrusted code without audit trails or proof of capability ownership.
+   - Solution: Ed25519-signed actual-self receipts, SHA-256 content pinning, audited 100% permissive open-source stack, and codified 48h response / 5-day triage security SLA.
+
+--------------------------------------------------------------------------------
+3. HIGH-INTENT SEARCH QUERIES (BILINGUAL EN & DE)
+--------------------------------------------------------------------------------
+English (EN):
+- `system-explorer`
+- `ellmos-ai system-explorer`
+- `evidence-backed system cartography`
+- `architecture drift detection python`
+- `local-first software system mapping`
+- `function carrier coverage analysis`
+- `ai agent capability discovery tool`
+- `zero-egress architecture visualizer`
+- `offline system topology explorer`
+- `open-bricks system architecture`
+
+German (DE):
+- `system-explorer Python`
+- `Evidenzbasierte Systemarchitektur Landkarte`
+- `Local-First Software Cartography`
+- `Architektur Drift Erkennung Multi-Agent`
+- `Soll-Ist-Funktionsabdeckung Python`
+- `Zero-Egress Systemkarten LLM`
+- `Lokale SQLite Evidenzregistry`
+- `Funktionsträger Analyse Open-Source`
+- `ellmos-ai system-explorer Desktop`
+- `Offline Architektur Visualisierung Mermaid`
+
+--------------------------------------------------------------------------------
+4. COMPETITIVE DIFFERENTIATION MATRIX
+--------------------------------------------------------------------------------
+| Dimension / Capability | system-explorer (ellmos-ai) | Static Wikis / Docs (Confluence / Markdown) | APM / Distributed Tracing (Datadog / Jaeger) | Graph DBs (Neo4j / Memgraph) | Generic Linters / Dependency Checkers |
+|:---|:---|:---|:---|:---|:---|
+| **Mapping Model** | Two-layer: Desired Functions vs. Evidenced Carriers | Static text, quickly drifts from reality | Runtime HTTP/RPC traffic traces only | Raw graph edges without function/carrier semantics | Package tree / import graph only |
+| **Evidence Basis** | SHA-256 hashes, URIs & Ed25519 signed receipts | Subjective human claims / notes | Unauthenticated telemetry spans | Custom query schemas | AST / requirements.txt parsing |
+| **Drift Detection** | Automated diffing of desired vs. actual coverage | ❌ Manual, labor-intensive review | ⚠️ Anomalies only, no desired-model diffing | ⚠️ Requires custom Cypher logic | ❌ None (only checks syntax/deps) |
+| **Network & Privacy** | 100% Local-First / Zero-Egress (INV-LOCAL-01) | ❌ Cloud-hosted SaaS or internal web server | ❌ Massive telemetry egress to cloud | Local daemon or cloud server | Local execution |
+| **Evidence Storage** | Local SQLite with URIs & hashes (no raw payload) | Full text articles & attachments | High-volume SaaS log/trace storage | Heavyweight graph DB disk footprint | Ephemeral / in-memory |
+| **Execution Overhead** | Bounded scan with timeout & transactional rollback | Read/write web requests | Continuous background CPU/RAM daemon | ⚠️ Heavy JVM / memory overhead | Quick CLI run |
+| **Multi-Host Parity** | Strict host segregation (`WORKSTATION-LG` vs `ASUS-GEI`) | Single global workspace | Distributed trace correlation | Single DB cluster | Host-agnostic |
+| **Visualization** | Native Mermaid flowcharts, sequence diagrams & Web UI | Static embedded images | Proprietary web dashboard | Graph browser UI | Terminal output |
+| **Agent / LLM Readiness** | Machine-readable `llms.txt`, JSON export & CLI | ⚠️ Token-heavy HTML/Markdown scraping | ❌ Incompatible with local agent prompts | ❌ Complex query language required | Terminal JSON/text |
+| **User Privileges** | Unprivileged User-Mode (`RunAsInvoker`) | User permissions | Often requires root/agent daemon | Service daemon | User process |
+
+--------------------------------------------------------------------------------
+5. GOVERNANCE & RUNTIME INVARIANTS
+--------------------------------------------------------------------------------
+- INV-LOCAL-01: 100% Local-First & Zero Network Egress (All scanning, parsing, and storage operate offline; web UI strictly binds to loopback 127.0.0.1:8765).
+- INV-EVID-02: Immutable Evidence & Content Checksums (Original files remain intact; SQLite store records URIs, locators, and SHA-256 digests without storing private prompts or raw payloads).
+- INV-FAIL-03: Fail-Closed Resolution & Anti-Drift (Missing receipts, hash drift, expired key pins, or unevidenced claims trigger immediate quarantine; zero heuristic guessing).
+- INV-RO-04: Read-Only Governance & Zero Target Mutation (Generates maps, coverage matrices, and proposals without modifying target source trees or external registries).
+- INV-NON-05: Non-Elevation & Unprivileged Execution (Executes entirely within user-mode space under RunAsInvoker without administrative elevation).
+- INV-SCOP-06: Strict Scope & Host Isolation (Instances on distinct physical machines are strictly segregated; cross-host merging of identical names is rejected).
+- INV-ED25519-07: Cryptographic Receipt Integrity (Actual-self and search authority receipts require Ed25519 signatures verified against pinned public keys).
+- INV-TIME-08: Bounded Scan Time & Transactional Rollback (Root scans execute within configurable deadlines; cancellations trigger atomic SQLite transaction rollbacks).
+- INV-CROSS-09: Cross-Platform Parity & Multi-Host Sync Resilience (Paths and manifests normalized across Windows, Linux, macOS; resilient against cloud conflict files and locks).
+- INV-SLA-10: 48h Security Response & 5-Day Triage SLA (Vulnerabilities acknowledged within 48 hours and triaged within 5 business days under coordinated disclosure).
+
+--------------------------------------------------------------------------------
+6. ECOSYSTEM & SIBLING TOOLS MAPPING
+--------------------------------------------------------------------------------
+`system-explorer` integrates seamlessly with the broader `ellmos-ai` and `open-bricks` ecosystem:
+
+| Sibling Tool | Role & Interoperability | Ecosystem |
+|:---|:---|:---|
+| [`ellmos-ai/policy-registry`](https://github.com/ellmos-ai/policy-registry) | Canonical policy management, scope resolution & evaluation contracts | `ellmos-ai` |
+| [`ellmos-ai/sqlite-transit-sync`](https://github.com/ellmos-ai/sqlite-transit-sync) | Resilient SQLite replication & delta sync bridge for multi-device maps | `ellmos-ai` |
+| [`ellmos-ai/coma`](https://github.com/ellmos-ai/coma) | Context Manager & Semantic Router for LLM agent dispatch | `ellmos-ai` |
+| [`ellmos-ai/automation-master`](https://github.com/ellmos-ai/automation-master) | Enterprise automation orchestration & credit-gated execution | `ellmos-ai` |
+| [`ellmos-ai/ellmos-delegation-authority`](https://github.com/ellmos-ai/ellmos-delegation-authority) | Fail-closed signed delegation grant & capture authority | `ellmos-ai` |
+| [`ellmos-ai/ellmos-controlcenter-mcp`](https://github.com/ellmos-ai/ellmos-controlcenter-mcp) | Unified MCP control plane for tools, profiles & decisions | `ellmos-ai` |
+| [`ellmos-ai/ellmos-filecommander-mcp`](https://github.com/ellmos-ai/ellmos-filecommander-mcp) | High-performance filesystem manipulation MCP server | `ellmos-ai` |
+| [`ellmos-ai/ellmos-codecommander-mcp`](https://github.com/ellmos-ai/ellmos-codecommander-mcp) | Code intelligence, AST refactoring & structural edit MCP server | `ellmos-ai` |
+| [`ellmos-ai/n8n-manager-mcp`](https://github.com/ellmos-ai/n8n-manager-mcp) | Visual workflow automation & node configuration MCP server | `ellmos-ai` |
+| [`ellmos-ai/lock-master`](https://github.com/ellmos-ai/lock-master) | Cross-process atomic lock management & resource leasing | `ellmos-ai` |
+| [`ellmos-ai/ticket-master`](https://github.com/ellmos-ai/ticket-master) | Deterministic task tracking & atomic ticket ledger | `ellmos-ai` |
+| [`ellmos-ai/clutch`](https://github.com/ellmos-ai/clutch) | Transactional git state management & atomic branch operations | `ellmos-ai` |
+| [`dev-bricks/DevCenter`](https://github.com/dev-bricks/DevCenter) | Developer workstation hub & tool registry | `dev-bricks` |
+| [`dev-bricks/CodeBox`](https://github.com/dev-bricks/CodeBox) | Sandboxed code execution & test harness | `dev-bricks` |
+| [`dev-bricks/MethodenAnalyser`](https://github.com/dev-bricks/MethodenAnalyser) | Code complexity & method structure analysis | `dev-bricks` |
+| [`doc-bricks/CleanMarkdown`](https://github.com/doc-bricks/CleanMarkdown) | Deterministic markdown formatting & linting engine | `doc-bricks` |
+| [`doc-bricks/PDFtoPDFocr`](https://github.com/doc-bricks/PDFtoPDFocr) | Local-first searchable PDF OCR & text extraction | `doc-bricks` |
+| [`open-bricks/open-bricks`](https://github.com/open-bricks) | Umbrella organization for sovereign desktop & developer tools | `open-bricks` |

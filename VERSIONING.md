@@ -1,6 +1,6 @@
 # Versionsstand
 
-Der kanonische Projektstand ist **0.4.1**. `pyproject.toml` ist die primäre
+Der kanonische Projektstand ist **0.4.2**. `pyproject.toml` ist die primäre
 Packaging-Quelle; `src/system_explorer.__version__`, `ellmos-module.v2.json`,
 `CLAUDE.md` und `STATE.md` müssen exakt denselben Wert führen.
 

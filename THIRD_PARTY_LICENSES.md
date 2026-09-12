@@ -2,7 +2,7 @@
 
 **Project:** `system-explorer`
 **License:** [MIT License](LICENSE)
-**Audit Date:** 2026-09-08
+**Audit Date:** 2026-09-12
 
 ---
 
@@ -27,6 +27,22 @@
 | [ruff](https://github.com/astral-sh/ruff) | `>=0.6` | MIT OR Apache-2.0 | `[dev]` | Fast Python linter and code formatting validation |
 | [build](https://github.com/pypa/build) | `>=1.2` | MIT | `[dev]` | PEP 517 build frontend and package artifact verification |
 | [jsonschema](https://github.com/python-jsonschema/jsonschema) | `>=4.0` | MIT | `[dev]` | Strict schema validation for stack pins and receipt payloads |
+
+---
+
+## Governance & Runtime Invariant Assurances
+
+`system-explorer` adheres to strict open-source governance and local-first execution contracts:
+
+- **100% Permissive Open Source**: All direct runtime dependencies and developer tooling use permissive open-source licenses (MIT, Apache-2.0, BSD-3-Clause, PSFL). No copyleft (GPL, AGPL) or proprietary binaries are included.
+- **INV-LOCAL-01 (100% Local-First & Zero Egress)**: Operates strictly offline. The web dashboard binds exclusively to loopback `127.0.0.1:8765`. Zero network telemetry or phone-home requests.
+- **INV-EVID-02 (Immutable Evidence & Checksums)**: Discovered files remain in place; SQLite evidence records store only URIs, locators, and SHA-256 digests.
+- **INV-FAIL-03 (Fail-Closed Resolution)**: Missing authority receipts, content hash drift, or unknown functions fail closed without heuristic guessing.
+- **INV-NON-05 (Non-Elevation & RunAsInvoker)**: Executes entirely within unprivileged user space without administrative elevation.
+- **INV-SCOP-06 (Strict Scope & Host Isolation)**: Prevents cross-host conflation between distinct physical machines (`WORKSTATION-LG`, `ASUS-GEI`).
+- **INV-ED25519-07 (Cryptographic Receipt Integrity)**: Ed25519-signed actual-self receipts verified against pinned public keys.
+- **INV-TIME-08 (Bounded Scan Time & Rollback)**: Bounded scan timeouts with transactional SQLite rollback upon interruption.
+- **INV-SLA-10 (48h Response / 5d Triage SLA)**: Enterprise-grade security vulnerability handling backed by coordinated disclosure.
 
 ---
 

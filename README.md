@@ -2,7 +2,7 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer banner">
 
-[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
 [![Pytest](https://img.shields.io/badge/Pytest-185%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
@@ -10,13 +10,15 @@
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
 [![Security](https://img.shields.io/badge/security-Local--First%20%7C%20Fail--Closed-orange.svg)](SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
+[![Third-Party Audited](https://img.shields.io/badge/third--party-100%25%20permissive-brightgreen.svg)](THIRD_PARTY_LICENSES.md)
+[![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
-[English](README.md) | [Deutsch](README_de.md)
+[🇩🇪 Deutsch](README_de.md) | **🇬🇧 English** | 🛡️ [Security Policy](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Third-Party Licenses](THIRD_PARTY_LICENSES.md)
 
 > [!NOTE]
 > For LLM-optimized index and quick reference, see [`llms.txt`](llms.txt).
@@ -36,6 +38,7 @@ it is a visible system gap.
 ## Quick Navigation
 
 - [Features](#features)
+- [Target Personas & Discoverability](#target-personas--discoverability)
 - [System Architecture](#system-architecture)
 - [Evidence-Backed Resolution Lifecycle](#evidence-backed-resolution-lifecycle)
 - [Quick Start](#quick-start)
@@ -47,6 +50,7 @@ it is a visible system gap.
 - [Explicit Function Equivalence](#explicit-function-equivalence)
 - [Governance & Runtime Invariants](#governance--runtime-invariants)
 - [Bundles & Partners](#bundles--partners)
+- [Third-Party Licenses & Transparency](#third-party-licenses--transparency)
 - [Security Policy](SECURITY.md)
 - [Ecosystem & Sibling Tools](#ecosystem--sibling-tools)
 
@@ -95,6 +99,17 @@ it is a visible system gap.
 - local graphical interface with evidence-related details
 - read-only, prompt-assisted change proposals with mandatory gates
 - path-probing plans for external, budgeted swarm tests
+
+## Target Personas & Discoverability
+
+`system-explorer` is designed for autonomous agent swarms, platform engineers, and security auditors who require cryptographic certainty about available capabilities:
+
+1. **Autonomous AI Agent Engineers & Swarm Architects**: Verify that tools, skills, and MCP services exist and match expected signatures before delegating tasks, eliminating tool hallucination.
+2. **Enterprise System Architects & SREs**: Detect architectural drift between desired system models and actual running implementations across multi-repository landscapes.
+3. **Local-First & Sovereign Software Developers**: Explore system maps and module topologies 100% offline with zero external network dependencies or telemetry exfiltration.
+4. **Security, Compliance & Governance Auditors**: Audit component provenance with Ed25519-signed actual-self receipts, SHA-256 content hashes, unprivileged non-elevation (`RunAsInvoker`), and 100% permissive open-source dependencies.
+
+Detailed high-intent search taxonomies and 5-way competitive differentiation matrices are maintained in [`MARKETING-LOG.txt`](MARKETING-LOG.txt).
 
 ## System Architecture
 
@@ -560,6 +575,15 @@ MCP servers such as ControlCenter are access surfaces, not function owners of
 this module. Authoritative membership, versions, profiles, and private
 composition recipes are defined exclusively in the respective bundle
 manifest; this public overview is only a safe discovery aid.
+
+## Third-Party Licenses & Transparency
+
+`system-explorer` maintains enterprise-grade open-source compliance and transparent dependency governance:
+
+- **100% Permissive Open-Source Stack**: All direct runtime dependencies (`cryptography`, Python Standard Library) and development tooling (`pytest`, `ruff`, `build`, `jsonschema`) are licensed under permissive terms (MIT, Apache-2.0, BSD-3-Clause, PSFL).
+- **Zero Restrictive Copyleft**: No GPL, AGPL, or proprietary commercial modules are required or bundled.
+- **Local-First & Unprivileged**: Executes under `RunAsInvoker` with zero outbound network calls, binding the local web UI exclusively to loopback `127.0.0.1:8765`.
+- **Full Inventory**: Detailed per-package licenses, upstream links, and complete license texts are documented in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
 
 ## Ecosystem & Sibling Tools
 

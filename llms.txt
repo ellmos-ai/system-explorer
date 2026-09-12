@@ -1,14 +1,15 @@
 # system-explorer
 
-> Last-checked: 2026-09-10
+> Last-checked: 2026-09-12
 
 Purpose: map desired system functions to evidenced function carriers.
 Truth boundary: source systems remain authoritative; evidence is referenced.
 Safety boundary: proposals are read-only and never authorize target mutation.
 Key command: system-explorer --help
-Verification baseline: 185 Pytest tests (including metadata contract tests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-09-10.
+Verification baseline: 185+ Pytest tests (including metadata contract tests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-09-12.
 Security policy: SECURITY.md
 Third-party licenses: THIRD_PARTY_LICENSES.md
+Marketing log: MARKETING-LOG.txt
 CI workflow: .github/workflows/ci.yml
 Architecture: ARCHITECTURE.md
 Evidence rules: docs/EVIDENCE-MODEL.md

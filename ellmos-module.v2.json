@@ -2,7 +2,7 @@
   "schema": "ellmos.module.v2",
   "id": "system-explorer",
   "display_name": "System Explorer",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "category": "control",
   "kind": "tool",
   "status": "development",

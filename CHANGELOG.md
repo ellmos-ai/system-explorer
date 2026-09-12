@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- 2026-09-12: Pfad B: Discoverability, 16-Point Navigation, Target Personas & Metadata Contract Refresh.
+  - Kanonischen Development-Stand auf `0.4.2` synchronisiert über `pyproject.toml`, `src/system_explorer/__init__.py`, `ellmos-module.v2.json`, `CLAUDE.md`, `STATE.md`, `VERSIONING.md`, `llms.txt` und zweisprachige READMEs.
+  - Zweisprachige README-Architektur (`README.md` & `README_de.md`) auf den 16-Punkte-Schnellnavigations-Standard mit 100%iger wechselseitiger Anker-Parität erweitert (`#target-personas--discoverability` / `#zielgruppen--auffindbarkeit`, `#third-party-licenses--transparency` / `#drittanbieter-lizenzen--transparenz`).
+  - Dedizierte Abschnitte für Target Personas (Autonome KI-Agenten, Enterprise System-Architekten, Local-First Entwickler, Sicherheits-Auditoren) und Drittanbieter-Lizenzen in beiden Sprachfassungen integriert.
+  - Shields.io-Badges um `Third-Party Audited` und `Marketing Log: Active` ergänzt sowie Version auf `0.4.2` aktualisiert.
+  - `pyproject.toml` unter `[project.urls]` um standardisierte PEP 621 URLs für `"Third-Party Licenses"`, `"Marketing-Log"` und `"LLM-Ready"` erweitert.
+  - `THIRD_PARTY_LICENSES.md` mit Audit-Datum 2026-09-12 und verbindlichen Governance- und Laufzeit-Invarianten-Zusicherungen (`INV-LOCAL-01` bis `INV-SLA-10`) re-verifiziert (100% permissiver Open-Source-Stack, Apache-2.0 / BSD-3-Clause / MIT / PSFL, kein restriktives Copyleft).
+  - Lokales Marketing- und Visual-Architecture-Protokoll `MARKETING-LOG.txt` mit 4 Ziel-Personas, zweisprachiger High-Intent Keyword-Matrix (EN/DE), 5-Wege-Wettbewerbsmatrix über 10 Dimensionen, 10 Laufzeit-Invarianten und Geschwisterwerkzeuge-Zuordnung modernisiert.
+  - `llms.txt` Last-checked-Zeitstempel auf 2026-09-12 und Verifikationsbaseline synchronisiert.
+  - Automatisierte Metadaten- und Vertragstestsuite in `tests/test_metadata.py` und `tests/test_versioning.py` für Version 0.4.2, 16-Punkte-Navigationsanker und erweiterte PEP 621 URLs ausgebaut.
+
 - 2026-09-10: Pfad A: Repository Hygiene, Pytest Standard Config, .gitignore Hardening & Contract Parity Refresh.
   - Kanonischen Development-Stand auf `0.4.1` synchronisiert über `pyproject.toml`, `src/system_explorer/__init__.py`, `ellmos-module.v2.json`, `CLAUDE.md`, `STATE.md`, `VERSIONING.md`, `llms.txt` und zweisprachige READMEs.
   - `pyproject.toml` unter `[tool.pytest.ini_options]` um standardisierte Runner-Flags `addopts = "-ra -v"` ergänzt.

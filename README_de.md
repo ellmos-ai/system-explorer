@@ -2,7 +2,7 @@
 
 <img src="assets/banner.png" width="100%" alt="System Explorer Banner">
 
-[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
 [![Pytest](https://img.shields.io/badge/Pytest-185%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
@@ -10,13 +10,15 @@
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
 [![Security](https://img.shields.io/badge/security-Local--First%20%7C%20Fail--Closed-orange.svg)](SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
+[![Third-Party Audited](https://img.shields.io/badge/third--party-100%25%20permissive-brightgreen.svg)](THIRD_PARTY_LICENSES.md)
+[![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
-[English](README.md) | [Deutsch](README_de.md)
+**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md)
 
 > [!NOTE]
 > Für einen LLM-optimierten Index und Schnellreferenz siehe [`llms.txt`](llms.txt).
@@ -26,7 +28,7 @@ Agenten- und Softwaresystems. Das Werkzeug trennt zwei Schichten:
 
 1. **Soll-Funktionen** – was das Gesamtsystem bereitstellen soll.
 2. **Funktionsträger** – Skills, Repositories/Module, MCP-Schnittstellen,
-   Stacks, Akteure, Befehle oder sonstige Komponenten, die diese Funktionen
+   stacks, Akteure, Befehle oder sonstige Komponenten, die diese Funktionen
    tatsächlich oder voraussichtlich bereitstellen.
 
 Diese Zuordnung macht volle, teilweise, fehlende, überlappende und negative
@@ -36,6 +38,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 ## Schnellnavigation
 
 - [Funktionen](#funktionen)
+- [Zielgruppen & Auffindbarkeit](#zielgruppen--auffindbarkeit)
 - [Systemarchitektur](#systemarchitektur)
 - [Evidenzbasierter Auflösungs-Lebenszyklus](#evidenzbasierter-auflösungs-lebenszyklus)
 - [Schnellstart](#schnellstart)
@@ -47,6 +50,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - [Explizite Funktions-Äquivalenz](#explizite-funktions-äquivalenz)
 - [Governance- & Laufzeit-Invarianten](#governance--und-laufzeit-invarianten)
 - [Bundles & Partner](#bundles--partner)
+- [Drittanbieter-Lizenzen & Transparenz](#drittanbieter-lizenzen--transparenz)
 - [Sicherheitsrichtlinie](SECURITY.md)
 - [Ökosystem & Geschwisterwerkzeuge](#ökosystem--geschwisterwerkzeuge)
 
@@ -95,6 +99,17 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - Lokale Weboberfläche mit evidenzbezogenen Detailansichten
 - Rein lesende, promptgestützte Änderungsvorschläge mit Pflicht-Gates
 - Pfad-Probing-Pläne für externe, budgetierte Schwarmtests
+
+## Zielgruppen & Auffindbarkeit
+
+`system-explorer` richtet sich an autonome Agentenschwärme, Plattformentwickler und Sicherheitsprüfer, die kryptographische Gewissheit über verfügbare Systemfähigkeiten benötigen:
+
+1. **Entwickler autonomer KI-Agenten & Schwarm-Architekten**: Überprüfen, ob Werkzeuge, Skills und MCP-Dienste tatsächlich existieren und den geforderten Signaturen entsprechen, bevor Aufgaben delegiert werden – schützt vor Werkzeughalluzinationen.
+2. **Enterprise-Systemarchitekten & SREs**: Erkennen architektonische Abweichungen (Drift) zwischen intendierten Systemmodellen (Soll-Funktionen) und realen Implementierungen (Funktionsträgern) über Repository-Grenzen hinweg.
+3. **Local-First- & Souveräne Softwareentwickler**: Analysieren Systemtopologien und periphere Softwareressourcen 100% offline ohne Cloud-Abhängigkeiten oder Telemetrie-Egress.
+4. **Sicherheits-, Compliance- & Governance-Auditoren**: Auditieren die Provenienz von Komponenten über Ed25519-signierte Actual-Self-Belege, SHA-256-Inhaltsprüfsummen, unprivilegierte Ausführung (`RunAsInvoker`) und 100% permissive Open-Source-Lizenzen.
+
+Detaillierte Suchtaxonomien und Wettbewerbsvergleiche werden in [`MARKETING-LOG.txt`](MARKETING-LOG.txt) geführt.
 
 ## Systemarchitektur
 
@@ -576,6 +591,15 @@ MCP-Server wie ControlCenter sind Zugangsflächen, keine Funktionseigentümer
 dieses Moduls. Verbindliche Zugehörigkeiten, Versionen, Profile und private
 Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 öffentliche Übersicht ist nur ein sicherer Einstiegshelfer.
+
+## Drittanbieter-Lizenzen & Transparenz
+
+`system-explorer` gewährleistet lückenlose Open-Source-Compliance und transparente Abhängigkeitsverwaltung:
+
+- **100% Permissiver Open-Source-Stack**: Sämtliche direkten Laufzeitabhängigkeiten (`cryptography`, Python-Standardbibliothek) sowie Entwicklungswerkzeuge (`pytest`, `ruff`, `build`, `jsonschema`) unterliegen permissiven Lizenzen (MIT, Apache-2.0, BSD-3-Clause, PSFL).
+- **Kein restriktives Copyleft**: Weder GPL-, AGPL- noch proprietäre Module sind erforderlich oder gebündelt.
+- **Local-First & Unprivilegiert**: Läuft unter `RunAsInvoker` ohne ausgehende Netzwerkverbindungen und bindet das lokale Web-Dashboard ausschließlich an `127.0.0.1:8765`.
+- **Vollständiges Inventar**: Eine detaillierte Aufstellung aller Pakete, Versionsvorgaben und Volltexte befindet sich in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
 
 ## Ökosystem & Geschwisterwerkzeuge
 

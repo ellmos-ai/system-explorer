@@ -2,11 +2,11 @@
 name: "system-explorer"
 type: project-docs
 profile: "FULL"
-version: 0.4.1
+version: 0.4.2
 created: "2026-07-29"
-updated: "2026-09-10"
-reason_last_change: "Repository Hygiene, Pytest Standard Config & Contract Parity (Pfad A)"
-last_verified: "2026-09-10"
+updated: "2026-09-12"
+reason_last_change: "Pfad B: Discoverability, 16-Point Navigation, Target Personas & Metadata Contract Refresh"
+last_verified: "2026-09-12"
 author: "Lukas Geiger"
 anthropic_compatible: true
 description: |

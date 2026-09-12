@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "system-explorer"
-version = "0.4.1"
+version = "0.4.2"
 description = "Evidence-backed system maps for functions, carriers, entry points, and architecture drift."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -52,6 +52,9 @@ Repository = "https://github.com/ellmos-ai/system-explorer.git"
 "Bug Tracker" = "https://github.com/ellmos-ai/system-explorer/issues"
 Changelog = "https://github.com/ellmos-ai/system-explorer/blob/main/CHANGELOG.md"
 Security = "https://github.com/ellmos-ai/system-explorer/blob/main/SECURITY.md"
+"Third-Party Licenses" = "https://github.com/ellmos-ai/system-explorer/blob/main/THIRD_PARTY_LICENSES.md"
+"Marketing-Log" = "https://github.com/ellmos-ai/system-explorer/blob/main/MARKETING-LOG.txt"
+"LLM-Ready" = "https://github.com/ellmos-ai/system-explorer/blob/main/llms.txt"
 "Parent Organization" = "https://github.com/ellmos-ai"
 "Umbrella Ecosystem" = "https://github.com/open-bricks"
 

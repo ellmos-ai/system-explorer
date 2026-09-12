@@ -18,7 +18,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
     def test_version_consistency(self) -> None:
         """Verify version across package, module manifest, pyproject.toml, and docs."""
         version = system_explorer.__version__
-        self.assertEqual(version, "0.4.1")
+        self.assertEqual(version, "0.4.2")
 
         pyproject = (self.root / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn(f'version = "{version}"', pyproject)
@@ -127,6 +127,9 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Homepage = ", pyproject_text)
         self.assertIn("Repository = ", pyproject_text)
         self.assertIn("Security = ", pyproject_text)
+        self.assertIn('"Third-Party Licenses" = ', pyproject_text)
+        self.assertIn('"Marketing-Log" = ', pyproject_text)
+        self.assertIn('"LLM-Ready" = ', pyproject_text)
         self.assertIn('"Parent Organization" = "https://github.com/ellmos-ai"', pyproject_text)
         self.assertIn('"Umbrella Ecosystem" = "https://github.com/open-bricks"', pyproject_text)
         self.assertIn("Topic :: Security", pyproject_text)
@@ -167,18 +170,21 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
         # Standard badges
         for doc in (readme_en, readme_de):
-            self.assertIn("version-0.4.1", doc)
+            self.assertIn("version-0.4.2", doc)
             self.assertIn("actions/workflows/ci.yml", doc)
             self.assertRegex(doc, r"Pytest-\d+%20passed")
             self.assertIn("Zero--Egress", doc)
             self.assertIn("Local--First", doc)
             self.assertIn("security%20sla-48h%20response%20%7C%205d%20triage", doc)
+            self.assertIn("third--party-100%25%20permissive", doc)
+            self.assertIn("marketing%20log-active", doc)
             self.assertIn("code%20style-ruff", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
 
-        # 14-point navigation items
+        # 16-point navigation items
         expected_nav_en = [
             "#features",
+            "#target-personas--discoverability",
             "#system-architecture",
             "#evidence-backed-resolution-lifecycle",
             "#quick-start",
@@ -190,6 +196,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             "#explicit-function-equivalence",
             "#governance--runtime-invariants",
             "#bundles--partners",
+            "#third-party-licenses--transparency",
             "SECURITY.md",
             "#ecosystem--sibling-tools",
         ]
@@ -198,6 +205,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
         expected_nav_de = [
             "#funktionen",
+            "#zielgruppen--auffindbarkeit",
             "#systemarchitektur",
             "#evidenzbasierter-auflösungs-lebenszyklus",
             "#schnellstart",
@@ -209,6 +217,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             "#explizite-funktions-äquivalenz",
             "#governance--und-laufzeit-invarianten",
             "#bundles--partner",
+            "#drittanbieter-lizenzen--transparenz",
             "SECURITY.md",
             "#ökosystem--geschwisterwerkzeuge",
         ]
@@ -263,7 +272,11 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         content = marketing_log.read_text(encoding="utf-8")
         self.assertIn("Pfad B", content)
         self.assertIn("2026-09-09", content)
+        self.assertIn("2026-09-12", content)
         self.assertIn("INV-LOCAL-01", content)
+        self.assertIn("INV-SLA-10", content)
+        self.assertIn("TARGET PERSONAS", content)
+        self.assertIn("COMPETITIVE DIFFERENTIATION MATRIX", content)
 
     def test_readme_mermaid_sequence_diagrams(self) -> None:
         """Verify Mermaid sequence diagram exists and models the resolution lifecycle."""
@@ -298,12 +311,13 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-10", llms_text)
+        self.assertIn("Last-checked: 2026-09-12", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
+        self.assertIn("MARKETING-LOG.txt", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
-        self.assertRegex(llms_text, r"\d+ Pytest tests")
+        self.assertRegex(llms_text, r"\d+.*Pytest tests")
 
     def test_ecosystem_table_parity(self) -> None:
         """Verify sibling ecosystem tools table contains essential partner repositories."""
@@ -343,6 +357,22 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertIn("2026-09-10", changelog)
         self.assertIn("Pfad A", changelog)
+
+    def test_changelog_recent_pfad_b_entry(self) -> None:
+        """Verify CHANGELOG.md contains a recent Pfad B entry."""
+        changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("2026-09-12", changelog)
+        self.assertIn("Pfad B", changelog)
+
+    def test_target_personas_and_licenses_sections_exist(self) -> None:
+        """Verify dedicated target personas and third-party license sections exist in both READMEs."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Target Personas & Discoverability", readme_en)
+        self.assertIn("## Zielgruppen & Auffindbarkeit", readme_de)
+        self.assertIn("## Third-Party Licenses & Transparency", readme_en)
+        self.assertIn("## Drittanbieter-Lizenzen & Transparenz", readme_de)
 
 
 if __name__ == "__main__":
