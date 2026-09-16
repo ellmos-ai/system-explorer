@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- 2026-09-16: Pfad A: Repository-Hygiene, CI Workflow Hardening, Stale Lifecycle, Multi-Host Sync Defense & Contract Parity.
+  - CI-Workflow `.github/workflows/ci.yml` gehärtet: `timeout-minutes: 15` für Matrix-Runner integriert (Schutz vor unbegrenzten Runner-Hängern) sowie top-level `permissions: contents: read` nach dem Least-Privilege-Prinzip deklariert.
+  - Automatisierten Stale-Lifecycle `.github/workflows/stale.yml` nach offiziellem `.GITHUBBOT`-Template mit `actions/stale@v9`, `timeout-minutes: 10`, 30 Tagen Inaktivitäts- und 7 Tagen Schließfrist sowie standardisierten Ausnahme-Labels (`pinned`, `security`, `proposal`, `feature`, `rfc`, `priority: high`) implementiert.
+  - Multi-Host-Cloud-Sync- und Gitignore-Härtung: `.gitignore` um erweiterte Sync-Konfliktmuster (`* (Kopie)*`, `* (Copy)*`, `*conflicted copy*`) sowie Merge-Artefakte (`*.orig`, `*.rej`) erweitert.
+  - Shields.io-Testbadge in `README.md` und `README_de.md` auf 190 bestandene Pytest-Tests aktualisiert.
+  - Maschinenlesbaren Kontext `llms.txt` auf Stand `2026-09-16`, 190 Pytest-Tests und `.github/workflows/stale.yml` synchronisiert.
+  - Lokales `MARKETING-LOG.txt` um Pfad-A-Hygiene-Audit-Eintrag für den 2026-09-16 ergänzt.
+  - Automatisierte Metadaten- und Vertragstestsuite in `tests/test_metadata.py` um 4 Contract-Tests erweitert (`test_ci_stale_workflow_present`, `test_ci_workflow_hardening`, `test_gitignore_extended_multi_host_patterns` sowie aktualisierter `test_changelog_recent_pfad_a_entry`).
+
 - 2026-09-12: Pfad B: Discoverability, 16-Point Navigation, Target Personas & Metadata Contract Refresh.
   - Kanonischen Development-Stand auf `0.4.2` synchronisiert über `pyproject.toml`, `src/system_explorer/__init__.py`, `ellmos-module.v2.json`, `CLAUDE.md`, `STATE.md`, `VERSIONING.md`, `llms.txt` und zweisprachige READMEs.
   - Zweisprachige README-Architektur (`README.md` & `README_de.md`) auf den 16-Punkte-Schnellnavigations-Standard mit 100%iger wechselseitiger Anker-Parität erweitert (`#target-personas--discoverability` / `#zielgruppen--auffindbarkeit`, `#third-party-licenses--transparency` / `#drittanbieter-lizenzen--transparenz`).

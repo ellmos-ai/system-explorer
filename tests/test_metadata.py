@@ -311,11 +311,12 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-12", llms_text)
+        self.assertIn("Last-checked: 2026-09-16", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn("MARKETING-LOG.txt", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
+        self.assertIn(".github/workflows/stale.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
         self.assertRegex(llms_text, r"\d+.*Pytest tests")
 
@@ -355,8 +356,40 @@ class SystemExplorerMetadataTests(unittest.TestCase):
     def test_changelog_recent_pfad_a_entry(self) -> None:
         """Verify CHANGELOG.md contains a recent Pfad A hygiene entry."""
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("2026-09-10", changelog)
+        self.assertIn("2026-09-16", changelog)
         self.assertIn("Pfad A", changelog)
+
+    def test_ci_workflow_hardening(self) -> None:
+        """Verify CI workflow defines timeout-minutes and permissions: contents: read."""
+        ci_path = self.root / ".github" / "workflows" / "ci.yml"
+        self.assertTrue(ci_path.is_file(), "ci.yml missing")
+        ci_text = ci_path.read_text(encoding="utf-8")
+        self.assertIn("timeout-minutes: 15", ci_text)
+        self.assertIn("permissions:", ci_text)
+        self.assertIn("contents: read", ci_text)
+
+    def test_ci_stale_workflow_present(self) -> None:
+        """Verify stale issues and PRs lifecycle workflow is configured with proper gates."""
+        stale_path = self.root / ".github" / "workflows" / "stale.yml"
+        self.assertTrue(stale_path.is_file(), "stale.yml missing")
+        stale_text = stale_path.read_text(encoding="utf-8")
+        self.assertIn("actions/stale@v9", stale_text)
+        self.assertIn("timeout-minutes: 10", stale_text)
+        self.assertIn("issues: write", stale_text)
+        self.assertIn("pull-requests: write", stale_text)
+        self.assertIn("days-before-stale: 30", stale_text)
+        self.assertIn("days-before-close: 7", stale_text)
+        self.assertIn("exempt-issue-labels:", stale_text)
+        self.assertIn("exempt-pr-labels:", stale_text)
+
+    def test_gitignore_extended_multi_host_patterns(self) -> None:
+        """Verify gitignore includes extended case variations and merge artifact exclusions."""
+        gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("* (Kopie)*", gitignore_text)
+        self.assertIn("* (Copy)*", gitignore_text)
+        self.assertIn("*conflicted copy*", gitignore_text)
+        self.assertIn("*.orig", gitignore_text)
+        self.assertIn("*.rej", gitignore_text)
 
     def test_changelog_recent_pfad_b_entry(self) -> None:
         """Verify CHANGELOG.md contains a recent Pfad B entry."""

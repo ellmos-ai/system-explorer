@@ -61,7 +61,12 @@ data/
 *-ASUS-GEI*
 *-WORKSTATION.*
 * (kopie)*
+* (Kopie)*
 * (copy)*
+* (Copy)*
+*conflicted copy*
+*.orig
+*.rej
 LOCK
 LOCK.*
 *.lock
