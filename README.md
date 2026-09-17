@@ -97,6 +97,7 @@ it is a visible system gap.
 - safe idempotent repository/bundle diagram maintenance with dry run,
   lock/dirty gates, atomic readback, and optional commit and push
 - local graphical interface with evidence-related details
+- optional GET-only panel mount for the existing `ellmos-unified-gui` host
 - read-only, prompt-assisted change proposals with mandatory gates
 - path-probing plans for external, budgeted swarm tests
 

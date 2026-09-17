@@ -58,6 +58,13 @@ Ein nichtleerer Ausgabeordner ohne
 `.system-explorer-explainer.json` beziehungsweise ein eindeutig vom Explorer
 erzeugtes Legacy-Handoff wird nicht überschrieben.
 
+Ein echter UC6-Renderadapter bleibt weiterhin gesperrt: Das aktuell geprüfte
+`ai-media-editor`-Manifest (`0.2.2`) veröffentlicht zwar CLI- und
+Workflow-Entrypoints, aber keinen maschinenlesbaren Rendervertrag mit
+Rechte-/Strategie-/Readback-Receipt. Deshalb bleibt `rendered: false` die
+einzige zulässige Explorer-Aussage; der Connector erfindet weder diese
+Autorität noch führt er einen Renderlauf aus.
+
 ## Repository- und Bundle-Schaltpläne
 
 `system-explorer diagrams` erzeugt eine verwaltete

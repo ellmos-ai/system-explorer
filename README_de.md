@@ -97,6 +97,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - Sichere idempotente Repository-/Bundle-Diagrammpflege mit Dry-Run,
   Lock/Dirty-Gates, atomarem Readback und optionalem Commit und Push
 - Lokale Weboberfläche mit evidenzbezogenen Detailansichten
+- optionaler GET-only-Panel-Mount für den vorhandenen Host `ellmos-unified-gui`
 - Rein lesende, promptgestützte Änderungsvorschläge mit Pflicht-Gates
 - Pfad-Probing-Pläne für externe, budgetierte Schwarmtests
 

@@ -7,7 +7,7 @@
 - [x] Kardinalitäten aus gepinnten externen Composition-Regeln scopeweise
   bewerten; fehlende oder widersprüchliche Regeln blockieren.
 - protobuf-spezifischen Gemini/agy-Decoder ergänzen
-- UI als optionales Panel in vorhandenen GUI-Host einbetten
+- [x] UI als optionales GET-only-Panel in vorhandenen GUI-Host einbetten
 - [x] Externe Schwarmresultate als standardisierte, referenzielle Probe-Receipts
   importieren, ohne Coverage-/Authority-Eskalation.
 - signierte Evidenzreceipts und inkrementelle Scans ergänzen

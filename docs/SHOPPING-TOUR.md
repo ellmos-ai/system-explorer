@@ -32,3 +32,16 @@ Wiederverwendbarkeit geprüft.
 - zeitbezogene Soll-/Ist-Auflösung
 - providerübergreifende, inhaltsarme Transcript-Normalisierung
 - Kartenprojektionen und read-only Proposal-UI
+
+## Verifizierte Unified-GUI-Anbindung
+
+Der vorhandene Host `ellmos-unified-gui` stellt mit `mount(host_app, prefix)`
+und Version `0.4.0` einen stabilen Einbettungsvertrag bereit. `system-explorer`
+liefert dafür optional `mount_unified_gui_panel(...)`. Die Bridge prüft den
+Host-Vertrag und die Mindestversion vor dem Mounten; ein fehlender oder
+inkompatibler Host deaktiviert die Einbettung ohne Route-Mutation.
+
+Das eingebettete Panel ist eine eigene GET-only-Sub-App. Es verwendet dieselbe
+lokale Evidence-Quelle, enthält keine Proposal-/Register-Routen und startet
+keinen zweiten Control-Plane- oder Schreibpfad. Die bestehende Standalone-UI
+bleibt unverändert.

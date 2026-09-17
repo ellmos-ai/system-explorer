@@ -6,6 +6,17 @@
 | Claude Code | Projekt-Session-JSONL | user/assistant, tool_use/tool_result, Session-/Entrypointmerkmale | keine angrenzenden Account-/MCP-Metadaten |
 | Claude Desktop | `audit.jsonl` | user/assistant/system/result/command lifecycle | kein separater Live-Hook im MVP |
 | Gemini/agy | Conversation-SQLite | Tabellenzeilen, Prompt `step_type=14`, Hashes für Binärfelder | unbekannte Protobuf-Typen werden nicht als Semantik erfunden |
+
+## Gemini/agy-Protobuf-Gate
+
+Ein spezifischer Decoder ist derzeit bewusst nicht aktiviert. Für eine
+Freischaltung müssen Gemini und agy zuerst einen autoritativen, versionierten
+Typvertrag mit Quelle und SHA-256-Pin liefern. Erst dann dürfen ausdrücklich
+freigegebene Nachrichtentypen und Felder gelesen werden. Unbekannte,
+fehlerhafte oder schema-driftende Bytes bleiben ausschließlich BLOB-Metadaten
+(Länge und Hash); sie werden weder heuristisch als Gespräch noch als Prompt,
+Toolaufruf oder Credential interpretiert. Die bestehende SQLite-Importstrecke
+bleibt damit read-only und inhaltsarm.
 | Kimi | Session-/Wire-JSONL | user prompts/steers, Loop-Toolereignisse, Nachrichten | Index dient nur zur Auffindung |
 | Generic | JSONL | heuristische Rollen-, Tool- und Pfadfelder | niedrigere Konfidenz |
 

@@ -122,6 +122,10 @@
       "id": "ai-media-editor-uc6"
     },
     {
+      "type": "panel",
+      "id": "unified-gui-readonly"
+    },
+    {
       "type": "repository-writer",
       "id": "generated-system-map"
     }
