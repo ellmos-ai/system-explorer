@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 680" width="2400" height="680">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="40%" stop-color="#0a1020"/>
+      <stop offset="70%" stop-color="#0c1428"/>
+      <stop offset="100%" stop-color="#070a14"/>
+    </linearGradient>
+
+    <radialGradient id="reticle-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#0369a1" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="brand-glow" cx="30%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#0f172a" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Optical Discovery Cone Gradient -->
+    <linearGradient id="beam-grad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.28"/>
+      <stop offset="45%" stop-color="#0ea5e9" stop-opacity="0.14"/>
+      <stop offset="85%" stop-color="#0284c7" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Metallic Tube Gradients -->
+    <linearGradient id="tube-body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="25%" stop-color="#64748b"/>
+      <stop offset="45%" stop-color="#cbd5e1"/>
+      <stop offset="65%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="tube-dewshield" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="22%" stop-color="#475569"/>
+      <stop offset="40%" stop-color="#94a3b8"/>
+      <stop offset="70%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <linearGradient id="brass-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="20%" stop-color="#f59e0b"/>
+      <stop offset="45%" stop-color="#fef08a"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+
+    <linearGradient id="chrome-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="35%" stop-color="#f8fafc"/>
+      <stop offset="70%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+
+    <linearGradient id="tripod-leg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="35%" stop-color="#475569"/>
+      <stop offset="70%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Lens Glass Reflection -->
+    <radialGradient id="lens-reflection" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="25%" stop-color="#38bdf8" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#0284c7" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0c4a6e" stop-opacity="0.8"/>
+    </radialGradient>
+
+    <!-- Focal Viewfield Background -->
+    <radialGradient id="viewfield-bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0a1932" stop-opacity="0.95"/>
+      <stop offset="70%" stop-color="#071326" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#040b17" stop-opacity="0.88"/>
+    </radialGradient>
+
+    <!-- Node Glow Gradients -->
+    <radialGradient id="core-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#0284c7" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="cyan-node-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#38bdf8"/>
+      <stop offset="80%" stop-color="#0284c7" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="teal-node-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#2dd4bf"/>
+      <stop offset="80%" stop-color="#0d9488" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0d9488" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="indigo-node-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#818cf8"/>
+      <stop offset="80%" stop-color="#4f46e5" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="amber-node-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#fbbf24"/>
+      <stop offset="80%" stop-color="#d97706" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#d97706" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Glow Filter -->
+    <filter id="neon-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="subtle-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Clip Path for the Focal Viewfield -->
+    <clipPath id="focal-clip">
+      <circle cx="1860" cy="310" r="240"/>
+    </clipPath>
+  </defs>
+  <!-- Canvas Background -->
+  <rect width="2400" height="680" fill="url(#bg-grad)"/>
+  <ellipse cx="1860" cy="310" rx="460" ry="340" fill="url(#reticle-glow)"/>
+  <ellipse cx="440" cy="340" rx="420" ry="260" fill="url(#brand-glow)"/>
+  <!-- Analytical Coordinate Grid -->
+  <g stroke="#38bdf8" stroke-opacity="0.04" stroke-width="1">
+    <line x1="100" y1="0" x2="100" y2="680"/>
+    <line x1="200" y1="0" x2="200" y2="680"/>
+    <line x1="300" y1="0" x2="300" y2="680"/>
+    <line x1="400" y1="0" x2="400" y2="680"/>
+    <line x1="500" y1="0" x2="500" y2="680"/>
+    <line x1="600" y1="0" x2="600" y2="680"/>
+    <line x1="700" y1="0" x2="700" y2="680"/>
+    <line x1="800" y1="0" x2="800" y2="680"/>
+    <line x1="900" y1="0" x2="900" y2="680"/>
+    <line x1="1000" y1="0" x2="1000" y2="680"/>
+    <line x1="1100" y1="0" x2="1100" y2="680"/>
+    <line x1="1200" y1="0" x2="1200" y2="680"/>
+    <line x1="1300" y1="0" x2="1300" y2="680"/>
+    <line x1="1400" y1="0" x2="1400" y2="680"/>
+    <line x1="1500" y1="0" x2="1500" y2="680"/>
+    <line x1="1600" y1="0" x2="1600" y2="680"/>
+    <line x1="1700" y1="0" x2="1700" y2="680"/>
+    <line x1="1800" y1="0" x2="1800" y2="680"/>
+    <line x1="1900" y1="0" x2="1900" y2="680"/>
+    <line x1="2000" y1="0" x2="2000" y2="680"/>
+    <line x1="2100" y1="0" x2="2100" y2="680"/>
+    <line x1="2200" y1="0" x2="2200" y2="680"/>
+    <line x1="2300" y1="0" x2="2300" y2="680"/>
+    <line x1="0" y1="68" x2="2400" y2="68"/>
+    <line x1="0" y1="136" x2="2400" y2="136"/>
+    <line x1="0" y1="204" x2="2400" y2="204"/>
+    <line x1="0" y1="272" x2="2400" y2="272"/>
+    <line x1="0" y1="340" x2="2400" y2="340"/>
+    <line x1="0" y1="408" x2="2400" y2="408"/>
+    <line x1="0" y1="476" x2="2400" y2="476"/>
+    <line x1="0" y1="544" x2="2400" y2="544"/>
+    <line x1="0" y1="612" x2="2400" y2="612"/>
+  </g>
+  <!-- Celestial Stars -->
+  <g>
+    <circle cx="160" cy="110" r="1.2" fill="#94a3b8" fill-opacity="0.45"/>
+    <circle cx="280" cy="80" r="1.5" fill="#94a3b8" fill-opacity="0.6"/>
+    <circle cx="420" cy="140" r="1.0" fill="#94a3b8" fill-opacity="0.35"/>
+    <circle cx="560" cy="95" r="1.8" fill="#94a3b8" fill-opacity="0.65"/>
+    <circle cx="710" cy="130" r="1.2" fill="#94a3b8" fill-opacity="0.4"/>
+    <circle cx="880" cy="75" r="1.4" fill="#94a3b8" fill-opacity="0.5"/>
+    <circle cx="960" cy="160" r="1.0" fill="#94a3b8" fill-opacity="0.35"/>
+    <circle cx="1050" cy="110" r="1.6" fill="#94a3b8" fill-opacity="0.6"/>
+    <circle cx="1190" cy="85" r="1.2" fill="#94a3b8" fill-opacity="0.45"/>
+    <circle cx="1310" cy="135" r="1.5" fill="#94a3b8" fill-opacity="0.55"/>
+    <circle cx="1450" cy="90" r="1.0" fill="#94a3b8" fill-opacity="0.35"/>
+    <circle cx="1540" cy="140" r="1.7" fill="#94a3b8" fill-opacity="0.65"/>
+    <circle cx="1650" cy="80" r="1.2" fill="#94a3b8" fill-opacity="0.4"/>
+    <circle cx="2200" cy="90" r="1.5" fill="#94a3b8" fill-opacity="0.6"/>
+    <circle cx="2290" cy="130" r="1.2" fill="#94a3b8" fill-opacity="0.45"/>
+    <circle cx="2350" cy="70" r="1.6" fill="#94a3b8" fill-opacity="0.7"/>
+    <circle cx="210" cy="540" r="1.2" fill="#94a3b8" fill-opacity="0.4"/>
+    <circle cx="350" cy="590" r="1.5" fill="#94a3b8" fill-opacity="0.5"/>
+    <circle cx="480" cy="520" r="1.0" fill="#94a3b8" fill-opacity="0.3"/>
+    <circle cx="620" cy="580" r="1.4" fill="#94a3b8" fill-opacity="0.45"/>
+    <circle cx="780" cy="530" r="1.2" fill="#94a3b8" fill-opacity="0.4"/>
+    <circle cx="890" cy="600" r="1.6" fill="#94a3b8" fill-opacity="0.55"/>
+    <circle cx="1480" cy="560" r="1.2" fill="#94a3b8" fill-opacity="0.35"/>
+    <circle cx="1600" cy="610" r="1.5" fill="#94a3b8" fill-opacity="0.5"/>
+    <circle cx="2240" cy="580" r="1.4" fill="#94a3b8" fill-opacity="0.5"/>
+    <circle cx="2320" cy="520" r="1.8" fill="#94a3b8" fill-opacity="0.65"/>
+    <circle cx="2370" cy="610" r="1.1" fill="#94a3b8" fill-opacity="0.35"/>
+  </g>
+  <!-- Optical Discovery Beam -->
+  <g>
+    <polygon points="1411,395 1798,78 2146,-15 2270,449 1922,542 1429,461" fill="url(#beam-grad)"/>
+    <line x1="1411" y1="395" x2="2146" y2="-15" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="8 6"/>
+    <line x1="1429" y1="461" x2="2270" y2="449" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="8 6"/>
+    <line x1="1420" y1="428" x2="1860" y2="310" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4 6"/>
+  </g>
+  <!-- Latent System Architecture (Unobserved / Dark) -->
+  <g stroke="#334155" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="4 5">
+    <line x1="1650" y1="220" x2="1580" y2="190"/>
+    <line x1="1580" y1="190" x2="1520" y2="140"/>
+    <line x1="1640" y1="370" x2="1610" y2="390"/>
+    <line x1="1610" y1="390" x2="1560" y2="470"/>
+    <line x1="2070" y1="220" x2="2160" y2="170"/>
+    <line x1="2160" y1="170" x2="2230" y2="130"/>
+    <line x1="2080" y1="380" x2="2190" y2="400"/>
+    <line x1="2190" y1="400" x2="2260" y2="470"/>
+    <line x1="2000" y1="500" x2="2100" y2="540"/>
+  </g>
+  <g fill="none" stroke="#475569" stroke-opacity="0.4" stroke-width="1.5">
+    <circle cx="1580" cy="190" r="7"/>
+    <circle cx="1520" cy="140" r="5"/>
+    <circle cx="1610" cy="390" r="8"/>
+    <circle cx="1560" cy="470" r="6"/>
+    <circle cx="2160" cy="170" r="8"/>
+    <circle cx="2230" cy="130" r="6"/>
+    <circle cx="2190" cy="400" r="9"/>
+    <circle cx="2260" cy="470" r="6"/>
+    <circle cx="2100" cy="540" r="7"/>
+  </g>
+  <!-- Focal Viewfield / Revealed Architecture Map -->
+  <circle cx="1860" cy="310" r="240" fill="url(#viewfield-bg)"/>
+  <g clip-path="url(#focal-clip)">
+    <g stroke="#38bdf8" stroke-opacity="0.08" stroke-width="1">
+      <line x1="1640" y1="70" x2="1640" y2="550"/>
+      <line x1="1684" y1="70" x2="1684" y2="550"/>
+      <line x1="1728" y1="70" x2="1728" y2="550"/>
+      <line x1="1772" y1="70" x2="1772" y2="550"/>
+      <line x1="1816" y1="70" x2="1816" y2="550"/>
+      <line x1="1860" y1="70" x2="1860" y2="550"/>
+      <line x1="1904" y1="70" x2="1904" y2="550"/>
+      <line x1="1948" y1="70" x2="1948" y2="550"/>
+      <line x1="1992" y1="70" x2="1992" y2="550"/>
+      <line x1="2036" y1="70" x2="2036" y2="550"/>
+      <line x1="2080" y1="70" x2="2080" y2="550"/>
+      <line x1="1620" y1="90" x2="2100" y2="90"/>
+      <line x1="1620" y1="134" x2="2100" y2="134"/>
+      <line x1="1620" y1="178" x2="2100" y2="178"/>
+      <line x1="1620" y1="222" x2="2100" y2="222"/>
+      <line x1="1620" y1="266" x2="2100" y2="266"/>
+      <line x1="1620" y1="310" x2="2100" y2="310"/>
+      <line x1="1620" y1="354" x2="2100" y2="354"/>
+      <line x1="1620" y1="398" x2="2100" y2="398"/>
+      <line x1="1620" y1="442" x2="2100" y2="442"/>
+      <line x1="1620" y1="486" x2="2100" y2="486"/>
+      <line x1="1620" y1="530" x2="2100" y2="530"/>
+    </g>
+    <!-- Architecture Graph Edges -->
+    <path d="M 1860 310 Q 1800 270 1740 210" stroke="#38bdf8" stroke-width="3" fill="none" filter="url(#subtle-glow)"/>
+    <path d="M 1740 210 L 1800 160" stroke="#38bdf8" stroke-width="2" fill="none"/>
+    <path d="M 1800 160 L 1860 150" stroke="#60a5fa" stroke-width="2" fill="none"/>
+    <path d="M 1740 210 L 1700 260" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+    <path d="M 1860 310 Q 1920 260 1980 190" stroke="#2dd4bf" stroke-width="3" fill="none" filter="url(#subtle-glow)"/>
+    <path d="M 1980 190 L 2040 230" stroke="#2dd4bf" stroke-width="2" fill="none"/>
+    <path d="M 1980 190 L 1960 245" stroke="#2dd4bf" stroke-width="1.5" fill="none"/>
+    <path d="M 2040 230 L 2050 170" stroke="#5eead4" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>
+    <path d="M 1960 245 L 1860 150" stroke="#2dd4bf" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+    <path d="M 1860 310 Q 1940 330 2010 370" stroke="#818cf8" stroke-width="3" fill="none" filter="url(#subtle-glow)"/>
+    <path d="M 2010 370 L 2040 440" stroke="#818cf8" stroke-width="2" fill="none"/>
+    <path d="M 2010 370 L 1950 435" stroke="#818cf8" stroke-width="2" fill="none"/>
+    <path d="M 1950 435 L 1980 495" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+    <path d="M 2040 390 L 2040 440" stroke="#818cf8" stroke-width="1.5" fill="none"/>
+    <path d="M 1860 310 Q 1810 350 1740 380" stroke="#38bdf8" stroke-width="2.5" fill="none"/>
+    <path d="M 1740 380 L 1710 440" stroke="#fbbf24" stroke-width="2" fill="none"/>
+    <path d="M 1740 380 L 1780 455" stroke="#f59e0b" stroke-width="2" fill="none"/>
+    <path d="M 1740 380 L 1820 395" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+    <path d="M 1740 380 C 1840 420 1920 410 2010 370" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="7 5" fill="none" filter="url(#subtle-glow)"/>
+    <path d="M 1800 160 Q 1920 140 1980 190" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 6" fill="none"/>
+    <path d="M 2040 230 Q 2050 300 2010 370" stroke="#2dd4bf" stroke-width="1.5" stroke-dasharray="6 5" fill="none"/>
+    <path d="M 1700 260 Q 1680 330 1740 380" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5 5" fill="none"/>
+    <circle cx="1800" cy="260" r="3.5" fill="#ffffff" filter="url(#subtle-glow)"/>
+    <circle cx="1920" cy="250" r="3.5" fill="#ffffff" filter="url(#subtle-glow)"/>
+    <circle cx="1935" cy="340" r="3.5" fill="#ffffff" filter="url(#subtle-glow)"/>
+    <circle cx="1800" cy="345" r="3.5" fill="#ffffff" filter="url(#subtle-glow)"/>
+    <circle cx="1875" cy="400" r="3" fill="#fbbf24" filter="url(#subtle-glow)"/>
+    <!-- Architecture Graph Nodes -->
+    <circle cx="1740" cy="210" r="15" fill="url(#cyan-node-glow)" filter="url(#subtle-glow)"/>
+    <circle cx="1740" cy="210" r="7" fill="#ffffff"/>
+    <circle cx="1800" cy="160" r="11" fill="#60a5fa"/>
+    <circle cx="1800" cy="160" r="4" fill="#ffffff"/>
+    <circle cx="1860" cy="150" r="12" fill="#38bdf8"/>
+    <circle cx="1860" cy="150" r="4.5" fill="#ffffff"/>
+    <circle cx="1700" cy="260" r="9" fill="#93c5fd"/>
+    <circle cx="1700" cy="260" r="3" fill="#ffffff"/>
+    <circle cx="1980" cy="190" r="16" fill="url(#teal-node-glow)" filter="url(#subtle-glow)"/>
+    <circle cx="1980" cy="190" r="7.5" fill="#ffffff"/>
+    <circle cx="2040" cy="230" r="12" fill="#2dd4bf"/>
+    <circle cx="2040" cy="230" r="5" fill="#ffffff"/>
+    <circle cx="1960" cy="245" r="10" fill="#14b8a6"/>
+    <circle cx="1960" cy="245" r="3.5" fill="#ffffff"/>
+    <circle cx="2050" cy="170" r="8" fill="#5eead4"/>
+    <circle cx="2050" cy="170" r="2.5" fill="#ffffff"/>
+    <circle cx="2010" cy="370" r="15" fill="url(#indigo-node-glow)" filter="url(#subtle-glow)"/>
+    <circle cx="2010" cy="370" r="7" fill="#ffffff"/>
+    <circle cx="2040" cy="440" r="12" fill="#818cf8"/>
+    <circle cx="2040" cy="440" r="4.5" fill="#ffffff"/>
+    <circle cx="1950" cy="435" r="10" fill="#6366f1"/>
+    <circle cx="1950" cy="435" r="3.5" fill="#ffffff"/>
+    <circle cx="1980" cy="495" r="8" fill="#a855f7"/>
+    <circle cx="1980" cy="495" r="2.5" fill="#ffffff"/>
+    <circle cx="1740" cy="380" r="15" fill="url(#amber-node-glow)" filter="url(#subtle-glow)"/>
+    <circle cx="1740" cy="380" r="7" fill="#ffffff"/>
+    <circle cx="1710" cy="440" r="11" fill="#f59e0b"/>
+    <circle cx="1710" cy="440" r="4" fill="#ffffff"/>
+    <circle cx="1780" cy="455" r="9" fill="#fbbf24"/>
+    <circle cx="1780" cy="455" r="3" fill="#ffffff"/>
+    <circle cx="1820" cy="395" r="8" fill="#f59e0b"/>
+    <circle cx="1820" cy="395" r="2.5" fill="#ffffff"/>
+    <!-- Central System Hub -->
+    <circle cx="1860" cy="310" r="36" fill="none" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <circle cx="1860" cy="310" r="26" fill="none" stroke="#38bdf8" stroke-opacity="0.6" stroke-width="2"/>
+    <circle cx="1860" cy="310" r="19" fill="url(#core-glow)" filter="url(#neon-glow)"/>
+    <circle cx="1860" cy="310" r="8" fill="#ffffff"/>
+  </g> <!-- end clipped graph -->
+  <!-- Telescope Reticle & Precision Bezel -->
+  <g>
+    <circle cx="1860" cy="310" r="252" fill="none" stroke="#1e293b" stroke-width="3"/>
+    <circle cx="1860" cy="310" r="246" fill="none" stroke="#334155" stroke-width="1.5"/>
+    <g stroke="#38bdf8" stroke-opacity="0.45" stroke-width="1">
+      <line x1="2102" y1="310" x2="2111" y2="310" stroke-width="1.8"/>
+      <line x1="2104" y1="336" x2="2107" y2="336" stroke-width="1"/>
+      <line x1="2100" y1="361" x2="2103" y2="362" stroke-width="1"/>
+      <line x1="2093" y1="386" x2="2096" y2="387" stroke-width="1"/>
+      <line x1="2084" y1="410" x2="2087" y2="411" stroke-width="1"/>
+      <line x1="2070" y1="431" x2="2077" y2="436" stroke-width="1.8"/>
+      <line x1="2058" y1="454" x2="2061" y2="456" stroke-width="1"/>
+      <line x1="2042" y1="474" x2="2044" y2="476" stroke-width="1"/>
+      <line x1="2024" y1="492" x2="2026" y2="494" stroke-width="1"/>
+      <line x1="2004" y1="508" x2="2006" y2="511" stroke-width="1"/>
+      <line x1="1981" y1="520" x2="1986" y2="527" stroke-width="1.8"/>
+      <line x1="1960" y1="534" x2="1961" y2="537" stroke-width="1"/>
+      <line x1="1936" y1="543" x2="1937" y2="546" stroke-width="1"/>
+      <line x1="1911" y1="550" x2="1912" y2="553" stroke-width="1"/>
+      <line x1="1886" y1="554" x2="1886" y2="557" stroke-width="1"/>
+      <line x1="1860" y1="552" x2="1860" y2="561" stroke-width="1.8"/>
+      <line x1="1834" y1="554" x2="1834" y2="557" stroke-width="1"/>
+      <line x1="1809" y1="550" x2="1808" y2="553" stroke-width="1"/>
+      <line x1="1784" y1="543" x2="1783" y2="546" stroke-width="1"/>
+      <line x1="1760" y1="534" x2="1759" y2="537" stroke-width="1"/>
+      <line x1="1739" y1="520" x2="1734" y2="527" stroke-width="1.8"/>
+      <line x1="1716" y1="508" x2="1714" y2="511" stroke-width="1"/>
+      <line x1="1696" y1="492" x2="1694" y2="494" stroke-width="1"/>
+      <line x1="1678" y1="474" x2="1676" y2="476" stroke-width="1"/>
+      <line x1="1662" y1="454" x2="1659" y2="456" stroke-width="1"/>
+      <line x1="1650" y1="431" x2="1643" y2="436" stroke-width="1.8"/>
+      <line x1="1636" y1="410" x2="1633" y2="411" stroke-width="1"/>
+      <line x1="1627" y1="386" x2="1624" y2="387" stroke-width="1"/>
+      <line x1="1620" y1="361" x2="1617" y2="362" stroke-width="1"/>
+      <line x1="1616" y1="336" x2="1613" y2="336" stroke-width="1"/>
+      <line x1="1618" y1="310" x2="1609" y2="310" stroke-width="1.8"/>
+      <line x1="1616" y1="284" x2="1613" y2="284" stroke-width="1"/>
+      <line x1="1620" y1="259" x2="1617" y2="258" stroke-width="1"/>
+      <line x1="1627" y1="234" x2="1624" y2="233" stroke-width="1"/>
+      <line x1="1636" y1="210" x2="1633" y2="209" stroke-width="1"/>
+      <line x1="1650" y1="189" x2="1643" y2="184" stroke-width="1.8"/>
+      <line x1="1662" y1="166" x2="1659" y2="164" stroke-width="1"/>
+      <line x1="1678" y1="146" x2="1676" y2="144" stroke-width="1"/>
+      <line x1="1696" y1="128" x2="1694" y2="126" stroke-width="1"/>
+      <line x1="1716" y1="112" x2="1714" y2="109" stroke-width="1"/>
+      <line x1="1739" y1="100" x2="1734" y2="93" stroke-width="1.8"/>
+      <line x1="1760" y1="86" x2="1759" y2="83" stroke-width="1"/>
+      <line x1="1784" y1="77" x2="1783" y2="74" stroke-width="1"/>
+      <line x1="1809" y1="70" x2="1808" y2="67" stroke-width="1"/>
+      <line x1="1834" y1="66" x2="1834" y2="63" stroke-width="1"/>
+      <line x1="1860" y1="68" x2="1860" y2="59" stroke-width="1.8"/>
+      <line x1="1886" y1="66" x2="1886" y2="63" stroke-width="1"/>
+      <line x1="1911" y1="70" x2="1912" y2="67" stroke-width="1"/>
+      <line x1="1936" y1="77" x2="1937" y2="74" stroke-width="1"/>
+      <line x1="1960" y1="86" x2="1961" y2="83" stroke-width="1"/>
+      <line x1="1981" y1="100" x2="1986" y2="93" stroke-width="1.8"/>
+      <line x1="2004" y1="112" x2="2006" y2="109" stroke-width="1"/>
+      <line x1="2024" y1="128" x2="2026" y2="126" stroke-width="1"/>
+      <line x1="2042" y1="146" x2="2044" y2="144" stroke-width="1"/>
+      <line x1="2058" y1="166" x2="2061" y2="164" stroke-width="1"/>
+      <line x1="2070" y1="189" x2="2077" y2="184" stroke-width="1.8"/>
+      <line x1="2084" y1="210" x2="2087" y2="209" stroke-width="1"/>
+      <line x1="2093" y1="234" x2="2096" y2="233" stroke-width="1"/>
+      <line x1="2100" y1="259" x2="2103" y2="258" stroke-width="1"/>
+      <line x1="2104" y1="284" x2="2107" y2="284" stroke-width="1"/>
+    </g>
+    <circle cx="1860" cy="310" r="240" fill="none" stroke="#38bdf8" stroke-width="2.5" filter="url(#subtle-glow)"/>
+    <circle cx="1860" cy="310" r="160" fill="none" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="6 8"/>
+    <circle cx="1860" cy="310" r="85" fill="none" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="3 5"/>
+    <g stroke="#38bdf8" stroke-opacity="0.45" stroke-width="1.2">
+      <line x1="1625" y1="310" x2="1812" y2="310"/>
+      <line x1="1908" y1="310" x2="2095" y2="310"/>
+      <line x1="1860" y1="75" x2="1860" y2="262"/>
+      <line x1="1860" y1="358" x2="1860" y2="545"/>
+      <line x1="1760" y1="306" x2="1760" y2="314"/>
+      <line x1="1960" y1="306" x2="1960" y2="314"/>
+      <line x1="1856" y1="210" x2="1864" y2="210"/>
+      <line x1="1856" y1="410" x2="1864" y2="410"/>
+      <line x1="1730" y1="306" x2="1730" y2="314"/>
+      <line x1="1990" y1="306" x2="1990" y2="314"/>
+      <line x1="1856" y1="180" x2="1864" y2="180"/>
+      <line x1="1856" y1="440" x2="1864" y2="440"/>
+      <line x1="1670" y1="306" x2="1670" y2="314"/>
+      <line x1="2050" y1="306" x2="2050" y2="314"/>
+      <line x1="1856" y1="120" x2="1864" y2="120"/>
+      <line x1="1856" y1="500" x2="1864" y2="500"/>
+      <line x1="1640" y1="306" x2="1640" y2="314"/>
+      <line x1="2080" y1="306" x2="2080" y2="314"/>
+      <line x1="1856" y1="90" x2="1864" y2="90"/>
+      <line x1="1856" y1="530" x2="1864" y2="530"/>
+    </g>
+    <g stroke="#38bdf8" stroke-opacity="0.8" stroke-width="2" fill="none">
+      <path d="M 1800 266 L 1800 250 L 1816 250"/>
+      <path d="M 1904 250 L 1920 250 L 1920 266"/>
+      <path d="M 1800 354 L 1800 370 L 1816 370"/>
+      <path d="M 1904 370 L 1920 370 L 1920 354"/>
+    </g>
+    <path d="M 1638 229 A 236 236 0 0 1 1941 88" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- Telescope Assembly -->
+  <!-- Tripod Base -->
+  <g>
+    <g stroke="#334155" stroke-width="3" fill="none">
+      <line x1="1060" y1="590" x2="1180" y2="595"/>
+      <line x1="1180" y1="595" x2="1310" y2="590"/>
+    </g>
+    <polygon points="1140,592 1220,592 1180,598" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+    <circle cx="1180" cy="595" r="5" fill="url(#brass-grad)"/>
+    <line x1="1165" y1="515" x2="1000" y2="655" stroke="url(#tripod-metal)" stroke-width="10" stroke-linecap="round"/>
+    <line x1="1170" y1="515" x2="1005" y2="655" stroke="#cbd5e1" stroke-width="2" stroke-opacity="0.4"/>
+    <rect x="1070" y="575" width="16" height="8" rx="2" fill="url(#brass-grad)" transform="rotate(38 1078 579)"/>
+    <circle cx="1000" cy="655" r="6" fill="#0f172a"/>
+    <line x1="1180" y1="515" x2="1180" y2="660" stroke="url(#tripod-metal)" stroke-width="12" stroke-linecap="round"/>
+    <line x1="1178" y1="515" x2="1178" y2="660" stroke="#cbd5e1" stroke-width="2.5" stroke-opacity="0.45"/>
+    <rect x="1172" y="582" width="16" height="8" rx="2" fill="url(#brass-grad)"/>
+    <circle cx="1180" cy="660" r="7" fill="#0f172a"/>
+    <line x1="1195" y1="515" x2="1360" y2="655" stroke="url(#tripod-metal)" stroke-width="10" stroke-linecap="round"/>
+    <line x1="1200" y1="515" x2="1365" y2="655" stroke="#cbd5e1" stroke-width="2" stroke-opacity="0.4"/>
+    <rect x="1275" y="575" width="16" height="8" rx="2" fill="url(#brass-grad)" transform="rotate(-38 1283 579)"/>
+    <circle cx="1360" cy="655" r="6" fill="#0f172a"/>
+    <polygon points="1145,522 1215,522 1206,502 1154,502" fill="url(#tube-dewshield)" stroke="#475569" stroke-width="1.5"/>
+    <rect x="1156" y="496" width="48" height="8" rx="2" fill="url(#brass-grad)"/>
+  </g>
+  <!-- Mount Mechanism -->
+  <g>
+    <line x1="1180" y1="492" x2="1135" y2="572" stroke="url(#chrome-grad)" stroke-width="7" stroke-linecap="round"/>
+    <rect x="1134" y="532" width="28" height="32" rx="4" fill="url(#tube-dewshield)" stroke="#475569" stroke-width="1.5" transform="rotate(-28 1148 548)"/>
+    <circle cx="1148" cy="548" r="6" fill="url(#brass-grad)"/>
+    <circle cx="1180" cy="492" r="22" fill="url(#tube-dewshield)" stroke="#64748b" stroke-width="1.5"/>
+    <circle cx="1180" cy="492" r="15" fill="url(#brass-grad)"/>
+    <circle cx="1180" cy="492" r="7" fill="#0f172a"/>
+    <line x1="1195" y1="482" x2="1212" y2="468" stroke="url(#chrome-grad)" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="1214" cy="466" r="6" fill="url(#brass-grad)"/>
+  </g>
+  <!-- Telescope Optical Tube (Angle: -15.0 deg) -->
+  <g transform="translate(1180, 492) rotate(-15.0)">
+    <!-- Finder Scope -->
+    <rect x="0" y="-36" width="6" height="12" fill="url(#brass-grad)"/>
+    <rect x="90" y="-36" width="6" height="12" fill="url(#brass-grad)"/>
+    <rect x="-15" y="-42" width="130" height="12" rx="2" fill="url(#tube-dewshield)" stroke="#475569" stroke-width="0.8"/>
+    <rect x="-15" y="-41" width="130" height="3" fill="#cbd5e1" fill-opacity="0.4"/>
+    <rect x="-2" y="-43" width="10" height="14" rx="1" fill="url(#brass-grad)"/>
+    <rect x="88" y="-43" width="10" height="14" rx="1" fill="url(#brass-grad)"/>
+    <rect x="-25" y="-40" width="10" height="8" rx="1" fill="#0f172a"/>
+    <rect x="115" y="-44" width="12" height="16" rx="2" fill="url(#brass-grad)"/>
+    <ellipse cx="126" cy="-36" rx="2" ry="7" fill="url(#lens-reflection)"/>
+    <!-- Main Tube -->
+    <rect x="-75" y="-26" width="255" height="52" rx="2" fill="url(#tube-body)"/>
+    <rect x="-75" y="-18" width="255" height="6" fill="#ffffff" fill-opacity="0.45"/>
+    <line x1="-75" y1="0" x2="180" y2="0" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1"/>
+    <!-- Tube Rings & Dovetail Plate -->
+    <rect x="-35" y="-29" width="15" height="58" rx="3" fill="url(#brass-grad)" stroke="#78350f" stroke-width="0.8"/>
+    <circle cx="-27.5" cy="-22" r="2.5" fill="#fef08a"/>
+    <circle cx="-27.5" cy="22" r="2.5" fill="#fef08a"/>
+    <rect x="35" y="-29" width="15" height="58" rx="3" fill="url(#brass-grad)" stroke="#78350f" stroke-width="0.8"/>
+    <circle cx="42.5" cy="-22" r="2.5" fill="#fef08a"/>
+    <circle cx="42.5" cy="22" r="2.5" fill="#fef08a"/>
+    <rect x="-40" y="27" width="95" height="9" rx="2" fill="url(#chrome-grad)" stroke="#334155" stroke-width="1"/>
+    <!-- Dew Shield & Objective Lens -->
+    <polygon points="180,-26 195,-34 195,34 180,26" fill="url(#tube-dewshield)"/>
+    <rect x="180" y="-27" width="6" height="54" fill="url(#brass-grad)"/>
+    <rect x="195" y="-34" width="55" height="68" rx="2" fill="url(#tube-dewshield)"/>
+    <rect x="195" y="-24" width="55" height="8" fill="#ffffff" fill-opacity="0.35"/>
+    <rect x="246" y="-35" width="10" height="70" rx="3" fill="url(#brass-grad)" stroke="#78350f" stroke-width="1"/>
+    <path d="M 252 -33 Q 260 0 252 33 Z" fill="url(#lens-reflection)" filter="url(#subtle-glow)"/>
+    <ellipse cx="254" cy="0" rx="4" ry="32" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.8"/>
+    <!-- Focuser & Eyepiece -->
+    <rect x="-92" y="-28" width="17" height="56" rx="2" fill="url(#tube-dewshield)"/>
+    <rect x="-92" y="-27" width="4" height="54" fill="url(#brass-grad)"/>
+    <rect x="-145" y="-20" width="53" height="40" fill="url(#chrome-grad)" stroke="#475569" stroke-width="0.8"/>
+    <rect x="-145" y="-14" width="53" height="5" fill="#ffffff" fill-opacity="0.5"/>
+    <line x1="-140" y1="-20" x2="-140" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-134" y1="-20" x2="-134" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-128" y1="-20" x2="-128" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-122" y1="-20" x2="-122" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-116" y1="-20" x2="-116" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-110" y1="-20" x2="-110" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-104" y1="-20" x2="-104" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <line x1="-98" y1="-20" x2="-98" y2="-15" stroke="#475569" stroke-width="0.8"/>
+    <rect x="-115" y="16" width="14" height="12" rx="2" fill="url(#chrome-grad)"/>
+    <circle cx="-108" cy="28" r="14" fill="url(#brass-grad)" stroke="#78350f" stroke-width="1"/>
+    <circle cx="-108" cy="28" r="10" fill="#d97706"/>
+    <circle cx="-108" cy="28" r="5" fill="url(#chrome-grad)"/>
+    <polygon points="-145,-22 -178,-22 -185,-10 -185,15 -175,22 -145,22" fill="url(#tube-dewshield)" stroke="#475569" stroke-width="1"/>
+    <rect x="-147" y="-22" width="4" height="44" fill="url(#brass-grad)"/>
+    <g transform="translate(-168, -22) rotate(-60)">
+      <rect x="0" y="-12" width="14" height="24" fill="url(#chrome-grad)"/>
+      <rect x="14" y="-14" width="6" height="28" rx="1" fill="url(#brass-grad)"/>
+      <rect x="20" y="-13" width="22" height="26" rx="2" fill="#0f172a"/>
+      <rect x="42" y="-15" width="8" height="30" rx="3" fill="#1e293b"/>
+      <ellipse cx="49" cy="0" rx="2" ry="13" fill="url(#lens-reflection)"/>
+    </g>
+  </g> <!-- end telescope tube -->
+  <!-- Brand Typography & Identity (Strictly brief-compliant) -->
+  <g>
+    <g transform="translate(142, 215)" stroke="#38bdf8" fill="none">
+      <circle cx="16" cy="16" r="15" stroke-width="1.8" stroke-opacity="0.8"/>
+      <circle cx="16" cy="16" r="8" stroke-width="1.2" stroke-opacity="0.5" stroke-dasharray="3 3"/>
+      <line x1="1" y1="16" x2="31" y2="16" stroke-width="1" stroke-opacity="0.4"/>
+      <line x1="16" y1="1" x2="16" y2="31" stroke-width="1" stroke-opacity="0.4"/>
+      <circle cx="16" cy="16" r="3.5" fill="#38bdf8"/>
+    </g>
+    <text x="140" y="328" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="84" font-weight="800" letter-spacing="-1.5">
+      <tspan fill="#ffffff">system-</tspan><tspan fill="#38bdf8">explorer</tspan>
+    </text>
+    <text x="142" y="388" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="26" font-weight="400" fill="#94a3b8" letter-spacing="0.5">
+      Evidence-based maps of modular agent systems
+    </text>
+    <line x1="142" y1="416" x2="380" y2="416" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="2"/>
+    <circle cx="380" cy="416" r="2.5" fill="#38bdf8"/>
+  </g>
+</svg>
