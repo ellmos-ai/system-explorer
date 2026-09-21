@@ -4,6 +4,8 @@ from __future__ import annotations
 import types
 from pathlib import Path
 
+import pytest
+
 from system_explorer.host_bridge import (
     BRIDGE_SCHEMA,
     create_readonly_panel,
@@ -44,6 +46,8 @@ def test_panel_contract_is_explicitly_get_only() -> None:
 
 
 def test_panel_exposes_read_only_status_and_rejects_writes(tmp_path: Path) -> None:
+    pytest.importorskip("fastapi")
+    pytest.importorskip("httpx")
     with Store(tmp_path / "evidence.db"):
         pass
     app = create_readonly_panel(_config(tmp_path))
@@ -58,6 +62,8 @@ def test_panel_exposes_read_only_status_and_rejects_writes(tmp_path: Path) -> No
 
 
 def test_compatible_host_gets_mounted_panel(tmp_path: Path) -> None:
+    pytest.importorskip("fastapi")
+    pytest.importorskip("httpx")
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
