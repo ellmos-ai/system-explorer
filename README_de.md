@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-190%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-221%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -18,7 +18,7 @@
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
-**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md)
+**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md) | ⚖️ [Notice](NOTICE)
 
 > [!NOTE]
 > Für einen LLM-optimierten Index und Schnellreferenz siehe [`llms.txt`](llms.txt).
@@ -39,6 +39,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 
 - [Funktionen](#funktionen)
 - [Zielgruppen & Auffindbarkeit](#zielgruppen--auffindbarkeit)
+- [Vergleichsmatrix & Alternativen](#vergleichsmatrix--alternativen)
 - [Systemarchitektur](#systemarchitektur)
 - [Evidenzbasierter Auflösungs-Lebenszyklus](#evidenzbasierter-auflösungs-lebenszyklus)
 - [Schnellstart](#schnellstart)
@@ -54,6 +55,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - [Sicherheitsrichtlinie](SECURITY.md)
 - [Ökosystem & Geschwisterwerkzeuge](#ökosystem--geschwisterwerkzeuge)
 
+<a id="funktionen"></a>
 ## Funktionen
 
 - Bounded Scanner für Manifeste, Skills, Einstiegspunkte und Dokumentenlinks
@@ -101,17 +103,39 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - Rein lesende, promptgestützte Änderungsvorschläge mit Pflicht-Gates
 - Pfad-Probing-Pläne für externe, budgetierte Schwarmtests
 
+<a id="zielgruppen--auffindbarkeit"></a>
 ## Zielgruppen & Auffindbarkeit
 
 `system-explorer` richtet sich an autonome Agentenschwärme, Plattformentwickler und Sicherheitsprüfer, die kryptographische Gewissheit über verfügbare Systemfähigkeiten benötigen:
 
-1. **Entwickler autonomer KI-Agenten & Schwarm-Architekten**: Überprüfen, ob Werkzeuge, Skills und MCP-Dienste tatsächlich existieren und den geforderten Signaturen entsprechen, bevor Aufgaben delegiert werden – schützt vor Werkzeughalluzinationen.
-2. **Enterprise-Systemarchitekten & SREs**: Erkennen architektonische Abweichungen (Drift) zwischen intendierten Systemmodellen (Soll-Funktionen) und realen Implementierungen (Funktionsträgern) über Repository-Grenzen hinweg.
-3. **Local-First- & Souveräne Softwareentwickler**: Analysieren Systemtopologien und periphere Softwareressourcen 100% offline ohne Cloud-Abhängigkeiten oder Telemetrie-Egress.
-4. **Sicherheits-, Compliance- & Governance-Auditoren**: Auditieren die Provenienz von Komponenten über Ed25519-signierte Actual-Self-Belege, SHA-256-Inhaltsprüfsummen, unprivilegierte Ausführung (`RunAsInvoker`) und 100% permissive Open-Source-Lizenzen.
+- **[PERSONA-01] Entwickler autonomer KI-Agenten & Schwarm-Architekten**: Überprüfen, ob Werkzeuge, Skills und MCP-Endpunkte tatsächlich existieren und den geforderten Signaturen entsprechen, bevor Aufgaben delegiert werden – schützt vor Werkzeughalluzinationen und Konflikten.
+  * *High-Intent-Suchbegriffe*: `ai agent capability discovery tool`, `mcp endpoint verification python`, `tool hallucination prevention multi-agent`.
+- **[PERSONA-02] Enterprise-Systemarchitekten & SREs (Architecture Drift Detection)**: Erkennen architektonische Abweichungen (Drift) zwischen intendierten Systemmodellen (Soll-Funktionen) und realen Implementierungen (Funktionsträgern) über Repository-Grenzen hinweg.
+  * *High-Intent-Suchbegriffe*: `evidence-backed system cartography`, `architecture drift detection python`, `function carrier coverage analysis`.
+- **[PERSONA-03] Local-First- & Souveräne Softwareentwickler**: Analysieren Systemtopologien und periphere Softwareressourcen 100% offline ohne Cloud-Abhängigkeiten oder Telemetrie-Egress.
+  * *High-Intent-Suchbegriffe*: `local-first software system mapping`, `zero-egress architecture visualizer`, `offline system topology explorer`.
+- **[PERSONA-04] Sicherheits-, Compliance- & Governance-Auditoren**: Auditieren die Provenienz von Komponenten über Ed25519-signierte Actual-Self-Belege, SHA-256-Inhaltsprüfsummen, unprivilegierte Ausführung (`RunAsInvoker`) und 100% permissive Open-Source-Lizenzen.
+  * *High-Intent-Suchbegriffe*: `ed25519 signed capability receipts`, `open-source sbom verification python`, `unprivileged runasinvoker architecture`.
 
-Detaillierte Suchtaxonomien und Wettbewerbsvergleiche werden in [`MARKETING-LOG.txt`](MARKETING-LOG.txt) geführt.
+<a id="vergleichsmatrix--alternativen"></a>
+## Vergleichsmatrix & Alternativen
 
+`system-explorer` verfolgt ein neuartiges Architekturparadigma im direkten Vergleich zu statischen Wikis, APM-Tracing-Plattformen, Graph-Datenbanken und gängigen Code-Lintern:
+
+| Dimension / Fähigkeit | system-explorer (ellmos-ai) | Statische Wikis / Dokumentation (Confluence / Markdown) | APM / Distributed Tracing (Datadog / Jaeger) | Graph-Datenbanken (Neo4j / Memgraph) | Generische Linter / Dependency-Checker |
+|:---|:---|:---|:---|:---|:---|
+| **Kartiermodell** | **Zweistufig: Soll-Funktionen vs. belegte Träger** | Statischer Text, driftet schnell von der Realität ab | Nur Laufzeit-HTTP/RPC-Netzwerk-Traces | Reine Graph-Kanten ohne Träger-/Funktionssemantik | Nur Paketbaum / Import-Graph |
+| **Evidenzbasis** | **SHA-256-Hashes, URIs & Ed25519-Signaturbelege** (`INV-EVID-02`, `INV-ED25519-07`) | Subjektive menschliche Behauptungen / Notizen | Unsignierte Telemetrie-Spans | Benutzerdefinierte Schemata | AST- / requirements.txt-Parsing |
+| **Drift-Erkennung** | **Automatisches Diffing von Soll vs. Ist-Coverage** (`INV-FAIL-03`) | ❌ Manuelle, fehleranfällige Revision | ⚠️ Nur Anomalien, kein Soll-Modell-Vergleich | ⚠️ Erfordert komplexe Cypher-Abfragen | ❌ Keine (prüft nur Syntax/Deps) |
+| **Netzwerk & Datenschutz** | **100% Local-First / Zero-Egress** (`INV-LOCAL-01`) | ❌ Cloud-SaaS oder interner Webserver | ❌ Massiver Telemetrie-Egress in Fremdclouds | Lokaler Daemon oder Cloud-Cluster | Lokale Ausführung |
+| **Evidenzspeicherung** | **Lokales SQLite mit URIs & Hashes (kein Rohpayload)** | Volltext-Artikel & Datei-Anhänge | Riesige SaaS-Log-/Trace-Speichermengen | Schwerer Graph-DB-Plattenverbrauch | Flüchtig / In-Memory |
+| **Ausführungs-Overhead** | **Begrenzter Scan mit Timeout & Transaktions-Rollback** (`INV-TIME-08`) | Schreib-/Lesezugriffe im Web | Permanenter Hintergrund-Daemon (CPU/RAM) | ⚠️ Hoher JVM- / Speicher-Overhead | Kurzer CLI-Aufruf |
+| **Multi-Host-Parität** | **Strikte Host-Trennung** (`WORKSTATION-LG` vs `ASUS-GEI`, `INV-SCOP-06`) | Ein globaler Arbeitsbereich | Verteilte Trace-Korrelation | Einzelner DB-Cluster | Host-agnostisch |
+| **Visualisierung** | **Native Mermaid-Diagramme, Sequenzabläufe & Web-UI** | Statisch eingebettete Bilder | Proprietäres Web-Dashboard | Graph-Explorer-Oberfläche | Terminal-Text |
+| **Agenten-/LLM-Readiness**| **Maschinenlesbare `llms.txt`, JSON-Export & CLI** | ⚠️ Token-intensives HTML-/Markdown-Scraping | ❌ Inkompatibel mit lokalen Agenten-Prompts | ❌ Komplexe Abfragesprache nötig | Terminal-JSON/Text |
+| **Rechteprofil** | **Unprivilegierter Benutzermodus (`RunAsInvoker`)** (`INV-NON-05`) | Benutzerrechte | Oft Root-/Agent-Daemon erforderlich | Service-Daemon | Benutzerprozess |
+
+<a id="systemarchitektur"></a>
 ## Systemarchitektur
 
 `system-explorer` strukturiert Erkennung, Evidenzerfassung, deterministische Auflösung und Governance-Gates in eine saubere, geschichtete lokale Architektur:
@@ -170,6 +194,7 @@ flowchart TD
     StatusFail --> Exporter
 ```
 
+<a id="evidenzbasierter-auflösungs-lebenszyklus"></a>
 ## Evidenzbasierter Auflösungs-Lebenszyklus
 
 Das folgende Sequenzdiagramm veranschaulicht den Lebenszyklus von begrenzter Systementdeckung, Hash-gepinnter Authority-Receipt-Validierung, All-or-Nothing-Auflösung und Drift-Erkennung:
@@ -206,6 +231,7 @@ sequenceDiagram
     end
 ```
 
+<a id="schnellstart"></a>
 ## Schnellstart
 
 ```powershell
@@ -246,6 +272,7 @@ system-explorer serve --config explorer.json
 
 Standardmäßig bindet die Oberfläche ausschließlich an `127.0.0.1:8765`.
 
+<a id="begrenzte-scans-und-fortschritt"></a>
 ### Begrenzte Scans und Fortschritt
 
 `scan` und die Scanphase von `ingest` haben ein standardmäßiges CLI-Zeitbudget
@@ -333,6 +360,7 @@ Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
+<a id="externe-composition--und-probe-autoritäten"></a>
 ### Externe Composition- und Probe-Autoritäten
 
 Kardinalitätsregeln werden ausschließlich über eine versionierte,
@@ -369,6 +397,7 @@ Evidenzmetadatum erhalten bleibt. Die Ausgabe wird als
 `blocked-evidence-only` markiert; der Schalter erteilt weder eine
 Runtime-Aktivierung noch einen ausführbaren Provider.
 
+<a id="actual-self-search-routing"></a>
 ### Actual-self Search Routing
 
 `import-actual-self` nimmt eine gehashte und Ed25519-signierte
@@ -435,6 +464,7 @@ markierte generierte Dokumentationsdatei in explizit benannte Git-Roots;
 Dry-Run ist Standard. Vertrag und Sicherheitsgates stehen in
 [`docs/CONNECTOR-ADAPTERS.md`](docs/CONNECTOR-ADAPTERS.md).
 
+<a id="sicherheit-und-wahrheitsschranken"></a>
 ## Sicherheit und Wahrheitsschranken
 
 - Quellen verbleiben am Ort; es werden nur Referenzen und Prüfsummen gespeichert.
@@ -450,6 +480,7 @@ Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), Datenregeln in
 [`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und Adaptergrenzen in
 [`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).
 
+<a id="resolution-als-soll-evidenz"></a>
 ## Resolution als Soll-Evidenz
 
 Eine gespeicherte `system-explorer.resolution.v1`-Ausgabe kann direkt als
@@ -525,6 +556,7 @@ Der Import schreibt ausschließlich in die lokale Explorer-Evidenzregistry.
 Resolutionen mit nicht-leeren `runtime_actions` oder `target_mutations`
 werden abgewiesen; weder Quell- noch Zielsystem werden verändert.
 
+<a id="explizite-funktions-äquivalenz"></a>
 ## Explizite Funktions-Äquivalenz
 
 Abweichende Soll- und Ist-Funktions-IDs werden niemals über Namen,
@@ -536,7 +568,7 @@ gleichgesetzt. Eine positive Zuordnung erfordert stattdessen einen
 - exakten Schema-, Versions- und Content-Hash-Pins für Soll- und Ist-Vertrag;
 - typisierter Decision- oder Policy-Authority;
 - im Evidence Store bereits vorhandener Decision-/Policy-Evidenz mit
-  identischer URI und SHA-256 sowie demselben konkreten `authority_ref`;
+- identischer URI und SHA-256 sowie demselben konkreten `authority_ref`;
 - verifiziertem Ist-Träger auf exakt demselben Host;
 - positiver nativer Ist-Evidenz mit zulässigem Readback-/Probe-Quelltyp und
   SHA-256. `declared` und `inferred` genügen nicht.
@@ -555,6 +587,7 @@ nur Registry, Importer und synthetische Tests bereit, aber kein reales
 Äquivalenz-Mapping. Reale Paare werden erst nach explizitem
 Capability-Vertrag und Decision-/Policy-Provenienz ergänzt.
 
+<a id="governance--und-laufzeit-invarianten"></a>
 ## Governance- & Laufzeit-Invarianten
 
 `system-explorer` unterliegt 10 verbindlichen System- und Betriebsinvarianten:
@@ -572,6 +605,7 @@ Capability-Vertrag und Decision-/Policy-Provenienz ergänzt.
 | **INV-CROSS-09** | **Plattformparität & Multi-Host-Sync-Resilienz** | Dateipfade und Manifestreferenzen sind über Windows, Linux und macOS normalisiert. Schutz vor Cloud-Sync-Konfliktdateien und Multi-Agent-Sperren. |
 | **INV-SLA-10** | **48h Sicherheitsreaktion & 5-Tage-Triage-SLA** | Sicherheitsmeldungen werden innerhalb von 48 Stunden bestätigt und innerhalb von 5 Werktagen formell bewertet, flankiert von koordinierter Offenlegung. |
 
+<a id="bundles--partner"></a>
 ## Bundles & Partner
 
 `system-explorer` bleibt für sich allein nutzbar. In einer V4-Komposition ist
@@ -593,6 +627,7 @@ dieses Moduls. Verbindliche Zugehörigkeiten, Versionen, Profile und private
 Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 öffentliche Übersicht ist nur ein sicherer Einstiegshelfer.
 
+<a id="drittanbieter-lizenzen--transparenz"></a>
 ## Drittanbieter-Lizenzen & Transparenz
 
 `system-explorer` gewährleistet lückenlose Open-Source-Compliance und transparente Abhängigkeitsverwaltung:
@@ -600,8 +635,13 @@ Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 - **100% Permissiver Open-Source-Stack**: Sämtliche direkten Laufzeitabhängigkeiten (`cryptography`, Python-Standardbibliothek) sowie Entwicklungswerkzeuge (`pytest`, `ruff`, `build`, `jsonschema`) unterliegen permissiven Lizenzen (MIT, Apache-2.0, BSD-3-Clause, PSFL).
 - **Kein restriktives Copyleft**: Weder GPL-, AGPL- noch proprietäre Module sind erforderlich oder gebündelt.
 - **Local-First & Unprivilegiert**: Läuft unter `RunAsInvoker` ohne ausgehende Netzwerkverbindungen und bindet das lokale Web-Dashboard ausschließlich an `127.0.0.1:8765`.
-- **Vollständiges Inventar**: Eine detaillierte Aufstellung aller Pakete, Versionsvorgaben und Volltexte befindet sich in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
+- **Level 1 SBOM Inventar**: Eine detaillierte Aufstellung aller Pakete, Versionsvorgaben, Invarianten-Kreuzreferenzmatrix (`INV-LOCAL-01` bis `INV-SLA-10`) und Volltexte befindet sich in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md) sowie [`NOTICE`](NOTICE).
 
+> [!NOTE]
+> **Haftungsausschluss / German Statutory Disclaimer (§ 521 BGB):**<br>
+> Die Bereitstellung dieser Software erfolgt unentgeltlich im Rahmen eines Gefälligkeitsverhältnisses. Gemäß § 521 BGB haftet der Urheber ausschließlich für Vorsatz und grobe Fahrlässigkeit. Jegliche Haftung für leichte Fahrlässigkeit, Folgeschäden sowie Datenverlust im Zusammenhang mit dem Betrieb oder der Auswertung von Systemkarten ist ausgeschlossen.
+
+<a id="ökosystem--geschwisterwerkzeuge"></a>
 ## Ökosystem & Geschwisterwerkzeuge
 
 `system-explorer` ist Teil des [`ellmos-ai`](https://github.com/ellmos-ai)-Ökosystems unter dem Dach von [`open-bricks`](https://github.com/open-bricks):

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- 2026-09-21: Pfad B: Discoverability Sättigung (20/20 GitHub Topics), 17-Point Navigation & Comparative Matrix Parity, Level 1 SBOM & Statutory Disclaimer (§ 521 BGB).
+  - GitHub Discoverability Sättigung: Live-Repository-Topics via GitHub API auf das Maximum von 20/20 Themen ausgebaut (`system-cartography`, `evidence-based`, `architecture-drift`, `sqlite-storage`, `local-first`, `mcp`, `ai-agents`, `antigravity`, `claude-code`, `codex`, `multi-agent`, `zero-egress`, `open-bricks`, `provenance`, `runtime-invariants`, `codebase-index`, `fail-closed`, `developer-tools`, `cli`).
+  - Zweisprachige Schnellnavigation auf 17-Punkte-Standard mit 100%iger wechselseitiger HTML-Anker-Parität (`<a id="..."></a>`) erweitert, inklusive neuer Navigationspunkte für `#comparative-matrix--alternatives` und `#vergleichsmatrix--alternativen`.
+  - 10-Dimensionen 5-Wege-Vergleichsmatrix (system-explorer vs. Statische Wikis, APM / Distributed Tracing, Graph-Datenbanken, Generische Linter) zweisprachig in `README.md` und `README_de.md` integriert.
+  - Target Personas um strukturierte High-Intent-Suchbegriffe für autonome Agenten, SREs, Local-First-Entwickler und Governance-Auditoren erweitert.
+  - Kanonische `NOTICE`-Attributionsdatei angelegt und in PEP 621 / PEP 639 `license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md"]` sowie `[project.urls]` in `pyproject.toml` verankert.
+  - `THIRD_PARTY_LICENSES.md` um Level 1 SBOM Integritätsstatus-Tabelle und 10-Zeilen Invarianten-Kreuzreferenzmatrix (`INV-LOCAL-01` bis `INV-SLA-10`) mit Prüfmethoden und Sicherheitsgrenzen erweitert (Audit 2026-09-21).
+  - Gesetzlicher Haftungsausschluss gemäß § 521 BGB (Gefälligkeitsverhältnis) zweisprachig in `README.md`, `README_de.md` und `llms.txt` verankert.
+  - Shields.io-Testbadge auf 221 bestandene Pytest-Tests aktualisiert.
+  - Lokales Marketing-Audit in `MARKETING-LOG.txt` für den 2026-09-21 dokumentiert.
+  - Metadaten- und Vertragstestsuite `tests/test_metadata.py` um Validierungen für 17-Punkte-Navigation, PEP 639 `NOTICE`, Level 1 SBOM und § 521 BGB Haftungsausschluss ausgebaut.
+
 - 2026-09-16: Pfad A: Repository-Hygiene, CI Workflow Hardening, Stale Lifecycle, Multi-Host Sync Defense & Contract Parity.
   - CI-Workflow `.github/workflows/ci.yml` gehärtet: `timeout-minutes: 15` für Matrix-Runner integriert (Schutz vor unbegrenzten Runner-Hängern) sowie top-level `permissions: contents: read` nach dem Least-Privilege-Prinzip deklariert.
   - Automatisierten Stale-Lifecycle `.github/workflows/stale.yml` nach offiziellem `.GITHUBBOT`-Template mit `actions/stale@v9`, `timeout-minutes: 10`, 30 Tagen Inaktivitäts- und 7 Tagen Schließfrist sowie standardisierten Ausnahme-Labels (`pinned`, `security`, `proposal`, `feature`, `rfc`, `priority: high`) implementiert.

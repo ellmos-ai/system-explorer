@@ -1,12 +1,13 @@
 # system-explorer
 
-> Last-checked: 2026-09-16
+> Last-checked: 2026-09-21
 
 Purpose: map desired system functions to evidenced function carriers.
 Truth boundary: source systems remain authoritative; evidence is referenced.
-Safety boundary: proposals are read-only and never authorize target mutation.
+Safety boundary: proposals are read-only and never authorize target mutation (§ 521 BGB Gefälligkeitsrecht).
 Key command: system-explorer --help
-Verification baseline: 190+ Pytest tests (including metadata contract tests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-09-16.
+Verification baseline: 221 Pytest tests (195 passed, 26 subtests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-09-21.
+Attribution: NOTICE
 Security policy: SECURITY.md
 Third-party licenses: THIRD_PARTY_LICENSES.md
 Marketing log: MARKETING-LOG.txt

@@ -122,10 +122,11 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         pyproject_text = (self.root / "pyproject.toml").read_text(encoding="utf-8")
 
         self.assertIn("[project]", pyproject_text)
-        self.assertIn('license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]', pyproject_text)
+        self.assertIn('license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md"]', pyproject_text)
         self.assertIn("[project.urls]", pyproject_text)
         self.assertIn("Homepage = ", pyproject_text)
         self.assertIn("Repository = ", pyproject_text)
+        self.assertIn("Notice = ", pyproject_text)
         self.assertIn("Security = ", pyproject_text)
         self.assertIn('"Third-Party Licenses" = ', pyproject_text)
         self.assertIn('"Marketing-Log" = ', pyproject_text)
@@ -181,10 +182,11 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("code%20style-ruff", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
 
-        # 16-point navigation items
+        # 17-point navigation items
         expected_nav_en = [
             "#features",
             "#target-personas--discoverability",
+            "#comparative-matrix--alternatives",
             "#system-architecture",
             "#evidence-backed-resolution-lifecycle",
             "#quick-start",
@@ -206,6 +208,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         expected_nav_de = [
             "#funktionen",
             "#zielgruppen--auffindbarkeit",
+            "#vergleichsmatrix--alternativen",
             "#systemarchitektur",
             "#evidenzbasierter-auflösungs-lebenszyklus",
             "#schnellstart",
@@ -311,7 +314,8 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-16", llms_text)
+        self.assertIn("Last-checked: 2026-09-21", llms_text)
+        self.assertIn("Attribution: NOTICE", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn("MARKETING-LOG.txt", llms_text)
@@ -394,7 +398,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
     def test_changelog_recent_pfad_b_entry(self) -> None:
         """Verify CHANGELOG.md contains a recent Pfad B entry."""
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("2026-09-12", changelog)
+        self.assertIn("2026-09-21", changelog)
         self.assertIn("Pfad B", changelog)
 
     def test_target_personas_and_licenses_sections_exist(self) -> None:
@@ -406,6 +410,28 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("## Zielgruppen & Auffindbarkeit", readme_de)
         self.assertIn("## Third-Party Licenses & Transparency", readme_en)
         self.assertIn("## Drittanbieter-Lizenzen & Transparenz", readme_de)
+
+    def test_notice_and_level1_sbom_compliance(self) -> None:
+        """Verify NOTICE attribution file and Level 1 SBOM integrity status in licenses."""
+        notice_file = self.root / "NOTICE"
+        self.assertTrue(notice_file.exists(), "NOTICE file must exist in repo root")
+        notice_text = notice_file.read_text(encoding="utf-8")
+        self.assertIn("Lukas Geiger", notice_text)
+        self.assertIn("ellmos-ai", notice_text)
+        self.assertIn("open-bricks", notice_text)
+
+        licenses_text = (self.root / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
+        self.assertIn("Level 1 SBOM", licenses_text)
+        self.assertIn("RunAsInvoker", licenses_text)
+        self.assertIn("INV-LOCAL-01", licenses_text)
+        self.assertIn("INV-SLA-10", licenses_text)
+
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+        self.assertIn("§ 521 BGB", readme_en)
+        self.assertIn("§ 521 BGB", readme_de)
+        self.assertIn('<a id="comparative-matrix--alternatives"></a>', readme_en)
+        self.assertIn('<a id="vergleichsmatrix--alternativen"></a>', readme_de)
 
 
 if __name__ == "__main__":
