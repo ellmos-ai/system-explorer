@@ -2,7 +2,7 @@
 
 **Project:** `system-explorer`<br>
 **License:** [MIT License](LICENSE)<br>
-**Audit Date:** 2026-09-21 (Version 0.4.2)
+**Audit Date:** 2026-09-26 (Version 0.4.2)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Metric | Status | Guarantee & Architectural Enforcement |
 |:---|:---|:---|
-| **Level 1 SBOM Audit** | **PASS** | Complete direct runtime, test, and tooling dependency ledger verified (Stand 2026-09-21). |
+| **Level 1 SBOM Audit** | **PASS** | Complete direct runtime, test, and tooling dependency ledger verified (Stand 2026-09-26, canonical attribution in `NOTICE`). |
 | **Zero-Copyleft Isolation** | **100% Permissive** | 0% AGPL, 0% GPL, 0% LGPL in runtime codebase. Unrestricted commercial and open-source integration. |
 | **Non-Elevation Security** | **RunAsInvoker Certified** | Routine scanning, mapping, and CLI execution operate strictly in unprivileged user mode. |
 | **Zero-Egress Isolation** | **100% Air-Gapped** | Zero network sockets, zero remote telemetry, local web dashboard bound exclusively to `127.0.0.1:8765` (`INV-LOCAL-01`). |

@@ -314,13 +314,14 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-21", llms_text)
+        self.assertIn("Last-checked: 2026-09-26", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn("MARKETING-LOG.txt", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn(".github/workflows/stale.yml", llms_text)
+        self.assertIn(".github/workflows/welcome.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
         self.assertRegex(llms_text, r"\d+.*Pytest tests")
 
@@ -351,16 +352,18 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn(partner, readme_de, f"Missing partner {partner} in README_de.md")
 
     def test_pytest_configuration_and_flags(self) -> None:
-        """Verify pyproject.toml defines standardized pytest testpaths and addopts."""
+        """Verify pyproject.toml defines standardized pytest testpaths, addopts, and norecursedirs."""
         pyproject = (self.root / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn("[tool.pytest.ini_options]", pyproject)
+        self.assertIn('minversion = "7.0"', pyproject)
         self.assertIn('testpaths = ["tests"]', pyproject)
-        self.assertIn('addopts = "-ra -v"', pyproject)
+        self.assertIn('addopts = "-ra -v --basetemp=.pytest_temp"', pyproject)
+        self.assertIn("norecursedirs = [", pyproject)
 
     def test_changelog_recent_pfad_a_entry(self) -> None:
         """Verify CHANGELOG.md contains a recent Pfad A hygiene entry."""
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("2026-09-16", changelog)
+        self.assertIn("2026-09-26", changelog)
         self.assertIn("Pfad A", changelog)
 
     def test_ci_workflow_hardening(self) -> None:
@@ -432,6 +435,42 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("§ 521 BGB", readme_de)
         self.assertIn('<a id="comparative-matrix--alternatives"></a>', readme_en)
         self.assertIn('<a id="vergleichsmatrix--alternativen"></a>', readme_de)
+
+    def test_welcome_workflow_provisioned(self) -> None:
+        """Verify welcome workflow is configured with first-interaction, timeout, and least privilege."""
+        welcome_path = self.root / ".github" / "workflows" / "welcome.yml"
+        self.assertTrue(welcome_path.is_file(), "welcome.yml missing")
+        welcome_text = welcome_path.read_text(encoding="utf-8")
+        self.assertIn("actions/first-interaction@v3", welcome_text)
+        self.assertIn("timeout-minutes: 5", welcome_text)
+        self.assertIn("concurrency:", welcome_text)
+        self.assertIn("cancel-in-progress: true", welcome_text)
+        self.assertIn("issues: write", welcome_text)
+        self.assertIn("pull-requests: write", welcome_text)
+
+    def test_stale_workflow_concurrency(self) -> None:
+        """Verify stale issues and PRs lifecycle workflow defines concurrency controls."""
+        stale_path = self.root / ".github" / "workflows" / "stale.yml"
+        self.assertTrue(stale_path.is_file(), "stale.yml missing")
+        stale_text = stale_path.read_text(encoding="utf-8")
+        self.assertIn("concurrency:", stale_text)
+        self.assertIn("group: stale-${{ github.ref }}", stale_text)
+        self.assertIn("cancel-in-progress: true", stale_text)
+
+    def test_gitignore_canonical_lock_guards(self) -> None:
+        """Verify .gitignore contains canonical multi-agent locks and test cache guards."""
+        gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("LOCK.user.*", gitignore_text)
+        self.assertIn("LOCK.until.*", gitignore_text)
+        self.assertIn("LOCK.condition.*", gitignore_text)
+        self.assertIn(".automation-lock", gitignore_text)
+        self.assertIn("!package-lock.json", gitignore_text)
+        self.assertIn(".pytest_temp/", gitignore_text)
+        self.assertIn(".hypothesis/", gitignore_text)
+        self.assertIn("*-ASUS*", gitignore_text)
+        self.assertIn("*-MacBook*", gitignore_text)
+        self.assertIn("*-WORKSTATION-LG*", gitignore_text)
+        self.assertIn("*-WORKSTATION-LG.*", gitignore_text)
 
 
 if __name__ == "__main__":

@@ -51,15 +51,24 @@ data/
 *.log
 .*.todo-archive-*.json
 
-# Sync conflicts and locks
+# Sync conflicts and multi-host defense
 *-conflict-*
 *.sync-temp-*
 *.sync-conflict-*
 *.conflict
 *-CONFLIT-*
-*-WORKSTATION-LG*
+*-ASUS*
 *-ASUS-GEI*
+*-LAPTOP*
+*-Mac Studio*
+*-MacBook*
+*-IDEAPAD*
+*-WORKSTATION*
+*_WORKSTATION*
+*-WORKSTATION-LG*
+*_WORKSTATION-LG*
 *-WORKSTATION.*
+*-WORKSTATION-LG.*
 * (kopie)*
 * (Kopie)*
 * (copy)*
@@ -67,12 +76,26 @@ data/
 *conflicted copy*
 *.orig
 *.rej
+
+# Canonical locks and defense
 LOCK
 LOCK.*
-*.lock
 LOCK*.txt
+LOCK.user.*
+LOCK.until.*
+LOCK.condition.*
 LOCK.permissions.json
+.automation-lock
 uv.lock
+!package-lock.json
+
+# Test, coverage and tooling caches
+.pytest_temp/
+.pytest_tmp*/
+.hypothesis/
+.turbo/
+.nyc_output/
+.tox/
 
 # Scratch and build caches
 wheelhouse/
