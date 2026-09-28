@@ -1,0 +1,166 @@
+THIRD-PARTY LICENSES & LEVEL 1 SBOM NOTICE
+Project: ellmos-ai/system-explorer
+Audited: 2026-09-28 (Prior audits: 2026-09-26, 2026-09-21, 2026-09-12, 2026-09-08)
+Repository Version: 0.4.2 (Version Freeze per T-20260920-167562623)
+Repository License: MIT License (see LICENSE)
+Repository Attribution Notice: NOTICE (see NOTICE)
+Architecture & Privacy: 100% Local-First, Zero-Egress, Unprivileged User-Mode (RunAsInvoker), Fail-Closed
+
+================================================================================
+1. EXECUTIVE SUMMARY & COMPLIANCE ASSURANCE
+================================================================================
+
+system-explorer is engineered under strict architectural and governance invariants:
+100% Local-First, Zero-Egress, unprivileged user-mode execution (RunAsInvoker),
+and fail-closed safety gate interception. The engine constructs evidence-backed
+system cartographies, separates desired functions from concrete function carriers,
+verifies cryptographic receipts, and identifies architecture drift.
+
+All direct, optional, and development dependencies utilized across system-explorer
+are distributed under strictly permissive open-source licenses (MIT, Apache-2.0,
+BSD-3-Clause, PSFL-2.0). There are zero copyleft, GPL, or AGPL-style viral
+dependencies, guaranteeing complete operational safety for enterprise
+integration, autonomous agent fleets, and security-critical deployments.
+Canonical copyright and ecosystem attributions are formally preserved in the
+root NOTICE file.
+
+================================================================================
+2. LEVEL 1 SBOM & INVARIANT CROSS-REFERENCE MATRIX
+================================================================================
+
+Invariant ID  | Operational Scope & Guarantee       | Technical Enforcement                  | License Scope
+--------------+-------------------------------------+----------------------------------------+-------------------
+INV-LOCAL-01  | Local-First & Zero-Egress           | Loopback 127.0.0.1:8765, zero telemetry| PSFL-2.0 / MIT
+INV-EVID-02   | Immutable Evidence & Checksums      | SQLite3, hashlib (SHA-256)             | PSFL-2.0 / MIT
+INV-FAIL-03   | Fail-Closed Resolution & Anti-Drift | Resolver & Bridge engine               | PSFL-2.0 / MIT
+INV-RO-04     | Read-Only Governance & Zero Mutation| CLI and API surface (§ 521 BGB)        | PSFL-2.0 / MIT
+INV-NON-05    | Non-Elevation & RunAsInvoker        | Unprivileged user process model        | PSFL-2.0 / MIT
+INV-SCOP-06   | Strict Scope & Host Isolation       | Host binding verification              | PSFL-2.0 / MIT
+INV-ED25519-07| Cryptographic Receipt Integrity     | cryptography Ed25519 engine            | Apache-2 / BSD-3
+INV-TIME-08   | Bounded Scan Time & Rollback        | Transactional SQLite with time budget  | PSFL-2.0 / MIT
+INV-CROSS-09  | Cross-Platform Parity & Sync Defense| .gitignore, multi-agent lock protocols | PSFL-2.0 / MIT
+INV-SLA-10    | 48h Response / 5d Triage SLA        | SECURITY.md (security@open-bricks.org) | MIT
+
+================================================================================
+3. ZERO-COPYLEFT ISOLATION GUARANTEE & RUNASINVOKER CERTIFICATION
+================================================================================
+
+1. Zero-Copyleft Isolation Guarantee:
+   All core runtime dependencies operate strictly under permissive open-source
+   licenses (MIT, Apache-2.0, BSD-3-Clause, PSFL-2.0). The codebase, build definitions,
+   and runtime interfaces are completely free of GPL, AGPL, LGPL, SSPL, or
+   reciprocal copyleft obligations.
+
+2. Unprivileged Execution (RunAsInvoker):
+   system-explorer enforces unprivileged user-mode execution under INV-NON-05.
+   All repository scanning, AST parsing, SQLite mapping, and local web dashboard
+   interfaces operate strictly within non-elevated user context without requiring
+   administrative elevation, root privileges, or daemon background services.
+
+3. Fail-Closed Security & Reversible Action Defense:
+   Under INV-FAIL-03 and INV-RO-04, missing authority receipts, unknown claims, or
+   signature mismatches immediately fail closed into a quarantine state.
+   All mapping and proposal functions operate read-only and never mutate scanned
+   codebases without explicit operator command.
+
+================================================================================
+4. RUNTIME DEPENDENCY INVENTORY
+================================================================================
+
+Package                  | Version Range  | SPDX License               | Purpose / Functional Scope
+-------------------------+----------------+----------------------------+---------------------------------------------------
+cryptography             | >=41           | Apache-2.0 OR BSD-3-Clause | Ed25519 signature verification for runtime receipts
+Python Standard Library  | >=3.10         | PSFL-2.0                   | Core runtime (hashlib, sqlite3, pathlib, json)
+
+================================================================================
+5. OPTIONAL EXTRAS & DEVELOPMENT DEPENDENCIES
+================================================================================
+
+Package                  | Category       | SPDX License               | Purpose / Functional Scope
+-------------------------+----------------+----------------------------+---------------------------------------------------
+pytest                   | Dev / QA       | MIT                        | Automated unit, contract, and regression testing
+ruff                     | Dev / QA       | MIT OR Apache-2.0          | Fast Python linter and code formatting validation
+build                    | Dev / Build    | MIT                        | PEP 517 build frontend and package verification
+jsonschema               | Dev / QA       | MIT                        | Strict schema validation for stack pins & receipts
+fastapi                  | Extra:gui      | MIT                        | Optional local web inspection dashboard
+httpx                    | Extra:gui      | BSD-3-Clause               | HTTP client for internal loopback test harness
+
+================================================================================
+6. LICENSE TEXTS
+================================================================================
+
+--- Apache License Version 2.0 (Apache-2.0) ---
+Applies to: cryptography, ruff
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+--- BSD 3-Clause License (BSD-3-Clause) ---
+Applies to: cryptography, httpx
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--- MIT License (MIT) ---
+Applies to: system-explorer, pytest, build, jsonschema, fastapi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--- Python Software Foundation License Version 2 (PSFL-2.0) ---
+Applies to: Python Standard Library
+
+1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and
+   the Individual or Organization ("Licensee") accessing and otherwise using this
+   software ("Python") in source or binary form and its associated documentation.
+2. Subject to the terms and conditions of this License Agreement, PSF hereby
+   grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
+   analyze, test, perform and/or display publicly, prepare derivative works,
+   distribute, and otherwise use Python alone or in any derivative version,
+   provided, however, that PSF's License Agreement and PSF's notice of copyright,
+   i.e., "Copyright (c) 2001-2026 Python Software Foundation; All Rights Reserved"
+   are retained in Python alone or in any derivative version prepared by Licensee.

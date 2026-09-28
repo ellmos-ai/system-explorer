@@ -11,6 +11,8 @@
 [![Security](https://img.shields.io/badge/security-Local--First%20%7C%20Fail--Closed-orange.svg)](SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/third--party-100%25%20permissive-brightgreen.svg)](THIRD_PARTY_LICENSES.md)
+[![Level 1 SBOM](https://img.shields.io/badge/Level%201%20SBOM-Plain--Text-brightgreen.svg)](THIRD_PARTY_LICENSES.txt)
+[![Verified: 2026-09-28](https://img.shields.io/badge/Verified-2026--09--28-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
 [![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -18,7 +20,7 @@
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
-[🇩🇪 Deutsch](README_de.md) | **🇬🇧 English** | 🛡️ [Security Policy](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Third-Party Licenses](THIRD_PARTY_LICENSES.md) | ⚖️ [Notice](NOTICE)
+[🇩🇪 Deutsch](README_de.md) | **🇬🇧 English** | 🛡️ [Security Policy](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Third-Party Licenses](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
 
 > [!NOTE]
 > For LLM-optimized index and quick reference, see [`llms.txt`](llms.txt).

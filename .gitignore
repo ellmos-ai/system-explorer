@@ -1,7 +1,9 @@
 # OS / editor noise
 .DS_Store
 Thumbs.db
+ehthumbs.db
 desktop.ini
+Desktop.ini
 *.swp
 *.swo
 
@@ -63,6 +65,7 @@ data/
 *-Mac Studio*
 *-MacBook*
 *-IDEAPAD*
+*-IDEAPAD-GEI*
 *-WORKSTATION*
 *_WORKSTATION*
 *-WORKSTATION-LG*

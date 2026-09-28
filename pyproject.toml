@@ -9,20 +9,29 @@ description = "Evidence-backed system maps for functions, carriers, entry points
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md"]
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt"]
 authors = [{ name = "Lukas Geiger", email = "lukas@open-bricks.org" }]
 keywords = [
-    "ellmos",
-    "system-explorer",
-    "architecture",
-    "drift-detection",
-    "system-mapping",
+    "architecture-drift",
+    "entrypoints",
     "evidence-based",
     "local-first",
-    "zero-egress",
+    "python",
+    "static-analysis",
+    "system-mapping",
+    "ai-agents",
+    "antigravity",
+    "claude-code",
+    "cli",
+    "codebase-index",
+    "codex",
+    "developer-tools",
+    "fail-closed",
+    "multi-agent",
     "open-bricks",
-    "ai-governance",
-    "function-carrier"
+    "provenance",
+    "zero-egress",
+    "runtime-invariants"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -57,6 +66,7 @@ Changelog = "https://github.com/ellmos-ai/system-explorer/blob/main/CHANGELOG.md
 Security = "https://github.com/ellmos-ai/system-explorer/blob/main/SECURITY.md"
 Notice = "https://github.com/ellmos-ai/system-explorer/blob/main/NOTICE"
 "Third-Party Licenses" = "https://github.com/ellmos-ai/system-explorer/blob/main/THIRD_PARTY_LICENSES.md"
+"Third-Party Licenses (Text)" = "https://github.com/ellmos-ai/system-explorer/blob/main/THIRD_PARTY_LICENSES.txt"
 "Marketing-Log" = "https://github.com/ellmos-ai/system-explorer/blob/main/MARKETING-LOG.txt"
 "LLM-Ready" = "https://github.com/ellmos-ai/system-explorer/blob/main/llms.txt"
 "Parent Organization" = "https://github.com/ellmos-ai"

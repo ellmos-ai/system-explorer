@@ -34,6 +34,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             "SECURITY.md",
             "LICENSE",
             "THIRD_PARTY_LICENSES.md",
+            "THIRD_PARTY_LICENSES.txt",
             "CHANGELOG.md",
             "llms.txt",
             "ARCHITECTURE.md",
@@ -122,19 +123,22 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         pyproject_text = (self.root / "pyproject.toml").read_text(encoding="utf-8")
 
         self.assertIn("[project]", pyproject_text)
-        self.assertIn('license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md"]', pyproject_text)
+        self.assertIn('license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt"]', pyproject_text)
         self.assertIn("[project.urls]", pyproject_text)
         self.assertIn("Homepage = ", pyproject_text)
         self.assertIn("Repository = ", pyproject_text)
         self.assertIn("Notice = ", pyproject_text)
         self.assertIn("Security = ", pyproject_text)
         self.assertIn('"Third-Party Licenses" = ', pyproject_text)
+        self.assertIn('"Third-Party Licenses (Text)" = ', pyproject_text)
         self.assertIn('"Marketing-Log" = ', pyproject_text)
         self.assertIn('"LLM-Ready" = ', pyproject_text)
         self.assertIn('"Parent Organization" = "https://github.com/ellmos-ai"', pyproject_text)
         self.assertIn('"Umbrella Ecosystem" = "https://github.com/open-bricks"', pyproject_text)
         self.assertIn("Topic :: Security", pyproject_text)
         self.assertIn("Topic :: System :: Monitoring", pyproject_text)
+        self.assertIn("architecture-drift", pyproject_text)
+        self.assertIn("runtime-invariants", pyproject_text)
         self.assertIn("[tool.ruff]", pyproject_text)
         self.assertIn("cryptography>=41", pyproject_text)
 
@@ -276,6 +280,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Pfad B", content)
         self.assertIn("2026-09-09", content)
         self.assertIn("2026-09-12", content)
+        self.assertIn("2026-09-28", content)
         self.assertIn("INV-LOCAL-01", content)
         self.assertIn("INV-SLA-10", content)
         self.assertIn("TARGET PERSONAS", content)
@@ -314,14 +319,18 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-26", llms_text)
+        self.assertIn("Last-checked: 2026-09-28", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
+        self.assertIn("THIRD_PARTY_LICENSES.txt", llms_text)
         self.assertIn("MARKETING-LOG.txt", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn(".github/workflows/stale.yml", llms_text)
         self.assertIn(".github/workflows/welcome.yml", llms_text)
+        self.assertIn(".github/workflows/auto-assign.yml", llms_text)
+        self.assertIn(".github/workflows/label-sync.yml", llms_text)
+        self.assertIn(".github/labels.yml", llms_text)
         self.assertIn("ARCHITECTURE.md", llms_text)
         self.assertRegex(llms_text, r"\d+.*Pytest tests")
 
@@ -363,7 +372,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
     def test_changelog_recent_pfad_a_entry(self) -> None:
         """Verify CHANGELOG.md contains a recent Pfad A hygiene entry."""
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("2026-09-26", changelog)
+        self.assertIn("2026-09-28", changelog)
         self.assertIn("Pfad A", changelog)
 
     def test_ci_workflow_hardening(self) -> None:
@@ -471,6 +480,70 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("*-MacBook*", gitignore_text)
         self.assertIn("*-WORKSTATION-LG*", gitignore_text)
         self.assertIn("*-WORKSTATION-LG.*", gitignore_text)
+
+    def test_auto_assign_workflow_provisioned(self) -> None:
+        """Verify auto-assign workflow is configured with github-script, timeout, and least privilege."""
+        workflow_path = self.root / ".github" / "workflows" / "auto-assign.yml"
+        self.assertTrue(workflow_path.is_file(), "auto-assign.yml missing")
+        content = workflow_path.read_text(encoding="utf-8")
+        self.assertIn("actions/github-script@v7", content)
+        self.assertIn("timeout-minutes: 5", content)
+        self.assertIn("concurrency:", content)
+        self.assertIn("cancel-in-progress: true", content)
+        self.assertIn("pull-requests: write", content)
+
+    def test_label_sync_workflow_and_manifest(self) -> None:
+        """Verify label-sync workflow and canonical labels.yml manifest exist and define 11 standard labels."""
+        workflow_path = self.root / ".github" / "workflows" / "label-sync.yml"
+        self.assertTrue(workflow_path.is_file(), "label-sync.yml missing")
+        wf_content = workflow_path.read_text(encoding="utf-8")
+        self.assertIn("EndBug/label-sync@v2", wf_content)
+        self.assertIn("timeout-minutes: 5", wf_content)
+        self.assertIn("concurrency:", wf_content)
+        self.assertIn("cancel-in-progress: true", wf_content)
+        self.assertIn("issues: write", wf_content)
+        self.assertIn(".github/labels.yml", wf_content)
+
+        labels_path = self.root / ".github" / "labels.yml"
+        self.assertTrue(labels_path.is_file(), "labels.yml missing")
+        labels_content = labels_path.read_text(encoding="utf-8")
+        for label in [
+            "bug",
+            "enhancement",
+            "good first issue",
+            "help wanted",
+            "documentation",
+            "duplicate",
+            "wontfix",
+            "priority: high",
+            "priority: low",
+            "needs-triage",
+            "stale",
+        ]:
+            self.assertIn(label, labels_content)
+
+    def test_level1_sbom_text_companion(self) -> None:
+        """Verify Level 1 SBOM text companion THIRD_PARTY_LICENSES.txt structure and invariants."""
+        sbom_path = self.root / "THIRD_PARTY_LICENSES.txt"
+        self.assertTrue(sbom_path.is_file(), "THIRD_PARTY_LICENSES.txt missing")
+        self.assertGreater(sbom_path.stat().st_size, 0)
+        content = sbom_path.read_text(encoding="utf-8")
+        self.assertIn("LEVEL 1 SBOM", content)
+        self.assertIn("INV-LOCAL-01", content)
+        self.assertIn("INV-SLA-10", content)
+        self.assertIn("RunAsInvoker", content)
+        self.assertIn("Zero-Copyleft", content)
+        self.assertIn("Apache-2.0", content)
+        self.assertIn("BSD-3-Clause", content)
+        self.assertIn("MIT License", content)
+        self.assertIn("PSFL-2.0", content)
+
+    def test_gitignore_multi_host_and_os_noise(self) -> None:
+        """Verify .gitignore contains extended multi-host sync and OS noise patterns."""
+        gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("Desktop.ini", gitignore_text)
+        self.assertIn("ehthumbs.db", gitignore_text)
+        self.assertIn("*-IDEAPAD-GEI*", gitignore_text)
 
 
 if __name__ == "__main__":
