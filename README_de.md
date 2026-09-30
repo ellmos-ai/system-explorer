@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-224%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-231%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -12,7 +12,7 @@
 [![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/third--party-100%25%20permissive-brightgreen.svg)](THIRD_PARTY_LICENSES.md)
 [![Level 1 SBOM](https://img.shields.io/badge/Level%201%20SBOM-Plain--Text-brightgreen.svg)](THIRD_PARTY_LICENSES.txt)
-[![Verified: 2026-09-28](https://img.shields.io/badge/Verified-2026--09--28-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
+[![Geprüft: 2026-09-30](https://img.shields.io/badge/Gepr%C3%BCft-2026--09--30-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
 [![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -39,25 +39,28 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 
 ## Schnellnavigation
 
-- [Funktionen](#funktionen)
-- [Zielgruppen & Auffindbarkeit](#zielgruppen--auffindbarkeit)
-- [Vergleichsmatrix & Alternativen](#vergleichsmatrix--alternativen)
-- [Systemarchitektur](#systemarchitektur)
-- [Evidenzbasierter Auflösungs-Lebenszyklus](#evidenzbasierter-auflösungs-lebenszyklus)
-- [Schnellstart](#schnellstart)
-- [Begrenzte Scans & Fortschritt](#begrenzte-scans-und-fortschritt)
-- [Externe Composition- & Probe-Autoritäten](#externe-composition--und-probe-autoritäten)
-- [Actual-Self Search Routing](#actual-self-search-routing)
-- [Sicherheit & Wahrheitsschranken](#sicherheit-und-wahrheitsschranken)
-- [Resolution als Soll-Evidenz](#resolution-als-soll-evidenz)
-- [Explizite Funktions-Äquivalenz](#explizite-funktions-äquivalenz)
-- [Governance- & Laufzeit-Invarianten](#governance--und-laufzeit-invarianten)
-- [Bundles & Partner](#bundles--partner)
-- [Drittanbieter-Lizenzen & Transparenz](#drittanbieter-lizenzen--transparenz)
-- [Sicherheitsrichtlinie](SECURITY.md)
-- [Ökosystem & Geschwisterwerkzeuge](#ökosystem--geschwisterwerkzeuge)
+| # | Abschnitt (DE) | Section (EN) | Anker |
+|---|---|---|---|
+| 01 | [Funktionen & Fähigkeiten](#sec-01) | [Features & Capabilities](#sec-01) | [`#sec-01`](#sec-01) |
+| 02 | [Zielgruppen & Auffindbarkeit](#sec-02) | [Target Personas & Discoverability](#sec-02) | [`#sec-02`](#sec-02) |
+| 03 | [Vergleichsmatrix vs. Alternativen](#sec-03) | [Comparative Matrix vs. Alternatives](#sec-03) | [`#sec-03`](#sec-03) |
+| 04 | [Visuelle Systemarchitektur & Topologie](#sec-04) | [Visual Architecture & Topology](#sec-04) | [`#sec-04`](#sec-04) |
+| 05 | [Evidenzbasierter Auflösungs-Lebenszyklus](#sec-05) | [Evidence-Backed Resolution Lifecycle](#sec-05) | [`#sec-05`](#sec-05) |
+| 06 | [Schnellstart & CLI-Workflows](#sec-06) | [Quick Start & CLI Workflows](#sec-06) | [`#sec-06`](#sec-06) |
+| 07 | [Begrenzte Scans & Fortschritt](#sec-07) | [Bounded Scans & Progress](#sec-07) | [`#sec-07`](#sec-07) |
+| 08 | [Externe Composition- & Probe-Autoritäten](#sec-08) | [External Composition & Probe Authorities](#sec-08) | [`#sec-08`](#sec-08) |
+| 09 | [Actual-Self Search Routing](#sec-09) | [Actual-Self Search Routing](#sec-09) | [`#sec-09`](#sec-09) |
+| 10 | [Sicherheit & Wahrheitsschranken](#sec-10) | [Security & Truth Boundaries](#sec-10) | [`#sec-10`](#sec-10) |
+| 11 | [Resolution als Soll-Evidenz](#sec-11) | [Resolution as Desired Evidence](#sec-11) | [`#sec-11`](#sec-11) |
+| 12 | [Explizite Funktions-Äquivalenz](#sec-12) | [Explicit Function Equivalence](#sec-12) | [`#sec-12`](#sec-12) |
+| 13 | [Governance- & Laufzeit-Invarianten](#sec-13) | [Governance & Runtime Invariants](#sec-13) | [`#sec-13`](#sec-13) |
+| 14 | [Bundles & Partner](#sec-14) | [Bundles & Partners](#sec-14) | [`#sec-14`](#sec-14) |
+| 15 | [Ökosystem & Geschwisterwerkzeuge](#sec-15) | [Ecosystem & Sibling Tools](#sec-15) | [`#sec-15`](#sec-15) |
+| 16 | [Tests, Verifikation & Qualitätssicherung](#sec-16) | [Testing, Verification & Quality Assurance](#sec-16) | [`#sec-16`](#sec-16) |
+| 17 | [Drittanbieter-Lizenzen & Level 1 SBOM](#sec-17) | [Third-Party Licenses & Level 1 SBOM](#sec-17) | [`#sec-17`](#sec-17) |
+| 18 | [Gesetzlicher Haftungsausschluss & Reaktions-SLA (§ 521 BGB)](#sec-18) | [Statutory Disclaimer & Response SLA (§ 521 BGB)](#sec-18) | [`#sec-18`](#sec-18) |
 
-<a id="funktionen"></a>
+<a id="sec-01"></a><a id="funktionen"></a>
 ## Funktionen
 
 - Bounded Scanner für Manifeste, Skills, Einstiegspunkte und Dokumentenlinks
@@ -105,7 +108,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - Rein lesende, promptgestützte Änderungsvorschläge mit Pflicht-Gates
 - Pfad-Probing-Pläne für externe, budgetierte Schwarmtests
 
-<a id="zielgruppen--auffindbarkeit"></a>
+<a id="sec-02"></a><a id="zielgruppen--auffindbarkeit"></a>
 ## Zielgruppen & Auffindbarkeit
 
 `system-explorer` richtet sich an autonome Agentenschwärme, Plattformentwickler und Sicherheitsprüfer, die kryptographische Gewissheit über verfügbare Systemfähigkeiten benötigen:
@@ -119,7 +122,7 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 - **[PERSONA-04] Sicherheits-, Compliance- & Governance-Auditoren**: Auditieren die Provenienz von Komponenten über Ed25519-signierte Actual-Self-Belege, SHA-256-Inhaltsprüfsummen, unprivilegierte Ausführung (`RunAsInvoker`) und 100% permissive Open-Source-Lizenzen.
   * *High-Intent-Suchbegriffe*: `ed25519 signed capability receipts`, `open-source sbom verification python`, `unprivileged runasinvoker architecture`.
 
-<a id="vergleichsmatrix--alternativen"></a>
+<a id="sec-03"></a><a id="vergleichsmatrix--alternativen"></a>
 ## Vergleichsmatrix & Alternativen
 
 `system-explorer` verfolgt ein neuartiges Architekturparadigma im direkten Vergleich zu statischen Wikis, APM-Tracing-Plattformen, Graph-Datenbanken und gängigen Code-Lintern:
@@ -137,8 +140,53 @@ Coverage sichtbar. Eine Funktion ohne belegten Träger ist nicht bloß
 | **Agenten-/LLM-Readiness**| **Maschinenlesbare `llms.txt`, JSON-Export & CLI** | ⚠️ Token-intensives HTML-/Markdown-Scraping | ❌ Inkompatibel mit lokalen Agenten-Prompts | ❌ Komplexe Abfragesprache nötig | Terminal-JSON/Text |
 | **Rechteprofil** | **Unprivilegierter Benutzermodus (`RunAsInvoker`)** (`INV-NON-05`) | Benutzerrechte | Oft Root-/Agent-Daemon erforderlich | Service-Daemon | Benutzerprozess |
 
-<a id="systemarchitektur"></a>
+<a id="sec-04"></a><a id="systemarchitektur"></a>
 ## Systemarchitektur
+
+### ASCII Vier-Ebenen-Architekturtopologie
+
+```text
++----------------------------------------------------------------------------------------+
+[EBENE 1: CLI-LAUFZEITEN, BENUTZEROBERFLÄCHEN & AUTOMATIONS-EINSTIEGSPUNKTE]
+------------------------------------------------------------------------------------------
+ +-------------------------+  +-------------------------+  +--------------------------+
+ |  system-explorer CLI    |  |  Lokales Web-Dashboard  |  |  Transkript- & Probe-    |
+ |  (scan, ingest, map,    |  |  (127.0.0.1:8765        |  |  Adapter (Codex, Claude, |
+ |   system-resolve, etc.) |  |   nur Loopback)         |  |   Gemini/agy, Kimi)      |
+ +-------------------------+  +-------------------------+  +--------------------------+
+                                           |
+                                           v
++----------------------------------------------------------------------------------------+
+[EBENE 2: SOVEREIGN CARTOGRAPHY ENGINE & DRIFT-DETEKTION]
+------------------------------------------------------------------------------------------
+ +------------------------------------------------------------------------------------+
+ | Bounded Scanner Engine  | V4 Composition Resolver | Actual-Self Search Router      |
+ | - Manifeste, Skills     | - Pinned Subsystem Refs | - Ed25519 Receipt Verifier     |
+ | - Steuerdokumente       | - Provider-Kardinalität | - Scoped Decision Authority    |
+ | - Funktionsträger       | - Strikte Host-Bindung  | - Gehashte Funktionsäquivalenz |
+ +------------------------------------------------------------------------------------+
+                                           |
+                                           v
++----------------------------------------------------------------------------------------+
+[EBENE 3: SQLITE EVIDENZ-LEDGER, ED25519 SUCH-QUITTUNGEN & TRUST STORE]
+------------------------------------------------------------------------------------------
+ +-------------------------+  +-------------------------+  +--------------------------+
+ | Lokales SQLite Evidenz- |  | Receipt Trust Store     |  | Exporter & Storyboard-   |
+ | Ledger (URIs, Locators, |  | (Ed25519 Public Keys,   |  | Pipeline (JSON, Mermaid, |
+ |  SHA-256 Prüfsummen)    |  |  Datei-SHA-256-Pins)    |  |  ASCII, HTML, ai-media)  |
+ +-------------------------+  +-------------------------+  +--------------------------+
+                                           |
+                                           v
++----------------------------------------------------------------------------------------+
+[EBENE 4: AIR-GAP SCHUTZPERIMETER, ZERO-EGRESS & GOVERNANCE-GRENZE]
+------------------------------------------------------------------------------------------
+ +-------------------------+  +-------------------------+  +--------------------------+
+ | 100% Local-First        |  | Fail-Closed Anti-Drift  |  | Unprivilegierte Ausf.    |
+ | - Kein Netzwerk-Egress  |  | - Mismatch -> Blockiert |  | - RunAsInvoker User Mode |
+ | - Loopback 127.0.0.1    |  | - 0 Ziel-Mutation       |  | - 48h Reaktions-SLA      |
+ +-------------------------+  +-------------------------+  +--------------------------+
++----------------------------------------------------------------------------------------+
+```
 
 `system-explorer` strukturiert Erkennung, Evidenzerfassung, deterministische Auflösung und Governance-Gates in eine saubere, geschichtete lokale Architektur:
 
@@ -196,7 +244,7 @@ flowchart TD
     StatusFail --> Exporter
 ```
 
-<a id="evidenzbasierter-auflösungs-lebenszyklus"></a>
+<a id="sec-05"></a><a id="evidenzbasierter-auflösungs-lebenszyklus"></a>
 ## Evidenzbasierter Auflösungs-Lebenszyklus
 
 Das folgende Sequenzdiagramm veranschaulicht den Lebenszyklus von begrenzter Systementdeckung, Hash-gepinnter Authority-Receipt-Validierung, All-or-Nothing-Auflösung und Drift-Erkennung:
@@ -233,7 +281,7 @@ sequenceDiagram
     end
 ```
 
-<a id="schnellstart"></a>
+<a id="sec-06"></a><a id="schnellstart"></a>
 ## Schnellstart
 
 ```powershell
@@ -274,8 +322,8 @@ system-explorer serve --config explorer.json
 
 Standardmäßig bindet die Oberfläche ausschließlich an `127.0.0.1:8765`.
 
-<a id="begrenzte-scans-und-fortschritt"></a>
-### Begrenzte Scans und Fortschritt
+<a id="sec-07"></a><a id="begrenzte-scans-und-fortschritt"></a>
+## Begrenzte Scans und Fortschritt
 
 `scan` und die Scanphase von `ingest` haben ein standardmäßiges CLI-Zeitbudget
 von 300 Sekunden. Jeder Root wird als eigener transaktionaler Checkpoint
@@ -362,8 +410,8 @@ Receipts, nicht in das hostneutrale Binding-Manifest.
 Resolverausgaben werden nur bei explizitem `--output` atomar geschrieben;
 Runtime-Aktionen und Zielsystemmutationen bleiben ausgeschlossen.
 
-<a id="externe-composition--und-probe-autoritäten"></a>
-### Externe Composition- und Probe-Autoritäten
+<a id="sec-08"></a><a id="externe-composition--und-probe-autorit-ten"></a><a id="externe-composition--und-probe-autoritäten"></a>
+## Externe Composition- und Probe-Autoritäten
 
 Kardinalitätsregeln werden ausschließlich über eine versionierte,
 SHA-256-gepinnte externe Referenz konsumiert. Der Evaluator prüft `exact`,
@@ -399,8 +447,8 @@ Evidenzmetadatum erhalten bleibt. Die Ausgabe wird als
 `blocked-evidence-only` markiert; der Schalter erteilt weder eine
 Runtime-Aktivierung noch einen ausführbaren Provider.
 
-<a id="actual-self-search-routing"></a>
-### Actual-self Search Routing
+<a id="sec-09"></a><a id="actual-self-search-routing"></a>
+## Actual-self Search Routing
 
 `import-actual-self` nimmt eine gehashte und Ed25519-signierte
 `ellmos.actual-self-component-receipt.v1` aus einer nativen
@@ -466,7 +514,7 @@ markierte generierte Dokumentationsdatei in explizit benannte Git-Roots;
 Dry-Run ist Standard. Vertrag und Sicherheitsgates stehen in
 [`docs/CONNECTOR-ADAPTERS.md`](docs/CONNECTOR-ADAPTERS.md).
 
-<a id="sicherheit-und-wahrheitsschranken"></a>
+<a id="sec-10"></a><a id="sicherheit-und-wahrheitsschranken"></a>
 ## Sicherheit und Wahrheitsschranken
 
 - Quellen verbleiben am Ort; es werden nur Referenzen und Prüfsummen gespeichert.
@@ -482,7 +530,7 @@ Details stehen in [ARCHITECTURE.md](ARCHITECTURE.md), Datenregeln in
 [`docs/EVIDENCE-MODEL.md`](docs/EVIDENCE-MODEL.md) und Adaptergrenzen in
 [`docs/PROVIDER-ADAPTERS.md`](docs/PROVIDER-ADAPTERS.md).
 
-<a id="resolution-als-soll-evidenz"></a>
+<a id="sec-11"></a><a id="resolution-als-soll-evidenz"></a>
 ## Resolution als Soll-Evidenz
 
 Eine gespeicherte `system-explorer.resolution.v1`-Ausgabe kann direkt als
@@ -558,7 +606,7 @@ Der Import schreibt ausschließlich in die lokale Explorer-Evidenzregistry.
 Resolutionen mit nicht-leeren `runtime_actions` oder `target_mutations`
 werden abgewiesen; weder Quell- noch Zielsystem werden verändert.
 
-<a id="explizite-funktions-äquivalenz"></a>
+<a id="sec-12"></a><a id="explizite-funktions-äquivalenz"></a><a id="explizite-funktions-aequivalenz"></a>
 ## Explizite Funktions-Äquivalenz
 
 Abweichende Soll- und Ist-Funktions-IDs werden niemals über Namen,
@@ -589,7 +637,7 @@ nur Registry, Importer und synthetische Tests bereit, aber kein reales
 Äquivalenz-Mapping. Reale Paare werden erst nach explizitem
 Capability-Vertrag und Decision-/Policy-Provenienz ergänzt.
 
-<a id="governance--und-laufzeit-invarianten"></a>
+<a id="sec-13"></a><a id="governance--und-laufzeit-invarianten"></a>
 ## Governance- & Laufzeit-Invarianten
 
 `system-explorer` unterliegt 10 verbindlichen System- und Betriebsinvarianten:
@@ -607,7 +655,7 @@ Capability-Vertrag und Decision-/Policy-Provenienz ergänzt.
 | **INV-CROSS-09** | **Plattformparität & Multi-Host-Sync-Resilienz** | Dateipfade und Manifestreferenzen sind über Windows, Linux und macOS normalisiert. Schutz vor Cloud-Sync-Konfliktdateien und Multi-Agent-Sperren. |
 | **INV-SLA-10** | **48h Sicherheitsreaktion & 5-Tage-Triage-SLA** | Sicherheitsmeldungen werden innerhalb von 48 Stunden bestätigt und innerhalb von 5 Werktagen formell bewertet, flankiert von koordinierter Offenlegung. |
 
-<a id="bundles--partner"></a>
+<a id="sec-14"></a><a id="bundles--partner"></a>
 ## Bundles & Partner
 
 `system-explorer` bleibt für sich allein nutzbar. In einer V4-Komposition ist
@@ -629,21 +677,7 @@ dieses Moduls. Verbindliche Zugehörigkeiten, Versionen, Profile und private
 Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 öffentliche Übersicht ist nur ein sicherer Einstiegshelfer.
 
-<a id="drittanbieter-lizenzen--transparenz"></a>
-## Drittanbieter-Lizenzen & Transparenz
-
-`system-explorer` gewährleistet lückenlose Open-Source-Compliance und transparente Abhängigkeitsverwaltung:
-
-- **100% Permissiver Open-Source-Stack**: Sämtliche direkten Laufzeitabhängigkeiten (`cryptography`, Python-Standardbibliothek) sowie Entwicklungswerkzeuge (`pytest`, `ruff`, `build`, `jsonschema`) unterliegen permissiven Lizenzen (MIT, Apache-2.0, BSD-3-Clause, PSFL).
-- **Kein restriktives Copyleft**: Weder GPL-, AGPL- noch proprietäre Module sind erforderlich oder gebündelt.
-- **Local-First & Unprivilegiert**: Läuft unter `RunAsInvoker` ohne ausgehende Netzwerkverbindungen und bindet das lokale Web-Dashboard ausschließlich an `127.0.0.1:8765`.
-- **Level 1 SBOM Inventar**: Eine detaillierte Aufstellung aller Pakete, Versionsvorgaben, Invarianten-Kreuzreferenzmatrix (`INV-LOCAL-01` bis `INV-SLA-10`) und Volltexte befindet sich in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md) sowie [`NOTICE`](NOTICE).
-
-> [!NOTE]
-> **Haftungsausschluss / German Statutory Disclaimer (§ 521 BGB):**<br>
-> Die Bereitstellung dieser Software erfolgt unentgeltlich im Rahmen eines Gefälligkeitsverhältnisses. Gemäß § 521 BGB haftet der Urheber ausschließlich für Vorsatz und grobe Fahrlässigkeit. Jegliche Haftung für leichte Fahrlässigkeit, Folgeschäden sowie Datenverlust im Zusammenhang mit dem Betrieb oder der Auswertung von Systemkarten ist ausgeschlossen.
-
-<a id="ökosystem--geschwisterwerkzeuge"></a>
+<a id="sec-15"></a><a id="ökosystem--geschwisterwerkzeuge"></a><a id="oekosystem--geschwisterwerkzeuge"></a>
 ## Ökosystem & Geschwisterwerkzeuge
 
 `system-explorer` ist Teil des [`ellmos-ai`](https://github.com/ellmos-ai)-Ökosystems unter dem Dach von [`open-bricks`](https://github.com/open-bricks):
@@ -668,3 +702,40 @@ Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 | [`CleanMarkdown`](https://github.com/doc-bricks/CleanMarkdown) | Deterministische Markdown-Formatierungs- & Linting-Engine |
 | [`PDFtoPDFocr`](https://github.com/doc-bricks/PDFtoPDFocr) | Local-First durchsuchbare PDF-OCR & Textextraktion |
 | [`open-bricks`](https://github.com/open-bricks) | Dachorganisation für souveräne Desktop- & Entwickler-Werkzeuge |
+
+<a id="sec-16"></a><a id="tests-verifikation--qualitaetssicherung"></a>
+## Tests, Verifikation & Qualitätssicherung
+
+`system-explorer` erzwingt lückenlose Qualitätssicherung durch automatisierte Testsuiten, striktes Linting, Bytecode-Kompilierung und Vertragstests:
+
+- **Pytest-Suite**: 231 Tests (205 bestanden, 26 Subtests) mit `--basetemp=.pytest_temp` und 100% Erfolgsquote.
+- **Ruff AST Linter**: Vollständige Konformität mit PEP 8 und modernen Python 3.10+ Lint-Standards (`ruff check src tests`).
+- **Python Bytecode-Kompilierung**: Verifiziert über alle Quellbäume (`python -m compileall -q src tests`).
+- **Vertrags- & Metadaten-Invarianten**: Validiert in `tests/test_metadata.py` und `tests/test_versioning.py`.
+
+```powershell
+pytest -ra -v
+ruff check src tests
+python -m compileall -q src tests
+```
+
+<a id="sec-17"></a><a id="drittanbieter-lizenzen--level-1-sbom"></a><a id="drittanbieter-lizenzen--transparenz"></a>
+## Drittanbieter-Lizenzen & Level 1 SBOM
+
+`system-explorer` gewährleistet lückenlose Open-Source-Compliance und transparente Abhängigkeitsverwaltung:
+
+- **100% Permissiver Open-Source-Stack**: Sämtliche direkten Laufzeitabhängigkeiten (`cryptography`, Python-Standardbibliothek) sowie Entwicklungswerkzeuge (`pytest`, `ruff`, `build`, `jsonschema`) unterliegen permissiven Lizenzen (MIT, Apache-2.0, BSD-3-Clause, PSFL).
+- **Kein restriktives Copyleft**: Weder GPL-, AGPL- noch proprietäre kommerzielle Module sind erforderlich oder gebündelt.
+- **Local-First & Unprivilegiert**: Läuft unter `RunAsInvoker` ohne ausgehende Netzwerkverbindungen und bindet das lokale Web-Dashboard ausschließlich an `127.0.0.1:8765`.
+- **Level 1 SBOM Inventar**: Eine detaillierte Aufstellung aller Pakete, Upstream-Links, Invarianten-Kreuzreferenzmatrix (`INV-LOCAL-01` bis `INV-SLA-10`) und Volltexte befindet sich in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md), im Plain-Text-Begleitdokument [`THIRD_PARTY_LICENSES.txt`](THIRD_PARTY_LICENSES.txt) sowie [`NOTICE`](NOTICE).
+
+<a id="sec-18"></a><a id="gesetzlicher-haftungsausschluss--reaktions-sla"></a><a id="haftungsausschluss"></a>
+## Gesetzlicher Haftungsausschluss & Reaktions-SLA (§ 521 BGB)
+
+### 48-Stunden-Sicherheitsreaktions-SLA
+Gemäß `INV-SLA-10` werden Sicherheitsmeldungen innerhalb von 48 Stunden bestätigt und innerhalb von 5 Werktagen formell bewertet:
+- **Sicherheitskontakte**: `security@ellmos.ai`, `security@open-bricks.org`, `support@lukasgeiger.com`
+- **Koordinierte Offenlegung**: Einreichung über GitHub Security Advisories oder direkte PGP-verschlüsselte Sicherheitskontakte.
+
+### Haftungsausschluss / German Statutory Disclaimer (§ 521 BGB)
+Die Bereitstellung dieser Software erfolgt unentgeltlich im Rahmen eines Gefälligkeitsverhältnisses. Gemäß § 521 BGB haftet der Urheber ausschließlich für Vorsatz und grobe Fahrlässigkeit. Jegliche Haftung für leichte Fahrlässigkeit, Folgeschäden sowie Datenverlust im Zusammenhang mit dem Betrieb oder der Auswertung von Systemkarten ist ausgeschlossen.

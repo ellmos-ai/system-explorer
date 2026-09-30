@@ -177,7 +177,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         for doc in (readme_en, readme_de):
             self.assertIn("version-0.4.2", doc)
             self.assertIn("actions/workflows/ci.yml", doc)
-            self.assertRegex(doc, r"Pytest-\d+%20passed")
+            self.assertRegex(doc, r"Pytest-\d+%20(passed|bestanden)")
             self.assertIn("Zero--Egress", doc)
             self.assertIn("Local--First", doc)
             self.assertIn("security%20sla-48h%20response%20%7C%205d%20triage", doc)
@@ -186,50 +186,60 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("code%20style-ruff", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
 
-        # 17-point navigation items
-        expected_nav_en = [
-            "#features",
-            "#target-personas--discoverability",
-            "#comparative-matrix--alternatives",
-            "#system-architecture",
-            "#evidence-backed-resolution-lifecycle",
-            "#quick-start",
-            "#bounded-scans-and-progress",
-            "#external-composition-and-probe-authorities",
-            "#actual-self-search-routing",
-            "#security-and-truth-boundaries",
-            "#resolution-as-desired-evidence",
-            "#explicit-function-equivalence",
-            "#governance--runtime-invariants",
-            "#bundles--partners",
-            "#third-party-licenses--transparency",
-            "SECURITY.md",
-            "#ecosystem--sibling-tools",
-        ]
-        for nav in expected_nav_en:
-            self.assertIn(nav, readme_en, f"Missing nav anchor {nav} in README.md")
+        # 18-point dual navigation items and semantic aliases
+        for i in range(1, 19):
+            anchor = f"#sec-{i:02d}"
+            self.assertIn(anchor, readme_en, f"Missing nav anchor {anchor} in README.md")
+            self.assertIn(anchor, readme_de, f"Missing nav anchor {anchor} in README_de.md")
 
-        expected_nav_de = [
-            "#funktionen",
-            "#zielgruppen--auffindbarkeit",
-            "#vergleichsmatrix--alternativen",
-            "#systemarchitektur",
-            "#evidenzbasierter-auflösungs-lebenszyklus",
-            "#schnellstart",
-            "#begrenzte-scans-und-fortschritt",
-            "#externe-composition--und-probe-autoritäten",
-            "#actual-self-search-routing",
-            "#sicherheit-und-wahrheitsschranken",
-            "#resolution-als-soll-evidenz",
-            "#explizite-funktions-äquivalenz",
-            "#governance--und-laufzeit-invarianten",
-            "#bundles--partner",
-            "#drittanbieter-lizenzen--transparenz",
-            "SECURITY.md",
-            "#ökosystem--geschwisterwerkzeuge",
+        expected_nav_ids_en = [
+            "features",
+            "target-personas--discoverability",
+            "comparative-matrix--alternatives",
+            "system-architecture",
+            "evidence-backed-resolution-lifecycle",
+            "quick-start",
+            "bounded-scans-and-progress",
+            "external-composition-and-probe-authorities",
+            "actual-self-search-routing",
+            "security-and-truth-boundaries",
+            "resolution-as-desired-evidence",
+            "explicit-function-equivalence",
+            "governance--runtime-invariants",
+            "bundles--partners",
+            "ecosystem--sibling-tools",
+            "testing--quality-verification",
+            "third-party-licenses--transparency",
+            "statutory-disclaimer--response-sla",
         ]
-        for nav in expected_nav_de:
-            self.assertIn(nav, readme_de, f"Missing nav anchor {nav} in README_de.md")
+        for nav_id in expected_nav_ids_en:
+            self.assertIn(f'id="{nav_id}"', readme_en, f"Missing semantic anchor id='{nav_id}' in README.md")
+
+        expected_nav_ids_de = [
+            "funktionen",
+            "zielgruppen--auffindbarkeit",
+            "vergleichsmatrix--alternativen",
+            "systemarchitektur",
+            "evidenzbasierter-auflösungs-lebenszyklus",
+            "schnellstart",
+            "begrenzte-scans-und-fortschritt",
+            "externe-composition--und-probe-autoritäten",
+            "actual-self-search-routing",
+            "sicherheit-und-wahrheitsschranken",
+            "resolution-als-soll-evidenz",
+            "explizite-funktions-äquivalenz",
+            "governance--und-laufzeit-invarianten",
+            "bundles--partner",
+            "ökosystem--geschwisterwerkzeuge",
+            "tests-verifikation--qualitaetssicherung",
+            "drittanbieter-lizenzen--transparenz",
+            "gesetzlicher-haftungsausschluss--reaktions-sla",
+        ]
+        for nav_id in expected_nav_ids_de:
+            self.assertIn(f'id="{nav_id}"', readme_de, f"Missing semantic anchor id='{nav_id}' in README_de.md")
+
+        self.assertIn("SECURITY.md", readme_en)
+        self.assertIn("SECURITY.md", readme_de)
 
     def test_readme_mermaid_flowchart_architecture(self) -> None:
         """Verify Mermaid flowchart exists and models layered local architecture."""
@@ -319,7 +329,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-28", llms_text)
+        self.assertIn("Last-checked: 2026-09-30", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
@@ -410,7 +420,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
     def test_changelog_recent_pfad_b_entry(self) -> None:
         """Verify CHANGELOG.md contains a recent Pfad B entry."""
         changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("2026-09-21", changelog)
+        self.assertIn("2026-09-30", changelog)
         self.assertIn("Pfad B", changelog)
 
     def test_target_personas_and_licenses_sections_exist(self) -> None:
@@ -420,8 +430,8 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
         self.assertIn("## Target Personas & Discoverability", readme_en)
         self.assertIn("## Zielgruppen & Auffindbarkeit", readme_de)
-        self.assertIn("## Third-Party Licenses & Transparency", readme_en)
-        self.assertIn("## Drittanbieter-Lizenzen & Transparenz", readme_de)
+        self.assertIn("## Third-Party Licenses & Level 1 SBOM", readme_en)
+        self.assertIn("## Drittanbieter-Lizenzen & Level 1 SBOM", readme_de)
 
     def test_notice_and_level1_sbom_compliance(self) -> None:
         """Verify NOTICE attribution file and Level 1 SBOM integrity status in licenses."""
@@ -544,6 +554,55 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Desktop.ini", gitignore_text)
         self.assertIn("ehthumbs.db", gitignore_text)
         self.assertIn("*-IDEAPAD-GEI*", gitignore_text)
+
+    def test_ascii_four_view_topology_projection(self) -> None:
+        """Verify ASCII four-view architectural topology projection exists in Section 04 of both READMEs."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        self.assertIn("### ASCII Four-View Architectural Topology", readme_en)
+        self.assertIn("[VIEW 1: CLI RUNTIMES, USER INTERFACES & AUTOMATION ENTRY POINTS]", readme_en)
+        self.assertIn("[VIEW 2: SYSTEM-EXPLORER SOVEREIGN CORE ENGINE & CARTOGRAPHY ORCHESTRATOR]", readme_en)
+        self.assertIn("[VIEW 3: SQLITE EVIDENCE LEDGER, ED25519 SEARCH RECEIPTS & TRUST STORE]", readme_en)
+        self.assertIn("[VIEW 4: AIR-GAP DEFENSE PERIMETER, ZERO-EGRESS & GOVERNANCE BOUNDARY]", readme_en)
+
+        self.assertIn("### ASCII Vier-Ebenen-Architekturtopologie", readme_de)
+        self.assertIn("[EBENE 1: CLI-LAUFZEITEN, BENUTZEROBERFLÄCHEN & AUTOMATIONS-EINSTIEGSPUNKTE]", readme_de)
+        self.assertIn("[EBENE 2: SOVEREIGN CARTOGRAPHY ENGINE & DRIFT-DETEKTION]", readme_de)
+        self.assertIn("[EBENE 3: SQLITE EVIDENZ-LEDGER, ED25519 SUCH-QUITTUNGEN & TRUST STORE]", readme_de)
+        self.assertIn("[EBENE 4: AIR-GAP SCHUTZPERIMETER, ZERO-EGRESS & GOVERNANCE-GRENZE]", readme_de)
+
+    def test_dedicated_sections_testing_and_statutory_disclaimer(self) -> None:
+        """Verify Section 16 (Testing & QA) and Section 18 (Statutory Disclaimer & SLA) exist in both READMEs."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        # Section 16
+        self.assertIn("## Testing, Verification & Quality Assurance", readme_en)
+        self.assertIn('<a id="sec-16"></a>', readme_en)
+        self.assertIn("## Tests, Verifikation & Qualitätssicherung", readme_de)
+        self.assertIn('<a id="sec-16"></a>', readme_de)
+
+        # Section 18
+        self.assertIn("## Statutory Disclaimer & Security Response SLA (§ 521 BGB)", readme_en)
+        self.assertIn('<a id="sec-18"></a>', readme_en)
+        self.assertIn("## Gesetzlicher Haftungsausschluss & Reaktions-SLA (§ 521 BGB)", readme_de)
+        self.assertIn('<a id="sec-18"></a>', readme_de)
+
+        # SLA text and German statutory disclaimer
+        for doc in (readme_en, readme_de):
+            self.assertIn("48", doc)
+            self.assertIn("§ 521 BGB", doc)
+            self.assertIn("Gefälligkeitsverhältnis", doc)
+
+    def test_level1_sbom_audit_date_recency(self) -> None:
+        """Verify Level 1 SBOM documents reflect current 2026-09-30 audit date."""
+        licenses_md = (self.root / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
+        licenses_txt = (self.root / "THIRD_PARTY_LICENSES.txt").read_text(encoding="utf-8")
+
+        self.assertIn("Audit Date:** 2026-09-30", licenses_md)
+        self.assertIn("Stand 2026-09-30", licenses_md)
+        self.assertIn("Audited: 2026-09-30", licenses_txt)
 
 
 if __name__ == "__main__":

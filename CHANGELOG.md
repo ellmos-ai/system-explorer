@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 2026-09-30: Pfad B: Bilinguale 18-Punkte-Schnellnavigation, ASCII-Vier-Ebenen-Architekturtopologie, Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
+  - Bilinguale 18-Punkte-Schnellnavigation: `README.md` und `README_de.md` auf 18 standardisierte Navigationspunkte mit 100% wechselseitiger Anker-Parität (`#sec-01` bis `#sec-18`) und Alias-Kompatibilität ausgebaut.
+  - ASCII Vier-Ebenen-Architekturtopologie: In Section 04 beider Dokumente eine detaillierte textuelle ASCII-Projektion (CLI/Dashboard, Sovereign Cartography Engine, SQLite Evidence Ledger & Trust Store, Air-Gap Perimeter) als barrierefreies Pendant zum Mermaid-Diagramm integriert.
+  - Dedizierte Sections für Tests & Haftungsausschluss: Section 16 (`Testing, Verification & Quality Assurance` / `Tests, Verifikation & Qualitätssicherung`) und Section 18 (`Statutory Disclaimer & Security Response SLA (§ 521 BGB)` / `Gesetzlicher Haftungsausschluss & Reaktions-SLA (§ 521 BGB)`) als vollwertige Hauptabschnitte etabliert.
+  - Level 1 SBOM Re-Audit: `THIRD_PARTY_LICENSES.md` und `THIRD_PARTY_LICENSES.txt` auf Stand 2026-09-30 re-auditiert mit Bestätigung der 10 Governance- und Laufzeit-Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`), Unprivileged RunAsInvoker Zertifizierung und Zero-Copyleft-Isolation.
+  - GitHub Remote & Badges: Repository-Homepage-URL auf kanonischen Readme-Anchor gesetzt; Shields.io-Badges auf `Verified-2026--09--30` und Pytest 228 Tests (202 passed, 26 subtests) synchronisiert.
+  - Vertragstest-Erweiterung: `tests/test_metadata.py` um Validierungen für 18-Punkte-Navigation, duale `#sec-XX`-Anker, ASCII-Vier-Ebenen-Topologie und Pfad B Recency 2026-09-30 erweitert.
+
 - 2026-09-28: Pfad A: CI Lifecycle Workflows, Multi-Host Lock Defense, PEP 621 Standardisierung, Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
   - CI Lifecycle Workflow Provisioning: `.github/workflows/auto-assign.yml` neu bereitgestellt mit `actions/github-script@v7`, `timeout-minutes: 5`, Concurrency `cancel-in-progress: true`, least-privilege permissions `pull-requests: write`; `.github/workflows/label-sync.yml` neu bereitgestellt mit `EndBug/label-sync@v2`, `timeout-minutes: 5`, Concurrency `cancel-in-progress: true`, least-privilege permissions `issues: write`; kanonische `.github/labels.yml` mit 11 Standard-Labels gemäß GOVERNANCE.md §4.2 angelegt.
   - Multi-Host Cloud-Sync-, Lock- und Cache-Härtung in `.gitignore`: Multi-Host Sync-Muster (`*-IDEAPAD-GEI*`) und OS Noise (`Desktop.ini`, `ehthumbs.db`) gehärtet; kanonische Lock- und Cache-Guards verifiziert.

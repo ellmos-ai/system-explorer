@@ -1,6 +1,6 @@
 # MARKETING-LOG: ellmos-ai/system-explorer
 # Discoverability, Visual Architecture, SEO, Ecosystem & Repository Hygiene
-Date: 2026-09-28
+Date: 2026-09-30
 Operator: Antigravity / Gemini (via GITHUBBOT Pfad A / Pfad B)
 Target Repo: ellmos-ai/system-explorer
 Canonical Path: C:\_Local_DEV\repos\system-explorer
@@ -18,6 +18,7 @@ Version: 0.4.2
 # [2026-09-21 11:55:00 CEST] [GITHUBBOT_ONE_REPO_MARKETING_AND_DESIGN] ACTION: PFAD_B_UPGRADE | REPO: ellmos-ai/system-explorer | SCOPE: GitHub Topics discoverability saturation to 20/20 topics via gh repo edit, 17-point Quick Navigation standard with 100% reciprocal anchor parity (<a id="...">), 10-dimension 5-way comparative matrix, canonical NOTICE file & Level 1 SBOM integrity status in THIRD_PARTY_LICENSES.md with INV-LOCAL-01 to INV-SLA-10 cross-reference matrix, statutory disclaimer (§ 521 BGB Gefälligkeitsverhältnis) bilingual integration, Pytest badge refresh to 221 passed, and expanded contract test suite.
 # [2026-09-26 10:20:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: CI lifecycle workflows (.github/workflows/welcome.yml provisioned with first-interaction@v3, stale.yml concurrency hardened), multi-host cloud-sync and lock defense in .gitignore (*-ASUS*, *-LAPTOP*, *-MacBook*, LOCK.user.*, .automation-lock), PEP 621 pytest configuration hardening (addopts = "-ra -v --basetemp=.pytest_temp", norecursedirs), Level 1 SBOM re-audit Stand 2026-09-26, llms.txt & README test badges parity (221 passed / 195 passed + 26 subtests), and contract test expansion in tests/test_metadata.py (100% green).
 # [2026-09-28 22:25:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: CI lifecycle workflows (.github/workflows/auto-assign.yml, .github/workflows/label-sync.yml, .github/labels.yml standard labels), multi-host cloud-sync and lock defense in .gitignore (*-IDEAPAD-GEI*, Desktop.ini, ehthumbs.db), PEP 621 metadata standardization (license-files with THIRD_PARTY_LICENSES.txt, Third-Party Licenses (Text) URL, saturated 20/20 GitHub topics in keywords), Level 1 SBOM companion THIRD_PARTY_LICENSES.txt Stand 2026-09-28 and THIRD_PARTY_LICENSES.md re-audit, bilingual README badges and llms.txt recency, and automated contract test expansion in tests/test_metadata.py.
+# [2026-09-30 23:55:00 CEST] [GITHUBBOT_ONE_REPO_MARKETING_AND_DESIGN] ACTION: PFAD_B_UPGRADE | REPO: ellmos-ai/system-explorer | SCOPE: Full 18-point bilingual navigation standard with 100% reciprocal anchor parity (<a id="sec-01"> to <a id="sec-18">), ASCII four-view architectural topology projection in Section 04, dedicated Section 16 (Testing & QA) and Section 18 (Statutory Disclaimer & SLA), Level 1 SBOM re-audit Stand 2026-09-30 (THIRD_PARTY_LICENSES.md & THIRD_PARTY_LICENSES.txt), GitHub remote homepage URL anchor alignment, and comprehensive contract test suite expansion in tests/test_metadata.py.
 
 --------------------------------------------------------------------------------
 1. REPOSITORY AUDIT & DISCOVERABILITY BASELINE
