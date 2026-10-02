@@ -82,7 +82,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-system_explorer = ["web/*"]
+system_explorer = ["web/*", "py.typed"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

@@ -39,26 +39,26 @@ it is a visible system gap.
 
 ## Quick Navigation
 
-| # | Section (EN) | Section (DE) | Anchor |
+| # | Section | Anchor | German Version |
 |---|---|---|---|
-| 01 | [Features & Capabilities](#sec-01) | [Funktionen & Fähigkeiten](#sec-01) | [`#sec-01`](#sec-01) |
-| 02 | [Target Personas & Discoverability](#sec-02) | [Zielgruppen & Auffindbarkeit](#sec-02) | [`#sec-02`](#sec-02) |
-| 03 | [Comparative Matrix vs. Alternatives](#sec-03) | [Vergleichsmatrix vs. Alternativen](#sec-03) | [`#sec-03`](#sec-03) |
-| 04 | [Visual Architecture & Topology](#sec-04) | [Visuelle Systemarchitektur & Topologie](#sec-04) | [`#sec-04`](#sec-04) |
-| 05 | [Evidence-Backed Resolution Lifecycle](#sec-05) | [Evidenzbasierter Auflösungs-Lebenszyklus](#sec-05) | [`#sec-05`](#sec-05) |
-| 06 | [Quick Start & CLI Workflows](#sec-06) | [Schnellstart & CLI-Workflows](#sec-06) | [`#sec-06`](#sec-06) |
-| 07 | [Bounded Scans & Progress](#sec-07) | [Begrenzte Scans & Fortschritt](#sec-07) | [`#sec-07`](#sec-07) |
-| 08 | [External Composition & Probe Authorities](#sec-08) | [Externe Composition- & Probe-Autoritäten](#sec-08) | [`#sec-08`](#sec-08) |
-| 09 | [Actual-Self Search Routing](#sec-09) | [Actual-Self Search Routing](#sec-09) | [`#sec-09`](#sec-09) |
-| 10 | [Security & Truth Boundaries](#sec-10) | [Sicherheit & Wahrheitsschranken](#sec-10) | [`#sec-10`](#sec-10) |
-| 11 | [Resolution as Desired Evidence](#sec-11) | [Resolution als Soll-Evidenz](#sec-11) | [`#sec-11`](#sec-11) |
-| 12 | [Explicit Function Equivalence](#sec-12) | [Explizite Funktions-Äquivalenz](#sec-12) | [`#sec-12`](#sec-12) |
-| 13 | [Governance & Runtime Invariants](#sec-13) | [Governance- & Laufzeit-Invarianten](#sec-13) | [`#sec-13`](#sec-13) |
-| 14 | [Bundles & Partners](#sec-14) | [Bundles & Partner](#sec-14) | [`#sec-14`](#sec-14) |
-| 15 | [Ecosystem & Sibling Tools](#sec-15) | [Ökosystem & Geschwisterwerkzeuge](#sec-15) | [`#sec-15`](#sec-15) |
-| 16 | [Testing, Verification & Quality Assurance](#sec-16) | [Tests, Verifikation & Qualitätssicherung](#sec-16) | [`#sec-16`](#sec-16) |
-| 17 | [Third-Party Licenses & Level 1 SBOM](#sec-17) | [Drittanbieter-Lizenzen & Level 1 SBOM](#sec-17) | [`#sec-17`](#sec-17) |
-| 18 | [Statutory Disclaimer & Response SLA (§ 521 BGB)](#sec-18) | [Gesetzlicher Haftungsausschluss & Reaktions-SLA (§ 521 BGB)](#sec-18) | [`#sec-18`](#sec-18) |
+| 01 | [Features & Capabilities](#sec-01) | [`#sec-01`](#sec-01) | [DE Version](README_de.md#sec-01) |
+| 02 | [Target Personas & Discoverability](#sec-02) | [`#sec-02`](#sec-02) | [DE Version](README_de.md#sec-02) |
+| 03 | [Comparative Matrix vs. Alternatives](#sec-03) | [`#sec-03`](#sec-03) | [DE Version](README_de.md#sec-03) |
+| 04 | [Visual Architecture & Topology](#sec-04) | [`#sec-04`](#sec-04) | [DE Version](README_de.md#sec-04) |
+| 05 | [Evidence-Backed Resolution Lifecycle](#sec-05) | [`#sec-05`](#sec-05) | [DE Version](README_de.md#sec-05) |
+| 06 | [Quick Start & CLI Workflows](#sec-06) | [`#sec-06`](#sec-06) | [DE Version](README_de.md#sec-06) |
+| 07 | [Bounded Scans & Progress](#sec-07) | [`#sec-07`](#sec-07) | [DE Version](README_de.md#sec-07) |
+| 08 | [External Composition & Probe Authorities](#sec-08) | [`#sec-08`](#sec-08) | [DE Version](README_de.md#sec-08) |
+| 09 | [Actual-Self Search Routing](#sec-09) | [`#sec-09`](#sec-09) | [DE Version](README_de.md#sec-09) |
+| 10 | [Security & Truth Boundaries](#sec-10) | [`#sec-10`](#sec-10) | [DE Version](README_de.md#sec-10) |
+| 11 | [Resolution as Desired Evidence](#sec-11) | [`#sec-11`](#sec-11) | [DE Version](README_de.md#sec-11) |
+| 12 | [Explicit Function Equivalence](#sec-12) | [`#sec-12`](#sec-12) | [DE Version](README_de.md#sec-12) |
+| 13 | [Governance & Runtime Invariants](#sec-13) | [`#sec-13`](#sec-13) | [DE Version](README_de.md#sec-13) |
+| 14 | [Bundles & Partners](#sec-14) | [`#sec-14`](#sec-14) | [DE Version](README_de.md#sec-14) |
+| 15 | [Ecosystem & Sibling Tools](#sec-15) | [`#sec-15`](#sec-15) | [DE Version](README_de.md#sec-15) |
+| 16 | [Testing, Verification & Quality Assurance](#sec-16) | [`#sec-16`](#sec-16) | [DE Version](README_de.md#sec-16) |
+| 17 | [Third-Party Licenses & Level 1 SBOM](#sec-17) | [`#sec-17`](#sec-17) | [DE Version](README_de.md#sec-17) |
+| 18 | [Statutory Disclaimer & Response SLA (§ 521 BGB)](#sec-18) | [`#sec-18`](#sec-18) | [DE Version](README_de.md#sec-18) |
 
 <a id="sec-01"></a><a id="features"></a>
 ## Features

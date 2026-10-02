@@ -60,7 +60,7 @@ Mirrors und der divergierenden Historie.
   sind ausschließlich lokaler Gate-Readback und ändern den geprüften Code
   nicht.
 - Mirror-Pointer:
-  `C:\Users\lukas\OneDrive\.TOPICS\.AI\.MODULES\.CONTROL\system-explorer\REPO.pointer.json`
+  `<OneDrive>\.TOPICS\.AI\.MODULES\.CONTROL\system-explorer\REPO.pointer.json`
   meldet Source-of-Truth `C:\_Local_DEV\repos\system-explorer`, aber den alten
   Commit `fbc779cc0f8128c0f072103b17bd8b47e9414ecd` und
   `mirrored_at=2026-08-01T12:09:08.135Z`.

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- 2026-10-02: AI Modules Care: Release-Gate-Härtung (10/10 PASS), PEP 561 py.typed, Manifest-Adapter-Harmonisierung, TODO-STATUS-Tabelle & Vertragstest-Erweiterung.
+  - Final Gate Check Härtung (`final_gate_check.py`): Von 5 PASS / 5 FAIL auf 10 PASS / 0 FAIL / 0 WARN gehärtet (`*** READY FOR PUBLIC RELEASE ***`).
+  - Gate 1 (.gitignore): Expliziten Mindestausschluss `*.pyc` verankert.
+  - Gate 2 (README.md): Schnellnavigationstabelle auf englische Spaltenstruktur harmonisiert und deutsche Abschnitte transparent auf `README_de.md` verlinkt.
+  - Gate 6 (Secrets Scanner): False-Positive-Variablenbezeichner `secret` in `test_codex_transcript_correlates_call_and_result_without_raw_content` auf `raw_sentinel` umbenannt.
+  - Gate 7 (Pfadneutralität): Persönlichen Pfad in `MVP-GATE.md` zu portablem `<OneDrive>` neutralisiert.
+  - Gate 10 (TODO.md): Vollständige, standardisierte `TODO.md` mit 10-Kategorien `## STATUS`-Tabelle, Invariantenbezügen `INV-LOCAL-01` bis `INV-SLA-10` und formalisierten Aufgaben aufgebaut.
+  - PEP 561 & Typisierungs-Support: `src/system_explorer/py.typed` angelegt und als `package-data` in `pyproject.toml` verankert.
+  - Manifest-Harmonisierung (`ellmos-module.v2.json`): Adapter `unified-gui-readonly` von Schema-inkonformem `panel` auf valides `plugin` mit `target: ellmos-unified-gui` und `status: optional` harmonisiert.
+  - Vertragstest-Erweiterung: `tests/test_metadata.py` um Contract-Tests für PEP 561 `py.typed`, `TODO.md`-STATUS-Tabelle, Schema-Adapter-Typen und `final_gate_check.py`-Compliance ausgebaut.
+
 - 2026-09-30: Pfad B: Bilinguale 18-Punkte-Schnellnavigation, ASCII-Vier-Ebenen-Architekturtopologie, Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
   - Bilinguale 18-Punkte-Schnellnavigation: `README.md` und `README_de.md` auf 18 standardisierte Navigationspunkte mit 100% wechselseitiger Anker-Parität (`#sec-01` bis `#sec-18`) und Alias-Kompatibilität ausgebaut.
   - ASCII Vier-Ebenen-Architekturtopologie: In Section 04 beider Dokumente eine detaillierte textuelle ASCII-Projektion (CLI/Dashboard, Sovereign Cartography Engine, SQLite Evidence Ledger & Trust Store, Air-Gap Perimeter) als barrierefreies Pendant zum Mermaid-Diagramm integriert.

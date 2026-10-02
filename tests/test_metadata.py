@@ -604,6 +604,55 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Stand 2026-09-30", licenses_md)
         self.assertIn("Audited: 2026-09-30", licenses_txt)
 
+    def test_pep561_py_typed_present(self) -> None:
+        """Verify PEP 561 py.typed marker file exists and is declared in pyproject.toml."""
+        py_typed = self.root / "src" / "system_explorer" / "py.typed"
+        self.assertTrue(py_typed.is_file(), "src/system_explorer/py.typed must exist for PEP 561")
+        pyproject = (self.root / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('"py.typed"', pyproject)
+
+    def test_todo_status_table_and_gates(self) -> None:
+        """Verify TODO.md exists with standard STATUS table, audit date and gate readiness."""
+        todo_path = self.root / "TODO.md"
+        self.assertTrue(todo_path.is_file(), "TODO.md must exist")
+        content = todo_path.read_text(encoding="utf-8")
+        self.assertIn("## STATUS", content)
+        self.assertIn("2026-10-02", content)
+        self.assertIn("10 PASS, 0 FAIL, 0 WARN", content)
+        self.assertIn("INV-SLA-10", content)
+
+    def test_module_manifest_schema_compliance(self) -> None:
+        """Verify ellmos-module.v2.json has valid adapter types according to v2 schema."""
+        manifest = json.loads((self.root / "ellmos-module.v2.json").read_text(encoding="utf-8"))
+        valid_types = {
+            "mcp", "plugin", "skill", "cli-wrapper", "connector",
+            "repository-writer", "provider-hook", "provider", "seam"
+        }
+        for adapter in manifest.get("adapters", []):
+            self.assertIn(adapter.get("type"), valid_types)
+
+    def test_final_gate_check_compliance(self) -> None:
+        """Verify final_gate_check.py passes 10/10 with 0 FAIL and 0 WARN."""
+        gate_script = (
+            Path.home()
+            / "OneDrive"
+            / ".TOPICS"
+            / ".AI"
+            / ".MODULES"
+            / "_scripts"
+            / "final_gate_check.py"
+        )
+        if gate_script.is_file():
+            import subprocess
+            import sys
+
+            cmd = [sys.executable, str(gate_script), "--repo-path", str(self.root)]
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            self.assertEqual(res.returncode, 0, f"final_gate_check failed:\n{res.stdout}\n{res.stderr}")
+            self.assertIn("10 PASS", res.stdout)
+            self.assertIn("0 FAIL", res.stdout)
+            self.assertIn("*** READY FOR PUBLIC RELEASE ***", res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -488,14 +488,14 @@ class ExplorerTest(unittest.TestCase):
 
     def test_codex_transcript_correlates_call_and_result_without_raw_content(self) -> None:
         transcript = self.root / "rollout.jsonl"
-        secret = "DO-NOT-STORE-RAW-CONTENT"
+        raw_sentinel = "DO-NOT-STORE-RAW-CONTENT"
         records = [
             {
                 "type": "response_item",
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": secret}],
+                    "content": [{"type": "input_text", "text": raw_sentinel}],
                 },
             },
             {
@@ -512,7 +512,7 @@ class ExplorerTest(unittest.TestCase):
                 "payload": {
                     "type": "function_call_output",
                     "call_id": "call-1",
-                    "output": secret,
+                    "output": raw_sentinel,
                 },
             },
         ]
@@ -526,7 +526,7 @@ class ExplorerTest(unittest.TestCase):
         self.assertEqual(stats["tool_calls"], 1)
         self.assertEqual(stats["tool_results"], 1)
         serialized = json.dumps({"evidence": evidence, "nodes": nodes})
-        self.assertNotIn(secret, serialized)
+        self.assertNotIn(raw_sentinel, serialized)
         self.assertIn("read_manifest", serialized)
 
     def test_maps_and_read_only_proposal(self) -> None:

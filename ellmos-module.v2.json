@@ -122,8 +122,10 @@
       "id": "ai-media-editor-uc6"
     },
     {
-      "type": "panel",
-      "id": "unified-gui-readonly"
+      "type": "plugin",
+      "id": "unified-gui-readonly",
+      "target": "ellmos-unified-gui",
+      "status": "optional"
     },
     {
       "type": "repository-writer",
