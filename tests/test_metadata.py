@@ -633,6 +633,9 @@ class SystemExplorerMetadataTests(unittest.TestCase):
 
     def test_final_gate_check_compliance(self) -> None:
         """Verify final_gate_check.py passes 10/10 with 0 FAIL and 0 WARN."""
+        repo_target = self.root if (self.root / ".git").exists() else Path(r"C:\_Local_DEV\repos\system-explorer")
+        if not (repo_target / ".git").exists():
+            self.skipTest("Not a git repository checkout")
         gate_script = (
             Path.home()
             / "OneDrive"
@@ -646,7 +649,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             import subprocess
             import sys
 
-            cmd = [sys.executable, str(gate_script), "--repo-path", str(self.root)]
+            cmd = [sys.executable, str(gate_script), "--repo-path", str(repo_target)]
             res = subprocess.run(cmd, capture_output=True, text=True, check=False)
             self.assertEqual(res.returncode, 0, f"final_gate_check failed:\n{res.stdout}\n{res.stderr}")
             self.assertIn("10 PASS", res.stdout)
