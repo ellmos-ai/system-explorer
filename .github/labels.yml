@@ -33,3 +33,12 @@
 - name: stale
   color: 'ededed'
   description: 'No recent activity'
+- name: dependencies
+  color: '0366d6'
+  description: 'Pull requests that update a dependency file'
+- name: github-actions
+  color: '000000'
+  description: 'Pull requests that update GitHub Actions code'
+- name: python
+  color: '3572A5'
+  description: 'Pull requests that update Python dependencies'

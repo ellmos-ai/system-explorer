@@ -1,7 +1,9 @@
 # OS / editor noise
 .DS_Store
 Thumbs.db
+thumbs.db
 ehthumbs.db
+ehthumbs_vista.db
 desktop.ini
 Desktop.ini
 *.swp
@@ -88,8 +90,13 @@ LOCK*.txt
 LOCK.user.*
 LOCK.until.*
 LOCK.condition.*
+LOCK.dev.*
+LOCK.antigravity.*
+LOCK.bugsearch.*
 LOCK.permissions.json
 .automation-lock
+TASKPLAN_*.md
+*-TASKPLAN*
 uv.lock
 !package-lock.json
 

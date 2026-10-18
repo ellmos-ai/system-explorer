@@ -1,18 +1,20 @@
 # system-explorer
 
-> Last-checked: 2026-09-30
+> Last-checked: 2026-10-18
 
 Purpose: map desired system functions to evidenced function carriers.
 Truth boundary: source systems remain authoritative; evidence is referenced.
 Safety boundary: proposals are read-only and never authorize target mutation (§ 521 BGB Gefälligkeitsrecht).
 Key command: system-explorer --help
-Verification baseline: 231 Pytest tests (205 passed, 26 subtests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-09-30.
+Verification baseline: 241 Pytest tests (215 passed, 26 subtests), Ruff, compileall, CLI help, and manifest validation passed locally on 2026-10-18.
 Attribution: NOTICE
+Contributing guide: CONTRIBUTING.md
 Security policy: SECURITY.md
 Third-party licenses: THIRD_PARTY_LICENSES.md
 Level 1 SBOM: THIRD_PARTY_LICENSES.txt
 Marketing log: MARKETING-LOG.txt
 CI workflow: .github/workflows/ci.yml
+Dependabot config: .github/dependabot.yml
 Stale workflow: .github/workflows/stale.yml
 Welcome workflow: .github/workflows/welcome.yml
 Auto-assign workflow: .github/workflows/auto-assign.yml

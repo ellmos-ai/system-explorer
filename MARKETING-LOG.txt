@@ -1,12 +1,13 @@
 # MARKETING-LOG: ellmos-ai/system-explorer
 # Discoverability, Visual Architecture, SEO, Ecosystem & Repository Hygiene
-Date: 2026-09-30
+Date: 2026-10-18
 Operator: Antigravity / Gemini (via GITHUBBOT Pfad A / Pfad B)
 Target Repo: ellmos-ai/system-explorer
 Canonical Path: C:\_Local_DEV\repos\system-explorer
 Version: 0.4.2
 
 # Audit & Action Tracking:
+# [2026-10-18 14:30:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: Dependabot Ecosystem Security (.github/dependabot.yml with pip & github-actions), .github/labels.yml expansion (dependencies, github-actions, python), bilingual CONTRIBUTING.md guidelines (Plan D workflow, Quality Gates, 10 Invariants, § 521 BGB, 48h SLA), PEP 621 metadata standardization (license-files with CONTRIBUTING.md, Contributing URL under [project.urls]), multi-host OS & lock defense in .gitignore (thumbs.db, ehthumbs_vista.db, TASKPLAN_*.md, LOCK.dev.*, LOCK.antigravity.*, LOCK.bugsearch.*), Level 1 SBOM re-audit Stand 2026-10-18 (THIRD_PARTY_LICENSES.md & THIRD_PARTY_LICENSES.txt), bilingual README badges & llms.txt recency, and automated contract test expansion in tests/test_metadata.py.
 # [2026-08-21 15:30:00 CEST] [GITHUBBOT_ONE_REPO_MARKETING_AND_DESIGN] ACTION: PFAD_B_UPGRADE | REPO: ellmos-ai/system-explorer | SCOPE: Initial discoverability, README design, bilingual SECURITY.md, 18-partner ecosystem matrix.
 # [2026-08-24 11:20:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: CI concurrency hardening, supported-versions matrix, PEP 621 classifiers/topics, gitignore sync conflict patterns, 11/11 contract tests.
 # [2026-08-26 14:15:00 CEST] [GITHUBBOT_ONE_REPO_CLEANER] ACTION: PFAD_A_HYGIENE | REPO: ellmos-ai/system-explorer | SCOPE: Test baseline refresh (179 Pytest tests), scan-time budget normalization, jsonschema dev-dependency.

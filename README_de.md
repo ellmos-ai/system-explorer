@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-231%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-241%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -12,7 +12,9 @@
 [![Security SLA](https://img.shields.io/badge/security%20sla-48h%20response%20%7C%205d%20triage-blue.svg)](SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/third--party-100%25%20permissive-brightgreen.svg)](THIRD_PARTY_LICENSES.md)
 [![Level 1 SBOM](https://img.shields.io/badge/Level%201%20SBOM-Plain--Text-brightgreen.svg)](THIRD_PARTY_LICENSES.txt)
-[![Geprüft: 2026-09-30](https://img.shields.io/badge/Gepr%C3%BCft-2026--09--30-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
+[![Beitragsrichtlinie](https://img.shields.io/badge/Beitragsrichtlinie-Guide-blue.svg)](CONTRIBUTING.md)
+[![Dependabot](https://img.shields.io/badge/Dependabot-Aktiv-brightgreen.svg)](.github/dependabot.yml)
+[![Geprüft: 2026-10-18](https://img.shields.io/badge/Gepr%C3%BCft-2026--10--18-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
 [![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -20,7 +22,7 @@
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
-**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
+**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 🤝 [Beitragsrichtlinie](CONTRIBUTING.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
 
 > [!NOTE]
 > Für einen LLM-optimierten Index und Schnellreferenz siehe [`llms.txt`](llms.txt).

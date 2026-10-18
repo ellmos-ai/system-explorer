@@ -123,9 +123,10 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         pyproject_text = (self.root / "pyproject.toml").read_text(encoding="utf-8")
 
         self.assertIn("[project]", pyproject_text)
-        self.assertIn('license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt"]', pyproject_text)
+        self.assertIn('license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt", "CONTRIBUTING.md"]', pyproject_text)
         self.assertIn("[project.urls]", pyproject_text)
         self.assertIn("Homepage = ", pyproject_text)
+        self.assertIn("Contributing = ", pyproject_text)
         self.assertIn("Repository = ", pyproject_text)
         self.assertIn("Notice = ", pyproject_text)
         self.assertIn("Security = ", pyproject_text)
@@ -329,13 +330,15 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-09-30", llms_text)
+        self.assertIn("Last-checked: 2026-10-18", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
+        self.assertIn("CONTRIBUTING.md", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.txt", llms_text)
         self.assertIn("MARKETING-LOG.txt", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
+        self.assertIn(".github/dependabot.yml", llms_text)
         self.assertIn(".github/workflows/stale.yml", llms_text)
         self.assertIn(".github/workflows/welcome.yml", llms_text)
         self.assertIn(".github/workflows/auto-assign.yml", llms_text)
@@ -596,13 +599,13 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("Gefälligkeitsverhältnis", doc)
 
     def test_level1_sbom_audit_date_recency(self) -> None:
-        """Verify Level 1 SBOM documents reflect current 2026-09-30 audit date."""
+        """Verify Level 1 SBOM documents reflect current 2026-10-18 audit date."""
         licenses_md = (self.root / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
         licenses_txt = (self.root / "THIRD_PARTY_LICENSES.txt").read_text(encoding="utf-8")
 
-        self.assertIn("Audit Date:** 2026-09-30", licenses_md)
-        self.assertIn("Stand 2026-09-30", licenses_md)
-        self.assertIn("Audited: 2026-09-30", licenses_txt)
+        self.assertIn("Audit Date:** 2026-10-18", licenses_md)
+        self.assertIn("Stand 2026-10-18", licenses_md)
+        self.assertIn("Audited: 2026-10-18", licenses_txt)
 
     def test_pep561_py_typed_present(self) -> None:
         """Verify PEP 561 py.typed marker file exists and is declared in pyproject.toml."""
@@ -655,6 +658,69 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("10 PASS", res.stdout)
             self.assertIn("0 FAIL", res.stdout)
             self.assertIn("*** READY FOR PUBLIC RELEASE ***", res.stdout)
+
+    def test_dependabot_ecosystem_security(self) -> None:
+        """Verify .github/dependabot.yml exists and configures pip and github-actions updates."""
+        dependabot_path = self.root / ".github" / "dependabot.yml"
+        self.assertTrue(dependabot_path.is_file(), ".github/dependabot.yml must exist")
+        content = dependabot_path.read_text(encoding="utf-8")
+        self.assertIn('package-ecosystem: "pip"', content)
+        self.assertIn('package-ecosystem: "github-actions"', content)
+        self.assertIn("open-pull-requests-limit: 0", content)
+        self.assertIn("open-pull-requests-limit: 3", content)
+        self.assertIn('timezone: "Europe/Berlin"', content)
+        self.assertIn('"dependencies"', content)
+        self.assertIn('"github-actions"', content)
+        self.assertIn('"python"', content)
+
+    def test_labels_yml_includes_dependabot_labels(self) -> None:
+        """Verify .github/labels.yml defines labels needed by dependabot."""
+        labels_path = self.root / ".github" / "labels.yml"
+        self.assertTrue(labels_path.is_file(), ".github/labels.yml must exist")
+        content = labels_path.read_text(encoding="utf-8")
+        self.assertIn("name: dependencies", content)
+        self.assertIn("name: github-actions", content)
+        self.assertIn("name: python", content)
+
+    def test_contributing_guidelines_bilingual(self) -> None:
+        """Verify CONTRIBUTING.md exists with bilingual guidance, quality gates, and invariants."""
+        contrib_path = self.root / "CONTRIBUTING.md"
+        self.assertTrue(contrib_path.is_file(), "CONTRIBUTING.md must exist")
+        content = contrib_path.read_text(encoding="utf-8")
+        self.assertIn("## Deutsch", content)
+        self.assertIn("## English", content)
+        self.assertIn("--signoff", content)
+        self.assertIn("final_gate_check.py", content)
+        self.assertIn("INV-LOCAL-01", content)
+        self.assertIn("INV-SLA-10", content)
+        self.assertIn("RunAsInvoker", content)
+        self.assertIn("§ 521 BGB", content)
+        self.assertIn("security@ellmos.ai", content)
+        self.assertIn("T-20260920-167562623", content)
+
+    def test_pyproject_contributing_url_and_license_files(self) -> None:
+        """Verify pyproject.toml references CONTRIBUTING.md in license-files and project.urls."""
+        pyproject_text = (self.root / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('"CONTRIBUTING.md"', pyproject_text)
+        self.assertIn('Contributing = "https://github.com/ellmos-ai/system-explorer/blob/main/CONTRIBUTING.md"', pyproject_text)
+
+    def test_extended_lock_and_os_defense_in_gitignore(self) -> None:
+        """Verify .gitignore contains extended OS noise, TASKPLAN, and specific LOCK patterns."""
+        gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("thumbs.db", gitignore_text)
+        self.assertIn("ehthumbs_vista.db", gitignore_text)
+        self.assertIn("TASKPLAN_*.md", gitignore_text)
+        self.assertIn("*-TASKPLAN*", gitignore_text)
+        self.assertIn("LOCK.dev.*", gitignore_text)
+        self.assertIn("LOCK.antigravity.*", gitignore_text)
+        self.assertIn("LOCK.bugsearch.*", gitignore_text)
+
+    def test_changelog_recent_pfad_a_2026_10_18_entry(self) -> None:
+        """Verify CHANGELOG.md contains the 2026-10-18 Pfad A hygiene entry."""
+        changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("2026-10-18: Pfad A", changelog)
+        self.assertIn("CONTRIBUTING.md", changelog)
+        self.assertIn(".github/dependabot.yml", changelog)
 
 
 if __name__ == "__main__":

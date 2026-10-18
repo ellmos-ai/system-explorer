@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- 2026-10-18: Pfad A: Dependabot Actions & Pip Guard, Bilinguale Beitragsrichtlinie (CONTRIBUTING.md), PEP 621 Metadaten, Multi-Host Lock Defense, Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
+  - Automated Dependabot Actions & Pip Guard: `.github/dependabot.yml` neu bereitgestellt mit wöchentlichen Updates für `github-actions` (Montags 06:00 Berlin Zeit, Open-PRs-Limit: 3) und `pip` Security-Updates (`open-pull-requests-limit: 0`).
+  - Label-Synchronisation (`.github/labels.yml`): Um `dependencies`, `github-actions` und `python` Labels erweitert für nahtlose Interoperabilität mit `label-sync.yml`.
+  - Bilinguale Beitragsrichtlinie (`CONTRIBUTING.md`): Umfassende Richtlinie (DE/EN) erstellt mit Plan D Workflow (`C:\_Local_DEV\repos\system-explorer`), DCO-Signoff-Regel (`--signoff`), Quality Gates (`ruff`, `pytest`, `compileall`, `git diff --check`, `final_gate_check.py`), vollständiger 10-Invarianten-Matrix (`INV-LOCAL-01` bis `INV-SLA-10`), Haftungsausschluss (§ 521 BGB Gefälligkeitsrecht) und 48h Security Response SLA.
+  - PEP 621 Standardisierung in `pyproject.toml`: `license-files` Whitelist um `CONTRIBUTING.md` erweitert; `Contributing` URL unter `[project.urls]` verankert; strikte Version-Freeze-Disziplin per T-20260920-167562623 (`version = "0.4.2"` unverändert beibehalten).
+  - Multi-Host Cloud-Sync-, Lock- und OS-Defense in `.gitignore`: `thumbs.db` (lowercase), `ehthumbs_vista.db`, `TASKPLAN_*.md`, `*-TASKPLAN*`, `LOCK.dev.*`, `LOCK.antigravity.*`, `LOCK.bugsearch.*` zur lückenlosen Absicherung ergänzt.
+  - Level 1 SBOM Re-Audit Stand 2026-10-18 in `THIRD_PARTY_LICENSES.md` & `THIRD_PARTY_LICENSES.txt`: Re-Audit mit Bestätigung aller 10 Governance- und Laufzeitinvarianten `INV-LOCAL-01` bis `INV-SLA-10`, unprivileged `RunAsInvoker` Non-Elevation Zertifizierung, Zero-Copyleft & Zero-Egress Core Isolation und Querverweis auf `CONTRIBUTING.md`.
+  - Dokumentation & Badges: `README.md` und `README_de.md` mit Badges für `Verified-2026--10--18` / `Geprüft-2026--10--18`, `Contributing: Guide` und `Dependabot: Active` synchronisiert; Header-Navigation um Contributing Guide erweitert; `llms.txt` Stand 2026-10-18 aktualisiert; lokales `MARKETING-LOG.txt` um Pfad A Revisionsbericht Stand 2026-10-18 ergänzt.
+  - Vertragstest-Erweiterung: `tests/test_metadata.py` um neue Contract-Tests für Dependabot-Ecosystem-Security, Labels-Vollständigkeit, bilinguales CONTRIBUTING.md, pyproject Contributing URL und erweiterte Gitignore Lock-Guards ausgebaut.
+
 - 2026-10-02: AI Modules Care: Release-Gate-Härtung (10/10 PASS), PEP 561 py.typed, Manifest-Adapter-Harmonisierung, TODO-STATUS-Tabelle & Vertragstest-Erweiterung.
   - Final Gate Check Härtung (`final_gate_check.py`): Von 5 PASS / 5 FAIL auf 10 PASS / 0 FAIL / 0 WARN gehärtet (`*** READY FOR PUBLIC RELEASE ***`).
   - Gate 1 (.gitignore): Expliziten Mindestausschluss `*.pyc` verankert.
