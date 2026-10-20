@@ -402,7 +402,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         stale_path = self.root / ".github" / "workflows" / "stale.yml"
         self.assertTrue(stale_path.is_file(), "stale.yml missing")
         stale_text = stale_path.read_text(encoding="utf-8")
-        self.assertIn("actions/stale@v9", stale_text)
+        self.assertIn("actions/stale@v11", stale_text)
         self.assertIn("timeout-minutes: 10", stale_text)
         self.assertIn("issues: write", stale_text)
         self.assertIn("pull-requests: write", stale_text)
