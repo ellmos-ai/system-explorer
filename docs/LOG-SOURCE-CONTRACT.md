@@ -50,6 +50,11 @@ BACH-Adapter muss `resolve_source(request, window)` und
 darf den zweiten Aufruf nicht allein aufgrund der ersten Entscheidung oder
 eines gespeicherten Message-Snapshots freigeben. Der hier getestete
 `SyntheticOwner` ist ausschließlich eine Fixture und keine BACH-API.
+Jeder Callback erhält eine eigene Kopie der validierten Anfrage. Ändert der
+Owner Felder, MessageID, ReceiptID oder Zielbindung in dieser Kopie, wird die
+Antwort ohne Auszug verweigert; die Originalanfrage des Consumers bleibt
+unverändert. Eine `PermissionError`-Verweigerung bei der erneuten Prüfung im
+Lese-Callback ergibt `denied`. Andere Providerfehler ergeben `unreachable`.
 
 ## Zeit- und Ergebnisvertrag
 

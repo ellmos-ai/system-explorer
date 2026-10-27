@@ -225,6 +225,70 @@ def test_current_owner_decision_is_read_again_for_each_call():
     assert owner.calls == ["authorize", "authorize"]
 
 
+def test_owner_cannot_expand_fields_or_mutate_original_request():
+    original = request(fields=["time_utc"])
+
+    class ExpandingOwner(SyntheticOwner):
+        def resolve_source(self, req, window):
+            req["fields"].append("event_code")
+            return super().resolve_source(req, window)
+
+    owner = ExpandingOwner()
+    result = read_excerpt(original, owner, now=NOW)
+    assert result["status"] == "denied" and result["entries"] == []
+    assert original["fields"] == ["time_utc"]
+    assert owner.calls == ["authorize"]
+
+
+def test_owner_cannot_rebind_target_or_correlation():
+    original = request()
+
+    class RebindingOwner(SyntheticOwner):
+        def resolve_source(self, req, window):
+            req.update(target_ref="target:other", message_id="M-20261027-987654321",
+                       receipt_id="R-20261027-987654321")
+            return super().resolve_source(req, window)
+
+    result = read_excerpt(original, RebindingOwner(), now=NOW)
+    assert result["status"] == "denied" and result["entries"] == []
+    assert (result["message_id"], result["receipt_id"], original["target_ref"]) == (
+        "M-20261027-123456789", "R-20261027-123456789", "target:synthetic",
+    )
+
+
+def test_owner_read_callback_cannot_mutate_validated_binding():
+    original = request()
+
+    class RebindingReadOwner(SyntheticOwner):
+        def read_redacted_excerpt(self, req, window, *, limit, fields):
+            req["target_ref"] = "target:other"
+            return super().read_redacted_excerpt(req, window, limit=limit, fields=fields)
+
+    result = read_excerpt(original, RebindingReadOwner(), now=NOW)
+    assert result["status"] == "denied" and result["entries"] == []
+    assert original["target_ref"] == "target:synthetic"
+
+
+def test_read_time_permission_denial_is_denied_without_text_access():
+    class DenyingOwner(SyntheticOwner):
+        def read_redacted_excerpt(self, req, window, *, limit, fields):
+            self.calls.append("read_denied_before_text")
+            raise PermissionError("private current-policy reason")
+
+    owner = DenyingOwner()
+    result = read_excerpt(request(), owner, now=NOW)
+    assert result["status"] == "denied" and result["entries"] == []
+    assert "private current-policy reason" not in repr(result)
+    assert owner.calls == ["authorize", "read_denied_before_text"]
+
+
+def test_unhashable_owner_status_has_controlled_failure():
+    owner = SyntheticOwner(status=[])
+    for action in (resolve_source, read_excerpt):
+        result = action(request(), owner, now=NOW)
+        assert result["status"] == "unreachable" and result["entries"] == []
+
+
 def test_invalid_requests_stop_before_owner_access():
     for bad in (
         request(source_ref="C:/logs/private"),

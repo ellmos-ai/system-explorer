@@ -171,7 +171,16 @@ def _request(value: Mapping[str, Any], now: datetime) -> tuple[dict[str, Any], T
     limit = value["max_entries"]
     if type(limit) is not int or not 1 <= limit <= 32:
         raise LogSourceContractError("max_entries must be between 1 and 32")
-    return dict(value), _window(value["window"], now)
+    window = _window(value["window"], now)
+    checked = dict(value)
+    checked["fields"] = list(fields)
+    checked["window"] = dict(value["window"])
+    return checked, window
+
+
+def _owner_request(request: Mapping[str, Any]) -> dict[str, Any]:
+    """Give each owner callback a separate copy of the validated request."""
+    return {**request, "fields": list(request["fields"]), "window": dict(request["window"])}
 
 
 def _public(request: Mapping[str, Any], window: TimeWindow, status: str,
@@ -191,11 +200,17 @@ def _public(request: Mapping[str, Any], window: TimeWindow, status: str,
 
 def _resolution(request: Mapping[str, Any], window: TimeWindow,
                 provider: OwnerLogProvider, now: datetime) -> tuple[str, OwnerResolution | None]:
+    owner_request = _owner_request(request)
     try:
-        resolution = provider.resolve_source(request, window)
+        resolution = provider.resolve_source(owner_request, window)
+    except PermissionError:
+        return "denied", None
     except Exception:
         return "unreachable", None
-    if not isinstance(resolution, OwnerResolution) or resolution.status not in STATES:
+    if owner_request != request:
+        return "denied", None
+    if (not isinstance(resolution, OwnerResolution) or type(resolution.status) is not str
+            or resolution.status not in STATES):
         return "unreachable", None
     if resolution.status in {"missing", "denied", "unreachable"}:
         return resolution.status, None
@@ -283,12 +298,17 @@ def read_excerpt(request: Mapping[str, Any], provider: OwnerLogProvider,
     status, resolution = _resolution(checked, window, provider, current)
     if resolution is None:
         return _public(checked, window, status)
+    owner_request = _owner_request(checked)
     try:
         batch = provider.read_redacted_excerpt(
-            checked, window, limit=checked["max_entries"], fields=frozenset(checked["fields"])
+            owner_request, window, limit=checked["max_entries"], fields=frozenset(checked["fields"])
         )
+    except PermissionError:
+        return _public(checked, window, "denied")
     except Exception:
         return _public(checked, window, "unreachable")
+    if owner_request != checked:
+        return _public(checked, window, "denied")
     entries = _safe_entries(batch, checked, window, resolution)
     if entries is None:
         return _public(checked, window, "denied")
