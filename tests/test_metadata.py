@@ -499,7 +499,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         workflow_path = self.root / ".github" / "workflows" / "auto-assign.yml"
         self.assertTrue(workflow_path.is_file(), "auto-assign.yml missing")
         content = workflow_path.read_text(encoding="utf-8")
-        self.assertIn("actions/github-script@v7", content)
+        self.assertIn("actions/github-script@v9", content)
         self.assertIn("timeout-minutes: 5", content)
         self.assertIn("concurrency:", content)
         self.assertIn("cancel-in-progress: true", content)
