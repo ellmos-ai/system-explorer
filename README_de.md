@@ -14,7 +14,7 @@
 [![Level 1 SBOM](https://img.shields.io/badge/Level%201%20SBOM-Plain--Text-brightgreen.svg)](THIRD_PARTY_LICENSES.txt)
 [![Beitragsrichtlinie](https://img.shields.io/badge/Beitragsrichtlinie-Guide-blue.svg)](CONTRIBUTING.md)
 [![Dependabot](https://img.shields.io/badge/Dependabot-Aktiv-brightgreen.svg)](.github/dependabot.yml)
-[![Geprüft: 2026-10-18](https://img.shields.io/badge/Gepr%C3%BCft-2026--10--18-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
+[![Geprüft: 2026-10-31](https://img.shields.io/badge/Gepr%C3%BCft-2026--10--31-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
 [![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -508,6 +508,38 @@ SHA-256 und autorisierendem Quelltyp `document:decision` oder
 gelöschte, mehrdeutige oder hashabweichende Einträge blockieren ausführbare
 Authority.
 
+### 9.1 Actual-Self-Receipt-Verifikation & Search-Routing-Ablauf
+
+Das folgende Sequenzdiagramm veranschaulicht den kryptographischen Ablauf der Ed25519-Trust-Store-Verifikation, der Actual-Self-Readback-Gültigkeitsprüfung und des Fail-Closed Search-Routings:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Caller as Agent / Aufrufer
+    participant CLI as System Explorer (search-route)
+    participant Trust as Receipt-Trust-Store (Ed25519)
+    participant Evidence as SQLite-Evidenz-Store
+    participant Router as Actual-Self Search Router
+    participant Gate as Fail-Closed Sicherheits-Gate
+
+    Caller->>CLI: search-route (Kandidaten, Resolution, Actual-Self, Autorität)
+    CLI->>Trust: Validiere Ed25519 Key-Pin & Store SHA-256 Digest
+    Trust-->>CLI: Öffentlicher Schlüssel & Signer-Policy validiert
+    CLI->>Router: Übermittle typisierte Kandidaten & Score-Domain
+    Router->>Evidence: Prüfe Decision- & Policy-Provenienz (URIs & Prüfsummen)
+    Evidence-->>Router: Verifizierte lokale Evidenz-Einträge (document:decision / policy)
+    Router->>Gate: Evaluiere Scopes, Host-IDs & delegierte Autoritäts-Receipts
+    alt Kryptographische Verifikation erfolgreich & Scope gültig
+        Gate-->>Router: Autorisierte Auswahl verifiziert
+        Router->>CLI: Erstelle ellmos.search-routing-receipt.v1 (Readback-Verifiziert)
+        CLI-->>Caller: Routing-Receipt ausgegeben (Status: AUTHORIZED)
+    else Manipulation, Ablauf, Scope-Fehlschlag oder Foreign-Host-Replay
+        Gate-->>Router: Sicherheitsverletzung oder Mehrdeutigkeit erkannt (Fail-Closed)
+        Router->>CLI: Auswahl unter Quarantäne (Keine Werkzeugausführung)
+        CLI-->>Caller: Blockiertes Receipt ausgegeben (Status: BLOCKED)
+    end
+```
+
 Der `ai-media-editor`-Konnektor materialisiert einen UC6-Handoff mit
 Storyboard, deutschem Sprechertext und Mermaid-Visuals aus ausgewählten
 Karten. Er rendert Medien nicht stillschweigend selbst und kopiert keine
@@ -710,7 +742,7 @@ Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 
 `system-explorer` erzwingt lückenlose Qualitätssicherung durch automatisierte Testsuiten, striktes Linting, Bytecode-Kompilierung und Vertragstests:
 
-- **Pytest-Suite**: 231 Tests (205 bestanden, 26 Subtests) mit `--basetemp=.pytest_temp` und 100% Erfolgsquote.
+- **Pytest-Suite**: 241 Tests (215 bestanden, 26 Subtests) mit `--basetemp=.pytest_temp` und 100% Erfolgsquote.
 - **Ruff AST Linter**: Vollständige Konformität mit PEP 8 und modernen Python 3.10+ Lint-Standards (`ruff check src tests`).
 - **Python Bytecode-Kompilierung**: Verifiziert über alle Quellbäume (`python -m compileall -q src tests`).
 - **Vertrags- & Metadaten-Invarianten**: Validiert in `tests/test_metadata.py` und `tests/test_versioning.py`.

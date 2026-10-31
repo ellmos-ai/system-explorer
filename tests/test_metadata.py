@@ -330,7 +330,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-10-18", llms_text)
+        self.assertIn("Last-checked: 2026-10-31", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
         self.assertIn("CONTRIBUTING.md", llms_text)
         self.assertIn("SECURITY.md", llms_text)
@@ -599,13 +599,13 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("Gefälligkeitsverhältnis", doc)
 
     def test_level1_sbom_audit_date_recency(self) -> None:
-        """Verify Level 1 SBOM documents reflect current 2026-10-18 audit date."""
+        """Verify Level 1 SBOM documents reflect current 2026-10-31 audit date."""
         licenses_md = (self.root / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
         licenses_txt = (self.root / "THIRD_PARTY_LICENSES.txt").read_text(encoding="utf-8")
 
-        self.assertIn("Audit Date:** 2026-10-18", licenses_md)
-        self.assertIn("Stand 2026-10-18", licenses_md)
-        self.assertIn("Audited: 2026-10-18", licenses_txt)
+        self.assertIn("Audit Date:** 2026-10-31", licenses_md)
+        self.assertIn("Stand 2026-10-31", licenses_md)
+        self.assertIn("Audited: 2026-10-31", licenses_txt)
 
     def test_pep561_py_typed_present(self) -> None:
         """Verify PEP 561 py.typed marker file exists and is declared in pyproject.toml."""
@@ -721,6 +721,25 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("2026-10-18: Pfad A", changelog)
         self.assertIn("CONTRIBUTING.md", changelog)
         self.assertIn(".github/dependabot.yml", changelog)
+
+    def test_actual_self_search_routing_sequence_diagram(self) -> None:
+        """Verify dedicated Actual-Self Search Routing sequence diagram exists in Section 09."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+
+        self.assertIn("### 9.1 Actual-Self Receipt Verification & Search Routing Sequence", readme_en)
+        self.assertIn("### 9.1 Actual-Self-Receipt-Verifikation & Search-Routing-Ablauf", readme_de)
+        for doc in (readme_en, readme_de):
+            self.assertIn("search-routing-receipt", doc)
+            self.assertIn("autonumber", doc)
+            self.assertTrue("Receipt Trust Store" in doc or "Receipt-Trust-Store" in doc)
+
+    def test_changelog_recent_pfad_b_2026_10_31_entry(self) -> None:
+        """Verify CHANGELOG.md contains the 2026-10-31 Pfad B discoverability entry."""
+        changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("2026-10-31: Pfad B", changelog)
+        self.assertIn("Actual-Self Search Routing Sequenzdiagramm-Architektur", changelog)
+        self.assertIn("241 Passed", changelog)
 
 
 if __name__ == "__main__":
