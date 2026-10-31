@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 2026-10-31: Pfad B: Discoverability, Actual-Self Search Routing Sequenzdiagramm-Architektur, Teststand-Parität (241 Passed), Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
+  - Actual-Self Search Routing Sequenzdiagramm: Section 09 in `README.md` und `README_de.md` um ein zweites dediziertes Mermaid-Sequenzdiagramm (`autonumber`) für die kryptographische Ed25519-Trust-Store-Verifikation, Actual-Self Readback-Gültigkeitsprüfung, Decision-/Policy-Evidenzauflösung und Fail-Closed Autorisierungsgates erweitert.
+  - Teststand- & Badges-Parität: Synchronisation der Pytest-Angaben in Section 16 beider Dokumente auf real gemessene 241 Tests (215 passed, 26 subtests, 100% grün) und Aktualisierung der Verified-Badges auf Stand `2026-10-31`.
+  - llms.txt RAG-Kontextindex: Aktualisierung des RAG-Kontexts auf Stand 2026-10-31 mit 241 Pytest-Tests Baseline.
+  - Level 1 SBOM Re-Audit Stand 2026-10-31: Re-Audit in `THIRD_PARTY_LICENSES.md` und `THIRD_PARTY_LICENSES.txt` mit Bestätigung aller 10 Governance- und Laufzeit-Invarianten `INV-LOCAL-01` bis `INV-SLA-10`, unprivileged `RunAsInvoker` Non-Elevation und 0% AGPL Copyleft-Kontamination.
+  - Version-Freeze: Version 0.4.2 strikt unverändert beibehalten gemäß T-20260920-167562623 (0 Versionsänderungen).
+  - Vertragstest-Erweiterung: `tests/test_metadata.py` und `tests/test_versioning.py` um Validierungen für das neue Actual-Self Search Routing Sequenzdiagramm und die 2026-10-31 Aktualität erweitert.
+
 - 2026-10-18: Pfad A: Dependabot Actions & Pip Guard, Bilinguale Beitragsrichtlinie (CONTRIBUTING.md), PEP 621 Metadaten, Multi-Host Lock Defense, Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
   - Automated Dependabot Actions & Pip Guard: `.github/dependabot.yml` neu bereitgestellt mit wöchentlichen Updates für `github-actions` (Montags 06:00 Berlin Zeit, Open-PRs-Limit: 3) und `pip` Security-Updates (`open-pull-requests-limit: 0`).
   - Label-Synchronisation (`.github/labels.yml`): Um `dependencies`, `github-actions` und `python` Labels erweitert für nahtlose Interoperabilität mit `label-sync.yml`.
