@@ -132,7 +132,8 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("Security = ", pyproject_text)
         self.assertIn('"Third-Party Licenses" = ', pyproject_text)
         self.assertIn('"Third-Party Licenses (Text)" = ', pyproject_text)
-        self.assertIn('"Marketing-Log" = ', pyproject_text)
+        self.assertNotIn('"Marketing-Log" = ', pyproject_text)
+        self.assertIn('"Code of Conduct" = ', pyproject_text)
         self.assertIn('"LLM-Ready" = ', pyproject_text)
         self.assertIn('"Parent Organization" = "https://github.com/ellmos-ai"', pyproject_text)
         self.assertIn('"Umbrella Ecosystem" = "https://github.com/open-bricks"', pyproject_text)
@@ -183,7 +184,8 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("Local--First", doc)
             self.assertIn("security%20sla-48h%20response%20%7C%205d%20triage", doc)
             self.assertIn("third--party-100%25%20permissive", doc)
-            self.assertIn("marketing%20log-active", doc)
+            self.assertNotIn("MARKETING-LOG.txt", doc)
+            self.assertIn("CODE_OF_CONDUCT.md", doc)
             self.assertIn("code%20style-ruff", doc)
             self.assertIn("LLM--Ready-llms.txt", doc)
 
@@ -283,19 +285,24 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn(inv_id, readme_en, f"Missing {inv_id} in README.md")
             self.assertIn(inv_id, readme_de, f"Missing {inv_id} in README_de.md")
 
-    def test_marketing_log_present(self) -> None:
-        """Verify MARKETING-LOG.txt exists and documents Pfad B."""
-        marketing_log = self.root / "MARKETING-LOG.txt"
-        self.assertTrue(marketing_log.is_file(), "MARKETING-LOG.txt missing")
-        content = marketing_log.read_text(encoding="utf-8")
-        self.assertIn("Pfad B", content)
-        self.assertIn("2026-09-09", content)
-        self.assertIn("2026-09-12", content)
-        self.assertIn("2026-09-28", content)
-        self.assertIn("INV-LOCAL-01", content)
-        self.assertIn("INV-SLA-10", content)
-        self.assertIn("TARGET PERSONAS", content)
-        self.assertIn("COMPETITIVE DIFFERENTIATION MATRIX", content)
+    def test_marketing_log_not_tracked_and_ignored(self) -> None:
+        """Verify MARKETING-LOG.txt is excluded from Git tracking per T-20260926-455218633."""
+        import shutil
+        import subprocess
+
+        gitignore_text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("*MARKETING-LOG.txt", gitignore_text)
+        self.assertIn("MARKETING-LOG.txt", gitignore_text)
+        self.assertIn("LOCK-CACHE.*", gitignore_text)
+
+        if (self.root / ".git").exists() and shutil.which("git"):
+            proc = subprocess.run(
+                ["git", "-C", str(self.root), "ls-files", "--", "MARKETING-LOG.txt"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(proc.stdout.strip(), "", "MARKETING-LOG.txt must not be tracked in Git")
 
     def test_readme_mermaid_sequence_diagrams(self) -> None:
         """Verify Mermaid sequence diagram exists and models the resolution lifecycle."""
@@ -314,9 +321,9 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         for check_path in [
             self.root / "README.md",
             self.root / "README_de.md",
+            self.root / "CODE_OF_CONDUCT.md",
             self.root / "SECURITY.md",
             self.root / "THIRD_PARTY_LICENSES.md",
-            self.root / "MARKETING-LOG.txt",
             self.root / "llms.txt",
             self.root / "CHANGELOG.md",
         ]:
@@ -330,13 +337,16 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-10-31", llms_text)
+        self.assertIn("Last-checked: 2026-11-14", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
+        self.assertIn("CODE_OF_CONDUCT.md", llms_text)
         self.assertIn("CONTRIBUTING.md", llms_text)
         self.assertIn("SECURITY.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.md", llms_text)
         self.assertIn("THIRD_PARTY_LICENSES.txt", llms_text)
-        self.assertIn("MARKETING-LOG.txt", llms_text)
+        self.assertNotIn("MARKETING-LOG.txt", llms_text)
+        self.assertIn(".github/ISSUE_TEMPLATE/bug_report.md", llms_text)
+        self.assertIn(".github/ISSUE_TEMPLATE/feature_request.md", llms_text)
         self.assertIn(".github/workflows/ci.yml", llms_text)
         self.assertIn(".github/dependabot.yml", llms_text)
         self.assertIn(".github/workflows/stale.yml", llms_text)
@@ -599,13 +609,13 @@ class SystemExplorerMetadataTests(unittest.TestCase):
             self.assertIn("Gefälligkeitsverhältnis", doc)
 
     def test_level1_sbom_audit_date_recency(self) -> None:
-        """Verify Level 1 SBOM documents reflect current 2026-10-31 audit date."""
+        """Verify Level 1 SBOM documents reflect current 2026-11-14 audit date."""
         licenses_md = (self.root / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
         licenses_txt = (self.root / "THIRD_PARTY_LICENSES.txt").read_text(encoding="utf-8")
 
-        self.assertIn("Audit Date:** 2026-10-31", licenses_md)
-        self.assertIn("Stand 2026-10-31", licenses_md)
-        self.assertIn("Audited: 2026-10-31", licenses_txt)
+        self.assertIn("Audit Date:** 2026-11-14", licenses_md)
+        self.assertIn("Stand 2026-11-14", licenses_md)
+        self.assertIn("Audited: 2026-11-14", licenses_txt)
 
     def test_pep561_py_typed_present(self) -> None:
         """Verify PEP 561 py.typed marker file exists and is declared in pyproject.toml."""
@@ -740,6 +750,55 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("2026-10-31: Pfad B", changelog)
         self.assertIn("Actual-Self Search Routing Sequenzdiagramm-Architektur", changelog)
         self.assertIn("241 Passed", changelog)
+
+    def test_manifests_surfaces_include_report_provider(self) -> None:
+        """Verify canonical manifest SURFACES includes 'report-provider'."""
+        from system_explorer.manifests import SURFACES
+
+        self.assertIn("report-provider", SURFACES)
+
+    def test_code_of_conduct_bilingual_present(self) -> None:
+        """Verify CODE_OF_CONDUCT.md exists in bilingual DE+EN form with reporting contacts."""
+        coc_path = self.root / "CODE_OF_CONDUCT.md"
+        self.assertTrue(coc_path.is_file(), "CODE_OF_CONDUCT.md missing")
+        content = coc_path.read_text(encoding="utf-8")
+        self.assertIn("Contributor Covenant", content)
+        self.assertIn("## English", content)
+        self.assertIn("## Deutsch", content)
+        self.assertIn("security@ellmos.ai", content)
+        self.assertIn("security@open-bricks.org", content)
+
+    def test_issue_templates_present(self) -> None:
+        """Verify GitHub issue templates exist with Local-First and Zero-Egress checks."""
+        for template_name in ("bug_report.md", "feature_request.md"):
+            tpl_path = self.root / ".github" / "ISSUE_TEMPLATE" / template_name
+            self.assertTrue(tpl_path.is_file(), f"Missing issue template {template_name}")
+            content = tpl_path.read_text(encoding="utf-8")
+            self.assertTrue(content.startswith("---\n"), f"Frontmatter missing in {template_name}")
+            self.assertIn("Zero-Egress", content)
+            self.assertIn("RunAsInvoker", content)
+
+    def test_ci_and_auto_assign_hardening_2026_11_14(self) -> None:
+        """Verify CI workflow hardening and auto-assign Bot-PR exclusion."""
+        ci_text = (self.root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", ci_text)
+        self.assertIn("git diff --check", ci_text)
+        self.assertIn("python -m pip check", ci_text)
+        self.assertIn("python -m pip install --no-build-isolation --dry-run .", ci_text)
+
+        assign_text = (
+            self.root / ".github" / "workflows" / "auto-assign.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("github.event.pull_request.user.type != 'Bot'", assign_text)
+
+    def test_changelog_recent_pfad_a_2026_11_14_entry(self) -> None:
+        """Verify CHANGELOG.md contains the 2026-11-14 Pfad A hygiene entry under Unreleased."""
+        changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## Unreleased", changelog)
+        self.assertIn("2026-11-14: Pfad A", changelog)
+        self.assertIn("report-provider", changelog)
+        self.assertIn("MARKETING-LOG.txt", changelog)
+        self.assertIn("CODE_OF_CONDUCT.md", changelog)
 
 
 if __name__ == "__main__":

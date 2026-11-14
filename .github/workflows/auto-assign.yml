@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   assign:
+    if: github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
