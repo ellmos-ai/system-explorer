@@ -784,7 +784,7 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", ci_text)
         self.assertIn("git diff --check", ci_text)
         self.assertIn("python -m pip check", ci_text)
-        self.assertIn("python -m pip install --no-build-isolation --dry-run .", ci_text)
+        self.assertIn("python -m pip install --dry-run .", ci_text)
 
         assign_text = (
             self.root / ".github" / "workflows" / "auto-assign.yml"
