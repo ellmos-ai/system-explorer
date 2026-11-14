@@ -33,6 +33,7 @@ SURFACES = {
     "dataset",
     "template",
     "mcp-adapter",
+    "report-provider",
 }
 NETWORK_BOUNDARIES = {"none", "local", "listed", "optional", "transport-defined"}
 DATA_BOUNDARIES = {"none", "public", "user-local", "sensitive", "application-defined"}
