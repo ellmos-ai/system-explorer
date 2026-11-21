@@ -784,12 +784,21 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", ci_text)
         self.assertIn("git diff --check", ci_text)
         self.assertIn("python -m pip check", ci_text)
-        self.assertIn("python -m pip install --no-build-isolation --dry-run .", ci_text)
+        # Mit Build-Isolation: Runner bringen auf Python 3.12+ kein setuptools mit und
+        # auf 3.10/3.11 ein zu altes fuer SPDX-``license``; pip holt das Backend selbst.
+        self.assertIn("python -m pip install --dry-run .", ci_text)
+        self.assertNotIn("--no-build-isolation", ci_text)
 
         assign_text = (
             self.root / ".github" / "workflows" / "auto-assign.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("github.event.pull_request.user.type != 'Bot'", assign_text)
+
+    def test_build_backend_floor_supports_spdx_license(self) -> None:
+        """SPDX-``license`` plus ``license-files`` (PEP 639) verlangt setuptools>=77."""
+        text = (self.root / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('license = "MIT"', text)
+        self.assertIn('requires = ["setuptools>=77"]', text)
 
     def test_changelog_recent_pfad_a_2026_11_14_entry(self) -> None:
         """Verify CHANGELOG.md contains the 2026-11-14 Pfad A hygiene entry under Unreleased."""
