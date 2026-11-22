@@ -133,6 +133,7 @@ def test_registry_redacts_entrypoint_credentials_and_prunes_stale_rows_on_refres
     tmp_path,
 ):
     config = _config(tmp_path)
+    config["software_resources"][0]["generated_by"] = "temp-builder"
     config["software_resources"][0]["interfaces"].append(
         {
             "method": "openapi",
@@ -154,7 +155,8 @@ def test_registry_redacts_entrypoint_credentials_and_prunes_stale_rows_on_refres
     assert "env-secret" not in leaked["entrypoint"]
     assert "[REDACTED]" in leaked["entrypoint"]
 
-    # Remove openapi interface, function, and second resource, then refresh.
+    # Remove openapi interface, function, generated_by, and second resource, then refresh.
+    config["software_resources"][0].pop("generated_by", None)
     config["software_resources"][0]["interfaces"] = [
         {
             "method": "cli",
@@ -167,6 +169,10 @@ def test_registry_redacts_entrypoint_credentials_and_prunes_stale_rows_on_refres
     with Store(Path(config["database"])) as store:
         register_software_resources(config, store)
         refreshed = software_endpoint_registry(store)
+        actor_ids = {node["id"] for node in store.nodes("actor")}
+
+    assert "actor:temp-builder" not in actor_ids
+    assert "actor:claude" not in actor_ids
 
     assert refreshed["summary"] == {
         "resources": 1,

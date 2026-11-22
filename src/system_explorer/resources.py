@@ -469,7 +469,10 @@ def _register_resource(
             "actor",
             str(generated_by),
             node_id=actor_id,
-            metadata={"provider": item.get("generated_by_provider")},
+            metadata={
+                "provider": item.get("generated_by_provider"),
+                "resource_controller": True,
+            },
         )
         store.add_edge(
             resource_id,
