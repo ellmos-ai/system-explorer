@@ -46,7 +46,11 @@ from .resolver import (
     resolve_test,
     validate_manifest_target,
 )
-from .resources import resource_report
+from .resources import (
+    register_software_resources,
+    resource_report,
+    software_endpoint_registry,
+)
 from .scanner import ProgressCallback, scan
 from .search_authority import import_search_authority_receipt
 from .search_routing import resolve_search_route
@@ -320,6 +324,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     resources = sub.add_parser("resources")
     resources.add_argument("--config", type=Path, required=True)
+
+    software_endpoints = sub.add_parser(
+        "software-endpoints",
+        help="Emit the deterministic local software endpoint registry.",
+    )
+    software_endpoints.add_argument("--config", type=Path, required=True)
+    software_endpoints.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Refresh configured software resources before emitting the registry.",
+    )
 
     purpose_check = sub.add_parser("purpose-check")
     purpose_check.add_argument("--target")
@@ -833,6 +848,9 @@ def _run(args: argparse.Namespace) -> int:
             value = purpose_report(store, args.target)
         elif args.command == "resources":
             value = resource_report(store)
+        elif args.command == "software-endpoints":
+            refresh = register_software_resources(config, store) if args.refresh else None
+            value = software_endpoint_registry(store, refresh=refresh)
         elif args.command == "provider-refresh":
             value = refresh_provider_sources(
                 config,
