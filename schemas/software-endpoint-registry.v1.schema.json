@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.ellmos.ai/system-explorer/software-endpoint-registry.v1.schema.json",
+  "title": "System Explorer Software Endpoint Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "authority",
+    "privacy",
+    "endpoints",
+    "summary",
+    "content_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "system-explorer.software-endpoint-registry.v1"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "runtime_authority"],
+      "properties": {
+        "kind": {"const": "evidence-store-projection"},
+        "runtime_authority": {"const": false}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_content_included", "credential_values_included"],
+      "properties": {
+        "raw_content_included": {"const": false},
+        "credential_values_included": {"const": false}
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/endpoint"}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resources", "installed_resources", "endpoints", "methods"],
+      "properties": {
+        "resources": {"type": "integer", "minimum": 0},
+        "installed_resources": {"type": "integer", "minimum": 0},
+        "endpoints": {"type": "integer", "minimum": 0},
+        "methods": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "refresh": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "provider"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "provider": {"type": ["string", "null"]}
+      }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1}
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "resource_id",
+        "resource_name",
+        "resource_kind",
+        "installed",
+        "status",
+        "method",
+        "entrypoint",
+        "structured",
+        "readiness",
+        "readiness_symbol",
+        "actors",
+        "functions"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "resource_id": {"type": "string", "minLength": 1},
+        "resource_name": {"type": "string", "minLength": 1},
+        "resource_kind": {"type": "string", "minLength": 1},
+        "installed": {"type": "boolean"},
+        "status": {"type": "string", "minLength": 1},
+        "method": {"type": "string", "minLength": 1},
+        "entrypoint": {"type": ["string", "null"]},
+        "structured": {"type": "boolean"},
+        "readiness": {
+          "enum": ["native", "direct", "indirect", "reference", "unproven"]
+        },
+        "readiness_symbol": {"type": "string", "minLength": 1},
+        "actors": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/actor"}
+        },
+        "functions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/function"}
+        }
+      }
+    }
+  }
+}

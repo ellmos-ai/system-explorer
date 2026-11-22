@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- 2026-11-22: Explizite Software-Endpoint-Registry für OCEAN Full Dev (Rebase von `ec50c92` auf `0.4.2`).
+  - Neue read-only CLI `software-endpoints` mit optionalem, eng begrenztem `--refresh` der konfigurierten Software-Ressourcen.
+  - Deterministische, inhaltsgehashte Projektion `system-explorer.software-endpoint-registry.v1` mit Ressourcen, Schnittstellen, Funktionen, Akteuren, LLM-Bereitschaft und beobachtetem Installationsstatus.
+  - JSON-Schema (`schemas/software-endpoint-registry.v1.schema.json`) und fokussierte API-/CLI-Tests ergänzen die bestehende Ressourcenkarte; Rohinhalte, Credential-Werte und Zielsystemmutationen bleiben ausgeschlossen.
+  - Das Modul deklariert nun ausdrücklich `software.endpoint.registry` und kann dadurch die gleichnamige OCEAN-Kompositionsrolle tragen; Version `0.4.2` bleibt unverändert.
+
 - 2026-11-14: Pfad A: Manifest-Schema-Parität (`report-provider`), Untracking von `MARKETING-LOG.txt` (`T-20260926-455218633`), CI-/Packaging-Härtung, Community-Health-Dateien & Vertragstest-Erweiterung.
   - Manifest-Schema-Parität: `SURFACES` in `src/system_explorer/manifests.py` um `"report-provider"` gemäß kanonischem Schema `ellmos.module.v2.schema.json` ergänzt (behebt Schema-Drift-Testfehler).
   - Schutz privater Projektartefakte (`T-20260926-455218633`): `MARKETING-LOG.txt` aus dem Git-Index entfernt (`git rm --cached`, lokal erhalten) und in `.gitignore` zusammen mit `LOCK-CACHE.*`, rollenbasierten Lock-Mustern (`LOCK.orchestrator.*`, `LOCK.operator.*`, `LOCK.worker.*`, `LOCK.thinker.*`, `LOCK.reviewer.*`) sowie `*.prof` verankert; Verweise in `pyproject.toml`, `README.md`, `README_de.md`, `llms.txt` und Vertragstests bereinigt.

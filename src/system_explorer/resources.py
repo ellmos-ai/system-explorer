@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from .contracts import canonical_content_hash
 from .store import Store
 from .util import expand_path, sha256_file, stable_id
 
@@ -82,6 +83,115 @@ def resource_report(store: Store) -> dict[str, Any]:
             }
         )
     return {"resources": rows, "summary": summary, "symbols": READINESS}
+
+
+def software_endpoint_registry(
+    store: Store,
+    *,
+    refresh: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    """Project the software-resource graph as a stable endpoint registry."""
+    resources = sorted(store.nodes("software_resource"), key=lambda row: row["id"])
+    nodes = {node["id"]: node for node in store.nodes()}
+    edges = store.resolved_edges()
+    exposed = {
+        edge["target_id"]: (edge["source_id"], edge["status"])
+        for edge in edges
+        if edge["relation"] == "exposes_interface"
+        and edge["source_id"] in nodes
+        and edge["target_id"] in nodes
+    }
+    actors_by_interface: dict[str, list[dict[str, Any]]] = {}
+    for edge in edges:
+        if edge["relation"] != "controls_via" or edge["target_id"] not in exposed:
+            continue
+        actor = nodes.get(edge["source_id"])
+        if not actor:
+            continue
+        actors_by_interface.setdefault(edge["target_id"], []).append(
+            {
+                "id": actor["id"],
+                "name": actor["name"],
+                "provider": actor.get("metadata", {}).get("provider"),
+            }
+        )
+
+    functions_by_resource: dict[str, list[dict[str, Any]]] = {}
+    for edge in edges:
+        if edge["relation"] != "carries":
+            continue
+        function = nodes.get(edge["target_id"])
+        if edge["source_id"] not in nodes or not function:
+            continue
+        functions_by_resource.setdefault(edge["source_id"], []).append(
+            {
+                "id": function["id"],
+                "name": function["name"],
+                "status": edge["status"],
+            }
+        )
+
+    endpoints: list[dict[str, Any]] = []
+    methods: dict[str, int] = {}
+    resources_by_id = {resource["id"]: resource for resource in resources}
+    for interface_id, (resource_id, status) in exposed.items():
+        resource = resources_by_id.get(resource_id)
+        interface = nodes.get(interface_id)
+        if not resource or not interface:
+            continue
+        resource_meta = resource.get("metadata", {})
+        interface_meta = interface.get("metadata", {})
+        method = str(interface_meta.get("control_method", "unproven"))
+        methods[method] = methods.get(method, 0) + 1
+        endpoints.append(
+            {
+                "id": interface["id"],
+                "resource_id": resource["id"],
+                "resource_name": resource["name"],
+                "resource_kind": resource_meta.get("resource_kind", "external-program"),
+                "installed": bool(resource_meta.get("installed", False)),
+                "status": status,
+                "method": method,
+                "entrypoint": interface_meta.get("entrypoint"),
+                "structured": bool(interface_meta.get("structured", False)),
+                "readiness": resource_meta.get("llm_readiness", "unproven"),
+                "readiness_symbol": resource_meta.get("llm_ready_symbol", "?"),
+                "actors": sorted(
+                    actors_by_interface.get(interface["id"], []),
+                    key=lambda row: row["id"],
+                ),
+                "functions": sorted(
+                    functions_by_resource.get(resource["id"], []),
+                    key=lambda row: row["id"],
+                ),
+            }
+        )
+
+    result: dict[str, Any] = {
+        "schema": "system-explorer.software-endpoint-registry.v1",
+        "authority": {
+            "kind": "evidence-store-projection",
+            "runtime_authority": False,
+        },
+        "privacy": {
+            "raw_content_included": False,
+            "credential_values_included": False,
+        },
+        "endpoints": sorted(endpoints, key=lambda row: row["id"]),
+        "summary": {
+            "resources": len(resources),
+            "installed_resources": sum(
+                bool(resource.get("metadata", {}).get("installed", False))
+                for resource in resources
+            ),
+            "endpoints": len(endpoints),
+            "methods": dict(sorted(methods.items())),
+        },
+    }
+    if refresh is not None:
+        result["refresh"] = refresh
+    result["content_hash"] = canonical_content_hash(result)
+    return result
 
 
 def resource_graph(store: Store) -> dict[str, Any]:

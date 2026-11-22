@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-248%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-251%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -306,6 +306,7 @@ system-explorer server-check --config deployment.json
 system-explorer provider-refresh --config deployment.json
 system-explorer purpose-check --target carrier:system-explorer --config deployment.json
 system-explorer resources --config software-resources.json
+system-explorer software-endpoints --config software-resources.json --refresh
 system-explorer map --config software-resources.json --view resources
 system-explorer explain-video --config explorer.json --output explainer-package --media-editor ..\ai-media-editor --probe
 system-explorer diagrams --repo C:\_Local_DEV\repos\my-module
@@ -392,6 +393,12 @@ Installed software is not automatically equated with LLM usability.
 `software_resources` and a bounded `software_discovery.commands` allowlist
 register the resource, function, and control path. `◆`, `◇`, `△`, `○`, and `?`
 denote native, direct, indirect, reference-only, and unevidenced LLM readiness.
+`software-endpoints --refresh` turns that same evidence into the deterministic
+`system-explorer.software-endpoint-registry.v1` projection. It lists only typed
+resource, interface, function, actor, readiness, and observed installation fields;
+raw source content, credential values, and target-system mutation remain excluded.
+The output is content-hashed and validated by
+[`schemas/software-endpoint-registry.v1.schema.json`](schemas/software-endpoint-registry.v1.schema.json).
 The rules and truth boundaries are documented in
 [`docs/CRYSTALLIZED-RESOURCES.md`](docs/CRYSTALLIZED-RESOURCES.md); a neutral
 configuration is available in
@@ -681,6 +688,11 @@ required discovery, mapping, and coverage checker for the
 `ellmos-core-discovery-bundle`. Direct partners are `ellmos-core` as the
 orchestration caller and the recommended component resolver and semantic
 routing partner.
+
+The same module is the concrete read-only provider for the
+`module:software-endpoint-registry` composition role: its dedicated CLI projection
+materializes the already evidenced software-resource graph without creating a
+second registry authority.
 
 The module can also provide read-only support at two boundaries:
 
