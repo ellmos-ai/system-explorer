@@ -707,6 +707,14 @@ this module. Authoritative membership, versions, profiles, and private
 composition recipes are defined exclusively in the respective bundle
 manifest; this public overview is only a safe discovery aid.
 
+### Planned Optional Integrations (Roadmap)
+
+Three prospective optional capability integrations do not yet have a cataloged module provider in `ellmos-module.v2.json` and are tracked here as roadmap boundaries rather than active `optional` manifest dependencies:
+
+- `controlcenter.context` — planned read-only context projection from `ellmos-controlcenter-mcp` (currently an MCP access surface rather than a `v2` module provider).
+- `byum.prompt-evidence` — planned redacted prompt-evidence handoff from `build-your-users-mind` once exposed as a typed module capability.
+- `apiprober.passive-export` — planned passive endpoint export intake from `ApiProber` complementing the local `api-prober.evidence-adapter`.
+
 <a id="sec-15"></a><a id="ecosystem--sibling-tools"></a>
 ## Ecosystem & Sibling Tools
 

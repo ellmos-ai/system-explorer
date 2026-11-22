@@ -52,15 +52,12 @@
   ],
   "requires": [],
   "optional": [
-    "controlcenter.context",
     "policy.registry",
-    "byum.prompt-evidence",
-    "hooker.runtime-evidence",
-    "swarm-ai.probe-runner",
+    "memory.hook",
+    "swarm.parallel",
     "unified-gui.host",
-    "system-gap-master.handoff",
-    "apiprober.passive-export",
-    "ai-media-editor.uc6"
+    "sync.messages",
+    "workflow.media.pipeline"
   ],
   "conflicts": [
     "target-system.mutation",
