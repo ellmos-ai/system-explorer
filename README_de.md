@@ -724,6 +724,14 @@ dieses Moduls. Verbindliche Zugehörigkeiten, Versionen, Profile und private
 Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 öffentliche Übersicht ist nur ein sicherer Einstiegshelfer.
 
+### Geplante optionale Integrationen (Roadmap)
+
+Drei perspektivische optionale Schnittstellen besitzen derzeit noch keinen katalogisierten Modul-Provider in `ellmos-module.v2.json` und werden daher hier als Roadmap-Abgrenzung statt als aktive `optional`-Manifest-Abhängigkeiten geführt:
+
+- `controlcenter.context` — geplante lesende Kontextprojektion aus `ellmos-controlcenter-mcp` (derzeit MCP-Zugangsfläche statt `v2`-Modul-Provider).
+- `byum.prompt-evidence` — geplanter redigierter Prompt-Evidenz-Handoff aus `build-your-users-mind`, sobald dieser als typisierte Modulfähigkeit exponiert wird.
+- `apiprober.passive-export` — geplanter passiver Endpoint-Export-Import aus `ApiProber` als Ergänzung zum lokalen `api-prober.evidence-adapter`.
+
 <a id="sec-15"></a><a id="ökosystem--geschwisterwerkzeuge"></a><a id="oekosystem--geschwisterwerkzeuge"></a>
 ## Ökosystem & Geschwisterwerkzeuge
 
