@@ -1,12 +1,102 @@
 from __future__ import annotations
 
+import json
+import re
 import shutil
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from .contracts import canonical_content_hash
 from .store import Store
 from .util import expand_path, sha256_file, stable_id
+
+_SECRET_WORD = (
+    r"(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|client[_-]?secret|"
+    r"credential(?:value)?|passwd|password|private[_-]?key|pwd|secret(?:value)?|token)"
+)
+_CLI_FLAG_ASSIGN_RE = re.compile(
+    rf"(?i)(--?[a-z0-9_-]*{_SECRET_WORD}[a-z0-9_-]*\s*=\s*)(\S+)"
+)
+_CLI_FLAG_SPACE_RE = re.compile(
+    rf"(?i)(--?[a-z0-9_-]*{_SECRET_WORD}[a-z0-9_-]*\s+)(?!-)(\S+)"
+)
+_ENV_ASSIGN_RE = re.compile(
+    rf"(?i)(\b[a-z0-9_]*{_SECRET_WORD}[a-z0-9_]*\s*=\s*)(\S+)"
+)
+_BEARER_RE = re.compile(r"(?i)(\bBearer\s+)([A-Za-z0-9._~+/-]+=*)")
+_URL_IN_TEXT_RE = re.compile(r"([a-z][a-z0-9+.-]*://[^\s\"'<>]+)", re.IGNORECASE)
+_QUERY_SECRET_KEY_RE = re.compile(rf"(?i)(?:^|[_-]){_SECRET_WORD}$|^(?:auth|key)$")
+
+
+def _sanitize_url(raw_url: str) -> str:
+    try:
+        parts = urlsplit(raw_url)
+    except ValueError:
+        return raw_url
+    netloc = parts.netloc
+    if "@" in netloc:
+        _, host = netloc.rsplit("@", 1)
+        netloc = f"[REDACTED]@{host}"
+    query = parts.query
+    if query:
+        pairs = parse_qsl(query, keep_blank_values=True)
+        redacted_pairs = [
+            (k, "[REDACTED]" if _QUERY_SECRET_KEY_RE.search(k) else v)
+            for k, v in pairs
+        ]
+        query = urlencode(redacted_pairs)
+    return urlunsplit((parts.scheme, netloc, parts.path, query, parts.fragment))
+
+
+def _sanitize_entrypoint(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value)
+    text = _URL_IN_TEXT_RE.sub(lambda m: _sanitize_url(m.group(1)), text)
+    text = _BEARER_RE.sub(r"\1[REDACTED]", text)
+    text = _CLI_FLAG_ASSIGN_RE.sub(r"\1[REDACTED]", text)
+    text = _CLI_FLAG_SPACE_RE.sub(r"\1[REDACTED]", text)
+    text = _ENV_ASSIGN_RE.sub(r"\1[REDACTED]", text)
+    return text
+
+
+def _prune_registered_software_resources(store: Store) -> None:
+    """Remove prior software-resource graph rows before a full refresh."""
+    store.db.execute(
+        """
+        DELETE FROM edges
+        WHERE (source_id LIKE 'software:%' AND relation IN ('exposes_interface', 'carries', 'generated_by'))
+           OR (target_id LIKE 'software-interface:%' AND relation = 'controls_via')
+        """
+    )
+    store.db.execute(
+        """
+        DELETE FROM nodes
+        WHERE node_type = 'interface'
+          AND id LIKE 'software-interface:%'
+          AND id NOT IN (SELECT source_id FROM edges UNION SELECT target_id FROM edges)
+        """
+    )
+    store.db.execute(
+        """
+        DELETE FROM nodes
+        WHERE node_type = 'software_resource'
+          AND id LIKE 'software:%'
+          AND id NOT IN (SELECT source_id FROM edges UNION SELECT target_id FROM edges)
+          AND id NOT IN (SELECT carrier_id FROM component_identity_claims)
+        """
+    )
+    for row in store.db.execute(
+        """
+        SELECT id, metadata_json FROM nodes
+        WHERE node_type IN ('function', 'actor')
+          AND id NOT IN (SELECT source_id FROM edges UNION SELECT target_id FROM edges)
+        """
+    ).fetchall():
+        metadata = json.loads(row["metadata_json"])
+        if metadata.get("resource_function") or metadata.get("resource_controller"):
+            store.db.execute("DELETE FROM nodes WHERE id = ?", (row["id"],))
 
 
 READINESS = {
@@ -33,6 +123,7 @@ def register_software_resources(
         "installed_observed": 0,
         "installed_missing": 0,
     }
+    _prune_registered_software_resources(store)
     base = Path(config.get("_base", "."))
     for item in config.get("software_resources", []):
         _register_resource(item, base, store, stats)
@@ -152,7 +243,7 @@ def software_endpoint_registry(
                 "installed": bool(resource_meta.get("installed", False)),
                 "status": status,
                 "method": method,
-                "entrypoint": interface_meta.get("entrypoint"),
+                "entrypoint": _sanitize_entrypoint(interface_meta.get("entrypoint")),
                 "structured": bool(interface_meta.get("structured", False)),
                 "readiness": resource_meta.get("llm_readiness", "unproven"),
                 "readiness_symbol": resource_meta.get("llm_ready_symbol", "?"),
@@ -312,6 +403,7 @@ def _register_resource(
             scope=resource_id,
             metadata={
                 **interface,
+                "entrypoint": _sanitize_entrypoint(interface.get("entrypoint")),
                 "control_method": method,
                 "structured": method in NATIVE_METHODS,
                 "credential_value_retained": False,

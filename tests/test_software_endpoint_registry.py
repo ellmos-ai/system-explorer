@@ -127,3 +127,53 @@ def test_cli_can_refresh_and_emit_registry_without_a_prior_full_scan(tmp_path):
     assert report["schema"] == "system-explorer.software-endpoint-registry.v1"
     assert report["summary"]["endpoints"] == 3
     assert report["refresh"]["software_resources"] == 2
+
+
+def test_registry_redacts_entrypoint_credentials_and_prunes_stale_rows_on_refresh(
+    tmp_path,
+):
+    config = _config(tmp_path)
+    config["software_resources"][0]["interfaces"].append(
+        {
+            "method": "openapi",
+            "entrypoint": (
+                "https://alice:top-secret@api.example.invalid/v1?api_key=raw-secret"
+                " --token cli-secret TOKEN=env-secret"
+            ),
+            "actors": [{"id": "claude", "name": "Claude", "provider": "anthropic"}],
+        }
+    )
+    with Store(Path(config["database"])) as store:
+        register_software_resources(config, store)
+        initial = software_endpoint_registry(store)
+
+    leaked = next(row for row in initial["endpoints"] if row["method"] == "openapi")
+    assert "top-secret" not in leaked["entrypoint"]
+    assert "raw-secret" not in leaked["entrypoint"]
+    assert "cli-secret" not in leaked["entrypoint"]
+    assert "env-secret" not in leaked["entrypoint"]
+    assert "[REDACTED]" in leaked["entrypoint"]
+
+    # Remove openapi interface, function, and second resource, then refresh.
+    config["software_resources"][0]["interfaces"] = [
+        {
+            "method": "cli",
+            "entrypoint": "python bridge-tool.py",
+        }
+    ]
+    config["software_resources"][0]["functions"] = []
+    config["software_resources"] = [config["software_resources"][0]]
+
+    with Store(Path(config["database"])) as store:
+        register_software_resources(config, store)
+        refreshed = software_endpoint_registry(store)
+
+    assert refreshed["summary"] == {
+        "resources": 1,
+        "installed_resources": 1,
+        "endpoints": 1,
+        "methods": {"cli": 1},
+    }
+    assert len(refreshed["endpoints"]) == 1
+    assert refreshed["endpoints"][0]["actors"] == []
+    assert refreshed["endpoints"][0]["functions"] == []
