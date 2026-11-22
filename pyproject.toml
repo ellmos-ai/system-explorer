@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -68,7 +68,7 @@ Notice = "https://github.com/ellmos-ai/system-explorer/blob/main/NOTICE"
 "Third-Party Licenses" = "https://github.com/ellmos-ai/system-explorer/blob/main/THIRD_PARTY_LICENSES.md"
 "Third-Party Licenses (Text)" = "https://github.com/ellmos-ai/system-explorer/blob/main/THIRD_PARTY_LICENSES.txt"
 Contributing = "https://github.com/ellmos-ai/system-explorer/blob/main/CONTRIBUTING.md"
-"Marketing-Log" = "https://github.com/ellmos-ai/system-explorer/blob/main/MARKETING-LOG.txt"
+"Code of Conduct" = "https://github.com/ellmos-ai/system-explorer/blob/main/CODE_OF_CONDUCT.md"
 "LLM-Ready" = "https://github.com/ellmos-ai/system-explorer/blob/main/llms.txt"
 "Parent Organization" = "https://github.com/ellmos-ai"
 "Umbrella Ecosystem" = "https://github.com/open-bricks"
@@ -91,6 +91,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-ra -v --basetemp=.pytest_temp"
 norecursedirs = [".git", ".pytest_temp", ".pytest_tmp*", ".hypothesis", ".turbo", ".nyc_output", ".tox"]
+xfail_strict = true
 
 [tool.ruff]
 line-length = 100

@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-241%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-248%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -14,15 +14,15 @@
 [![Level 1 SBOM](https://img.shields.io/badge/Level%201%20SBOM-Plain--Text-brightgreen.svg)](THIRD_PARTY_LICENSES.txt)
 [![Beitragsrichtlinie](https://img.shields.io/badge/Beitragsrichtlinie-Guide-blue.svg)](CONTRIBUTING.md)
 [![Dependabot](https://img.shields.io/badge/Dependabot-Aktiv-brightgreen.svg)](.github/dependabot.yml)
-[![Geprüft: 2026-10-31](https://img.shields.io/badge/Gepr%C3%BCft-2026--10--31-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
-[![Marketing Log: Active](https://img.shields.io/badge/marketing%20log-active-blue.svg)](MARKETING-LOG.txt)
+[![Geprüft: 2026-11-14](https://img.shields.io/badge/Gepr%C3%BCft-2026--11--14-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
+[![Verhaltenskodex](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
 
-**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 🤝 [Beitragsrichtlinie](CONTRIBUTING.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
+**🇩🇪 Deutsch** | [🇬🇧 English](README.md) | 🛡️ [Sicherheitsrichtlinie](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 🤝 [Beitragsrichtlinie](CONTRIBUTING.md) | 🤝 [Verhaltenskodex](CODE_OF_CONDUCT.md) | 📋 [llms.txt](llms.txt) | 📜 [Drittanbieter-Lizenzen](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
 
 > [!NOTE]
 > Für einen LLM-optimierten Index und Schnellreferenz siehe [`llms.txt`](llms.txt).
@@ -742,7 +742,7 @@ Kompositionsrezepte stehen ausschließlich im jeweiligen Bundle-Manifest; diese
 
 `system-explorer` erzwingt lückenlose Qualitätssicherung durch automatisierte Testsuiten, striktes Linting, Bytecode-Kompilierung und Vertragstests:
 
-- **Pytest-Suite**: 241 Tests (215 bestanden, 26 Subtests) mit `--basetemp=.pytest_temp` und 100% Erfolgsquote.
+- **Pytest-Suite**: 248 Tests mit `--basetemp=.pytest_temp` und 100% Erfolgsquote.
 - **Ruff AST Linter**: Vollständige Konformität mit PEP 8 und modernen Python 3.10+ Lint-Standards (`ruff check src tests`).
 - **Python Bytecode-Kompilierung**: Verifiziert über alle Quellbäume (`python -m compileall -q src tests`).
 - **Vertrags- & Metadaten-Invarianten**: Validiert in `tests/test_metadata.py` und `tests/test_versioning.py`.

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 2026-11-14: Pfad A: Manifest-Schema-Parität (`report-provider`), Untracking von `MARKETING-LOG.txt` (`T-20260926-455218633`), CI-/Packaging-Härtung, Community-Health-Dateien & Vertragstest-Erweiterung.
+  - Manifest-Schema-Parität: `SURFACES` in `src/system_explorer/manifests.py` um `"report-provider"` gemäß kanonischem Schema `ellmos.module.v2.schema.json` ergänzt (behebt Schema-Drift-Testfehler).
+  - Schutz privater Projektartefakte (`T-20260926-455218633`): `MARKETING-LOG.txt` aus dem Git-Index entfernt (`git rm --cached`, lokal erhalten) und in `.gitignore` zusammen mit `LOCK-CACHE.*`, rollenbasierten Lock-Mustern (`LOCK.orchestrator.*`, `LOCK.operator.*`, `LOCK.worker.*`, `LOCK.thinker.*`, `LOCK.reviewer.*`) sowie `*.prof` verankert; Verweise in `pyproject.toml`, `README.md`, `README_de.md`, `llms.txt` und Vertragstests bereinigt.
+  - Community Health & Governance: Zweisprachigen Verhaltenskodex (`CODE_OF_CONDUCT.md`, Contributor Covenant v2.1 DE/EN) sowie strukturierte Issue-Vorlagen (`.github/ISSUE_TEMPLATE/bug_report.md` und `feature_request.md`) mit Local-First/Zero-Egress-Checks ergänzt und in `pyproject.toml`, `README.md`, `README_de.md` und `llms.txt` verlinkt.
+  - CI-Matrix- & Packaging-Härtung: `.github/workflows/ci.yml` um `workflow_dispatch`, `git diff --check`, `python -m pip check` und `python -m pip install --dry-run .` ergänzt (mit Build-Isolation, da Runner auf Python 3.12+ kein setuptools mitbringen; `[build-system]` verlangt für SPDX-`license` jetzt `setuptools>=77`); `.github/workflows/auto-assign.yml` gegen Bot-PRs gehärtet (`github.event.pull_request.user.type != 'Bot'`); `xfail_strict = true` in `pyproject.toml` aktiviert.
+  - Level 1 SBOM Re-Audit & Teststand-Parität: Auditdatum in `THIRD_PARTY_LICENSES.md`, `THIRD_PARTY_LICENSES.txt`, `llms.txt` und README-Badges auf `2026-11-14` sowie Pytest-Badge auf `248 passed` aktualisiert; `version = "0.4.2"` unverändert (T-20260920-167562623).
+  - Vertragstest-Erweiterung: `tests/test_metadata.py` und `tests/test_versioning.py` um Tests für `SURFACES`-Parität, `MARKETING-LOG.txt`-Untracking, `CODE_OF_CONDUCT.md`, Issue-Templates, CI-/Auto-Assign-Härtung und Aktualität `2026-11-14` erweitert.
+
 - 2026-10-31: Pfad B: Discoverability, Actual-Self Search Routing Sequenzdiagramm-Architektur, Teststand-Parität (241 Passed), Level 1 SBOM Re-Audit & Vertragstest-Erweiterung.
   - Actual-Self Search Routing Sequenzdiagramm: Section 09 in `README.md` und `README_de.md` um ein zweites dediziertes Mermaid-Sequenzdiagramm (`autonumber`) für die kryptographische Ed25519-Trust-Store-Verifikation, Actual-Self Readback-Gültigkeitsprüfung, Decision-/Policy-Evidenzauflösung und Fail-Closed Autorisierungsgates erweitert.
   - Teststand- & Badges-Parität: Synchronisation der Pytest-Angaben in Section 16 beider Dokumente auf real gemessene 241 Tests (215 passed, 26 subtests, 100% grün) und Aktualisierung der Verified-Badges auf Stand `2026-10-31`.
