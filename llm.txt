@@ -1,0 +1,8 @@
+# Compatibility Pointer -> llms.txt
+
+Canonical LLM entry point: [llms.txt](llms.txt)
+Product skill specification: [SKILL.md](SKILL.md)
+
+Quick verification:
+- `system-explorer --help`
+- `system-explorer doctor --config examples/explorer.json`
