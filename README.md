@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/system-explorer/actions/workflows/ci.yml)
-[![Pytest](https://img.shields.io/badge/Pytest-251%20passed-brightgreen.svg)](tests)
+[![Pytest](https://img.shields.io/badge/Pytest-256%20passed-brightgreen.svg)](tests)
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](pyproject.toml)
 [![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20%7C%20Zero--Egress-success.svg)](SECURITY.md)
@@ -14,18 +14,19 @@
 [![Level 1 SBOM](https://img.shields.io/badge/Level%201%20SBOM-Plain--Text-brightgreen.svg)](THIRD_PARTY_LICENSES.txt)
 [![Contributing](https://img.shields.io/badge/Contributing-Guide-blue.svg)](CONTRIBUTING.md)
 [![Dependabot](https://img.shields.io/badge/Dependabot-Active-brightgreen.svg)](.github/dependabot.yml)
-[![Verified: 2026-11-14](https://img.shields.io/badge/Verified-2026--11--14-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
+[![Verified: 2026-11-24](https://img.shields.io/badge/Verified-2026--11--24-brightgreen.svg)](https://github.com/ellmos-ai/system-explorer)
 [![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Ecosystem: ellmos-ai](https://img.shields.io/badge/Ecosystem-ellmos--ai-blue.svg)](https://github.com/ellmos-ai)
 [![Umbrella: open-bricks](https://img.shields.io/badge/Umbrella-open--bricks-purple.svg)](https://github.com/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-blueviolet.svg)](llms.txt)
+[![Product Skill](https://img.shields.io/badge/Product%20Skill-SKILL.md-blueviolet.svg)](SKILL.md)
 
-[🇩🇪 Deutsch](README_de.md) | **🇬🇧 English** | 🛡️ [Security Policy](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 🤝 [Contributing Guide](CONTRIBUTING.md) | 🤝 [Code of Conduct](CODE_OF_CONDUCT.md) | 📋 [llms.txt](llms.txt) | 📜 [Third-Party Licenses](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
+[🇩🇪 Deutsch](README_de.md) | **🇬🇧 English** | 🛡️ [Security Policy](SECURITY.md) | 📝 [Changelog](CHANGELOG.md) | 🤝 [Contributing Guide](CONTRIBUTING.md) | 🤝 [Code of Conduct](CODE_OF_CONDUCT.md) | 🤖 [Product Skill](SKILL.md) | 📋 [llms.txt](llms.txt) | 📜 [Third-Party Licenses](THIRD_PARTY_LICENSES.md) | 📄 [Level 1 SBOM Text](THIRD_PARTY_LICENSES.txt) | ⚖️ [Notice](NOTICE)
 
 > [!NOTE]
-> For LLM-optimized index and quick reference, see [`llms.txt`](llms.txt).
+> For the LLM-optimized index and quick reference, see [`llms.txt`](llms.txt) (compatibility pointer: [`llm.txt`](llm.txt)) and the product usage skill [`SKILL.md`](SKILL.md).
 
 `system-explorer` creates evidence-based maps of a modular agent and software
 system. The tool separates two layers:
@@ -246,6 +247,12 @@ flowchart TD
     StatusFail --> Exporter
 ```
 
+### Local Web Dashboard & Terminal Workflow Preview
+
+<img src="README/screenshots/dashboard_view.png" width="100%" alt="System Explorer Local Web Dashboard">
+
+<img src="assets/terminal-workflow.svg" width="100%" alt="System Explorer Terminal Workflow Preview">
+
 <a id="sec-05"></a><a id="evidence-backed-resolution-lifecycle"></a>
 ## Evidence-Backed Resolution Lifecycle
 
@@ -324,6 +331,15 @@ system-explorer serve --config explorer.json
 ```
 
 By default, the interface binds only to `127.0.0.1:8765`.
+
+### Install with your LLM
+
+```text
+Install and verify https://github.com/ellmos-ai/system-explorer (prefer a release tag or commit pin, no unverified curl|sh pipes):
+1. Read llms.txt and SKILL.md in the repository root first.
+2. Create an isolated environment (.venv) and run the installation command from llms.txt.
+3. Verify the installation with the verification command (--help / pytest) and report the result.
+```
 
 <a id="sec-07"></a><a id="bounded-scans-and-progress"></a>
 ## Bounded scans and progress
@@ -746,7 +762,7 @@ Three prospective optional capability integrations do not yet have a cataloged m
 
 `system-explorer` enforces comprehensive quality assurance through automated test suites, strict linting, bytecode compilation, and contract validation:
 
-- **Pytest Suite**: 248 tests executed with `--basetemp=.pytest_temp` and 100% green pass rate.
+- **Pytest Suite**: 256 tests (plus 26 subtests) executed with `--basetemp=.pytest_temp` and 100% green pass rate.
 - **Ruff AST Linter**: Complete compliance with PEP 8 and modern Python 3.10+ lint standards (`ruff check src tests`).
 - **Python Bytecode Compilation**: Verified across all source trees (`python -m compileall -q src tests`).
 - **Contract & Metadata Invariants**: Validated in `tests/test_metadata.py` and `tests/test_versioning.py`.
@@ -777,3 +793,7 @@ In accordance with `INV-SLA-10`, security vulnerabilities are acknowledged withi
 
 ### Haftungsausschluss / German Statutory Disclaimer (§ 521 BGB)
 Die Bereitstellung dieser Software erfolgt unentgeltlich im Rahmen eines Gefälligkeitsverhältnisses. Gemäß § 521 BGB haftet der Urheber ausschließlich für Vorsatz und grobe Fahrlässigkeit. Jegliche Haftung für leichte Fahrlässigkeit, Folgeschäden sowie Datenverlust im Zusammenhang mit dem Betrieb oder der Auswertung von Systemkarten ist ausgeschlossen.
+
+---
+
+*Concept & Approval: Geiger · Text assistance: LLM-assisted · Graphics: SVG-generated & UI screenshot*

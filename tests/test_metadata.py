@@ -337,7 +337,9 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         llms_text = (self.root / "llms.txt").read_text(encoding="utf-8")
 
         self.assertIn("# system-explorer", llms_text)
-        self.assertIn("Last-checked: 2026-11-14", llms_text)
+        self.assertIn("Last-checked: 2026-11-24", llms_text)
+        self.assertIn("Product Skill: SKILL.md", llms_text)
+        self.assertIn("Compatibility pointer: llm.txt", llms_text)
         self.assertIn("Attribution: NOTICE", llms_text)
         self.assertIn("CODE_OF_CONDUCT.md", llms_text)
         self.assertIn("CONTRIBUTING.md", llms_text)
@@ -808,6 +810,85 @@ class SystemExplorerMetadataTests(unittest.TestCase):
         self.assertIn("report-provider", changelog)
         self.assertIn("MARKETING-LOG.txt", changelog)
         self.assertIn("CODE_OF_CONDUCT.md", changelog)
+
+    def test_p022_product_skill_and_llm_entrypoints_2026_11_24(self) -> None:
+        """Verify Policy P-022 files (SKILL.md, llm.txt, llms.txt) and LLM install blocks."""
+        skill_path = self.root / "SKILL.md"
+        llm_path = self.root / "llm.txt"
+        llms_path = self.root / "llms.txt"
+        self.assertTrue(skill_path.is_file(), "Missing SKILL.md")
+        self.assertTrue(llm_path.is_file(), "Missing llm.txt")
+        self.assertTrue(llms_path.is_file(), "Missing llms.txt")
+
+        skill_text = skill_path.read_text(encoding="utf-8")
+        self.assertIn("name: system-explorer", skill_text)
+        self.assertIn("version: 0.4.2", skill_text)
+        self.assertIn("software-endpoints", skill_text)
+        self.assertIn("search-route", skill_text)
+
+        llm_text = llm_path.read_text(encoding="utf-8")
+        self.assertIn("llms.txt", llm_text)
+        self.assertIn("SKILL.md", llm_text)
+
+        llms_text = llms_path.read_text(encoding="utf-8")
+        self.assertIn("## Quick Install & Verification", llms_text)
+        self.assertIn("Prerequisites:", llms_text)
+        self.assertIn("Installation:", llms_text)
+        self.assertIn("Verification:", llms_text)
+        self.assertIn("Minimal Example:", llms_text)
+
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+        self.assertIn("### Install with your LLM", readme_en)
+        self.assertIn("### Mit deinem LLM installieren", readme_de)
+        for doc in (readme_en, readme_de):
+            self.assertIn("SKILL.md", doc)
+            self.assertIn("llm.txt", doc)
+            self.assertIn(".venv", doc)
+
+        pyproject = (self.root / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('"Product Skill" = "https://github.com/ellmos-ai/system-explorer/blob/main/SKILL.md"', pyproject)
+
+    def test_visual_assets_dashboard_screenshot_and_terminal_svg(self) -> None:
+        """Verify UI screenshot, terminal SVG preview, and preserved banner assets."""
+        banner_png = self.root / "assets" / "banner.png"
+        terminal_svg = self.root / "assets" / "terminal-workflow.svg"
+        dashboard_png = self.root / "README" / "screenshots" / "dashboard_view.png"
+        self.assertTrue(banner_png.is_file(), "Existing assets/banner.png must remain")
+        self.assertTrue(terminal_svg.is_file(), "Missing assets/terminal-workflow.svg")
+        self.assertTrue(dashboard_png.is_file(), "Missing README/screenshots/dashboard_view.png")
+        self.assertGreater(dashboard_png.stat().st_size, 10000)
+
+        svg_text = terminal_svg.read_text(encoding="utf-8")
+        self.assertIn("<svg", svg_text)
+        self.assertIn("</svg>", svg_text)
+        self.assertIn("system-explorer", svg_text)
+
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+        for doc in (readme_en, readme_de):
+            self.assertIn("assets/banner.png", doc)
+            self.assertIn("README/screenshots/dashboard_view.png", doc)
+            self.assertIn("assets/terminal-workflow.svg", doc)
+
+    def test_ai_disclosure_and_geiger_attribution_in_readmes(self) -> None:
+        """Verify concise public AI attribution with Geiger (never LG) in Section 18."""
+        readme_en = (self.root / "README.md").read_text(encoding="utf-8")
+        readme_de = (self.root / "README_de.md").read_text(encoding="utf-8")
+        self.assertIn("Concept & Approval: Geiger", readme_en)
+        self.assertIn("Idee & Abnahme: Geiger", readme_de)
+        self.assertIn("Verified-2026--11--24", readme_en)
+        self.assertIn("Gepr%C3%BCft-2026--11--24", readme_de)
+        self.assertIn("Pytest-256%20passed", readme_en)
+        self.assertIn("Pytest-256%20passed", readme_de)
+
+    def test_changelog_recent_pfad_b_2026_11_24_entry(self) -> None:
+        """Verify CHANGELOG.md contains the 2026-11-24 Pfad B entry and frozen version 0.4.2."""
+        changelog = (self.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("2026-11-24: Pfad B:", changelog)
+        self.assertIn("SKILL.md", changelog)
+        self.assertIn("dashboard_view.png", changelog)
+        self.assertIn("terminal-workflow.svg", changelog)
 
 
 if __name__ == "__main__":

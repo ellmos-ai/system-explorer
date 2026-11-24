@@ -1,18 +1,44 @@
 # system-explorer
 
-> Last-checked: 2026-11-14
+> Last-checked: 2026-11-24
 
 Purpose: map desired system functions to evidenced function carriers.
+Version: 0.4.2
 Truth boundary: source systems remain authoritative; evidence is referenced.
 Safety boundary: proposals are read-only and never authorize target mutation (§ 521 BGB Gefälligkeitsrecht).
 Key command: system-explorer --help
-Verification baseline: 251 Pytest tests (including the software endpoint registry and metadata contracts), Ruff, compileall, CLI help, and manifest validation passed locally.
+Verification baseline: 256 Pytest tests (including the software endpoint registry and metadata contracts), Ruff, compileall, CLI help, and manifest validation passed locally.
+
+## Quick Install & Verification
+
+- Prerequisites: Python >=3.10, `cryptography>=41`, unprivileged user mode (`RunAsInvoker`), zero outbound network access required.
+- Installation:
+  ```powershell
+  python -m venv .venv
+  .\.venv\Scripts\python -m pip install -e .
+  ```
+- Verification:
+  ```powershell
+  .\.venv\Scripts\python -m system_explorer.cli --help
+  .\.venv\Scripts\python -m pytest -ra -v
+  ```
+- Minimal Example:
+  ```powershell
+  .\.venv\Scripts\python -m system_explorer.cli doctor --config examples/explorer.json
+  ```
+
+## Canonical Entry Points & Governance
+
+Product Skill: SKILL.md
+Compatibility pointer: llm.txt
 Attribution: NOTICE
 Code of Conduct: CODE_OF_CONDUCT.md
 Contributing guide: CONTRIBUTING.md
 Security policy: SECURITY.md
 Third-party licenses: THIRD_PARTY_LICENSES.md
 Level 1 SBOM: THIRD_PARTY_LICENSES.txt
+Dashboard screenshot: README/screenshots/dashboard_view.png
+Terminal workflow visual: assets/terminal-workflow.svg
 CI workflow: .github/workflows/ci.yml
 Issue templates: .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md
 Dependabot config: .github/dependabot.yml

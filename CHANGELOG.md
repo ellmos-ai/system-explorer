@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 2026-11-24: Pfad B: Discoverability, Produkt-Skill (`SKILL.md` / `llm.txt`), lokales Web-UI-Screenshot, Terminal-SVG & Teststand-Parität.
+  - Policy P-022 (`SKILL.md`, `llm.txt`, `llms.txt` & kopierbarer LLM-Installationsblock): Produkt-Skill mit Aufgaben, Grenzen, Ein-/Ausgabeformaten und Exit-Codes sowie Kompatibilitätszeiger `llm.txt`, Abschnitt `## Quick Install & Verification` in `llms.txt` (`Last-checked: 2026-11-24`) und `.venv`-isolierte LLM-Installationsprompts in `README.md` und `README_de.md` ergänzt.
+  - Visuelle Vorschau & GUI-Screenshot: Echtes Dark-Mode-Screenshot des lokalen Loopback-Dashboards (`README/screenshots/dashboard_view.png`, `1920x1080`) sowie dunkle Vektor-Terminalvorschau (`assets/terminal-workflow.svg`, `880x540`) erstellt und unter Erhalt von `assets/banner.png` / `assets/banner.svg` in Abschnitt 04 beider READMEs eingebettet.
+  - Badges, KI-Kennzeichnung & Vertragstests: Teststand in `README.md`, `README_de.md` und `llms.txt` auf gemessene `256` Pytest-Tests, `Verified`/`Geprüft` auf `2026-11-24` sowie knappen öffentlichen Herkunftshinweis (`Geiger`, nie `LG`) in Abschnitt 18 aktualisiert; `"Product Skill"`-URL in `pyproject.toml` unter `[project.urls]` ergänzt (`version = "0.4.2"` unverändert per `T-20260920-167562623`); 4 neue Vertragstests in `tests/test_metadata.py`.
+
 - 2026-11-22: Explizite Software-Endpoint-Registry für OCEAN Full Dev (Rebase von `ec50c92` auf `0.4.2`).
   - Neue read-only CLI `software-endpoints` mit optionalem, eng begrenztem `--refresh` der konfigurierten Software-Ressourcen.
   - Deterministische, inhaltsgehashte Projektion `system-explorer.software-endpoint-registry.v1` mit Ressourcen, Schnittstellen, Funktionen, Akteuren, LLM-Bereitschaft und beobachtetem Installationsstatus.
